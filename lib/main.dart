@@ -476,12 +476,12 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _openAdd() {
-    showModalBottomSheet(
+    showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => SafeArea(
+      builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -498,50 +498,49 @@ class _MainShellState extends State<MainShell> {
                 icon: Icons.shopping_cart,
                 label: '新增支出',
                 color: kRed,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final item = await Navigator.push<ExpenseItem>(
-                    context,
-                    MaterialPageRoute(builder: (_) => AddExpensePage(state: s)),
-                  );
-                  if (item != null && mounted) s.addExpense(item);
-                },
+                onTap: () => Navigator.pop(ctx, 'expense'),
               ),
               const SizedBox(height: 12),
               _AddOptionButton(
                 icon: Icons.trending_up,
                 label: '新增收入',
                 color: kGreen,
-                onTap: () {
-                  Navigator.pop(context);
-                  _showAddIncomeDialog();
-                },
+                onTap: () => Navigator.pop(ctx, 'income'),
               ),
               const SizedBox(height: 12),
               _AddOptionButton(
                 icon: Icons.receipt,
                 label: '新增固定開銷',
                 color: kGold,
-                onTap: () {
-                  Navigator.pop(context);
-                  _showAddFixedDialog();
-                },
+                onTap: () => Navigator.pop(ctx, 'fixed'),
               ),
               const SizedBox(height: 12),
               _AddOptionButton(
                 icon: Icons.show_chart,
                 label: '新增投資',
                 color: const Color(0xFF4D8ED8),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showAddInvestmentDialog();
-                },
+                onTap: () => Navigator.pop(ctx, 'invest'),
               ),
             ],
           ),
         ),
       ),
-    );
+    ).then((choice) async {
+      if (!mounted) return;
+      if (choice == 'expense') {
+        final item = await Navigator.push<ExpenseItem>(
+          context,
+          MaterialPageRoute(builder: (_) => AddExpensePage(state: s)),
+        );
+        if (item != null && mounted) s.addExpense(item);
+      } else if (choice == 'income') {
+        _showAddIncomeDialog();
+      } else if (choice == 'fixed') {
+        _showAddFixedDialog();
+      } else if (choice == 'invest') {
+        _showAddInvestmentDialog();
+      }
+    });
   }
 
   void _showAddExpenseDialog() {
