@@ -1617,6 +1617,39 @@ class _BarChart extends StatelessWidget {
   }
 }
 
+
+// ─── 新增選項按鈕 ───
+class _AddOptionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _AddOptionButton({required this.icon, required this.label, required this.color, required this.onTap});
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    ),
+  );
+}
+
 // âââ å·¥å·å½å¼ âââ
 String _fmt(int n) => NumberFormat('#,###').format(n);
 String _fmtK(int n) => n >= 10000 ? '${(n / 1000).toStringAsFixed(0)}K' : _fmt(n);
