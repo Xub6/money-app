@@ -1582,24 +1582,26 @@ class _BarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxV = [...values, budget].fold<double>(0, max) * 1.15;
+    const barAreaHeight = 100.0;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: List.generate(months.length, (i) {
         final v = values[i];
-        final pct = maxV > 0 ? (v / maxV).clamp(0.0, 1.0) : 0.0;
+        final pct = (maxV > 0 ? (v / maxV).clamp(0.0, 1.0) : 0.0);
         final over = v > budget;
+        final barH = (pct * barAreaHeight).clamp(2.0, barAreaHeight);
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+            child: Column(mainAxisAlignment: MainAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
               if (v > 0) Text(_fmtK(v.round()),
                   style: TextStyle(fontSize: 9, color: over ? kRed : kGray, fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
               TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: pct),
+                tween: Tween(begin: 0, end: barH),
                 duration: Duration(milliseconds: 350 + i * 80), curve: Curves.easeOut,
-                builder: (_, p, __) => FractionallySizedBox(
-                  heightFactor: p,
+                builder: (_, h, __) => SizedBox(
+                  height: h,
                   child: Container(
                     decoration: BoxDecoration(
                       color: over ? kRed : kGold,
