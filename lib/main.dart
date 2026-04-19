@@ -1000,7 +1000,7 @@ class _DetailPageState extends State<DetailPage> {
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         leading: CircleAvatar(
-                          backgroundColor: cat.color.withValues(alpha: 0.15),
+                          backgroundColor: cat.color.withOpacity(0.15),
                           child: Icon(cat.icon, color: cat.color, size: 22),
                         ),
                         title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
@@ -1106,7 +1106,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: sel ? c.color.withValues(alpha: 0.12) : Colors.white,
+                    color: sel ? c.color.withOpacity(0.12) : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: sel ? c.color : Colors.grey.shade300, width: sel ? 1.5 : 1),
                   ),
