@@ -1,398 +1,38 @@
 import 'dart:math';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-// ─── 新增模組化導入 ───
+import 'core/constants/app_colors.dart';
+import 'core/constants/categories.dart';
 import 'core/utils/logger.dart';
+import 'data/repositories/app_state.dart';
+import 'data/models/expense_item.dart';
+import 'data/models/fixed_item.dart';
 import 'providers/theme_provider.dart';
+import 'screens/search/search_page.dart';
+import 'screens/add_edit/add_edit_expense_page.dart';
+
+// ─── 顏色別名（相容現有 widget）───
+const kGold = AppColors.gold;
+const kGoldLight = AppColors.goldLight;
+const kBg = AppColors.background;
+const kCard = AppColors.cardLight;
+const kGreen = AppColors.success;
+const kRed = AppColors.error;
+const kGray = AppColors.textSecondary;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  // 添加全局錯誤處理
   FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.presentError(details);
-    debugPrint('=== FLUTTER ERROR ===');
-    debugPrint(details.exception.toString());
-    debugPrint(details.stack.toString());
+    AppLogger.error('Flutter Error', error: details.exception, stackTrace: details.stack);
   };
 
   AppLogger.info('App starting...');
   runApp(const MoneyApp());
-}
-
-// ─── 顏色常數 ───
-const kGold = Color(0xFFC59B63);
-const kGoldLight = Color(0xFFF5ECD8);
-const kBg = Color(0xFFF6F3F1);
-const kCard = Color(0xFFFFFFFD);
-const kGreen = Color(0xFF88A89A);
-const kRed = Color(0xFFE05C5C);
-const kGray = Color(0xFF7A7A7A);
-
-// ─── 類別設定 ───
-class Category {
-  final String name;
-  final IconData icon;
-  final Color color;
-  const Category(this.name, this.icon, this.color);
-}
-
-const kCategories = [
-  Category('餐飲', Icons.restaurant, Color(0xFFD7BC74)),
-  Category('教育', Icons.school, Color(0xFF7B9BB5)),
-  Category('娛樂', Icons.sports_esports, Color(0xFF98AF82)),
-  Category('交通', Icons.directions_bus, Color(0xFFC59B63)),
-  Category('購物', Icons.shopping_bag, Color(0xFFC48DA0)),
-  Category('醫療', Icons.local_hospital, Color(0xFF88A89A)),
-  Category('住居', Icons.home, Color(0xFFB8956A)),
-  Category('其他', Icons.more_horiz, Color(0xFFB4B2A9)),
-];
-
-Category catOf(String name) =>
-    kCategories.firstWhere((c) => c.name == name, orElse: () => kCategories.last);
-
-// ─── 資料模型 ───
-class ExpenseItem {
-  final String id;
-  final String title;
-  final String category;
-  final int amount;
-  final DateTime date;
-  final String note;
-  final DateTime? editedAt;
-
-  ExpenseItem({
-    String? id,
-    required this.title,
-    required this.category,
-    required this.amount,
-    required this.date,
-    required this.note,
-    this.editedAt,
-  }) : id = id ?? DateTime.now().microsecondsSinceEpoch.toString();
-
-  Map<String, dynamic> toJson() => {
-        'id': id, 'title': title, 'category': category,
-        'amount': amount, 'date': date.toIso8601String(), 'note': note,
-        'editedAt': editedAt?.toIso8601String(),
-      };
-
-  factory ExpenseItem.fromJson(Map<String, dynamic> j) => ExpenseItem(
-        id: j['id'] ?? '', title: j['title'] ?? '',
-        category: j['category'] ?? '其他', amount: j['amount'] ?? 0,
-        date: DateTime.parse(j['date']), note: j['note'] ?? '',
-        editedAt: j['editedAt'] != null ? DateTime.parse(j['editedAt']) : null,
-      );
-
-  ExpenseItem copyWith({
-    String? id,
-    String? title,
-    String? category,
-    int? amount,
-    DateTime? date,
-    String? note,
-    DateTime? editedAt,
-  }) =>
-      ExpenseItem(
-        id: id ?? this.id,
-        title: title ?? this.title,
-        category: category ?? this.category,
-        amount: amount ?? this.amount,
-        date: date ?? this.date,
-        note: note ?? this.note,
-        editedAt: editedAt ?? this.editedAt ?? DateTime.now(),
-      );
-
-  bool get isEdited => editedAt != null;
-}
-
-// 收入項目
-class IncomeItem {
-  final String id;
-  final String title;
-  final int amount;
-  final DateTime date;
-  final String source;
-
-  IncomeItem({
-    String? id,
-    required this.title,
-    required this.amount,
-    required this.date,
-    required this.source,
-  }) : id = id ?? DateTime.now().microsecondsSinceEpoch.toString();
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'amount': amount,
-        'date': date.toIso8601String(),
-        'source': source,
-      };
-
-  factory IncomeItem.fromJson(Map<String, dynamic> j) => IncomeItem(
-        id: j['id'] ?? '',
-        title: j['title'] ?? '',
-        amount: j['amount'] ?? 0,
-        date: DateTime.parse(j['date']),
-        source: j['source'] ?? '其他',
-      );
-}
-
-// 投資項目
-class InvestmentItem {
-  final String id;
-  final String symbol;
-  final String name;
-  final int shares;
-  final int costPerShare;
-  final DateTime purchaseDate;
-  final String notes;
-
-  InvestmentItem({
-    String? id,
-    required this.symbol,
-    required this.name,
-    required this.shares,
-    required this.costPerShare,
-    required this.purchaseDate,
-    this.notes = '',
-  }) : id = id ?? DateTime.now().microsecondsSinceEpoch.toString();
-
-  int get totalCost => shares * costPerShare;
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'symbol': symbol,
-        'name': name,
-        'shares': shares,
-        'costPerShare': costPerShare,
-        'purchaseDate': purchaseDate.toIso8601String(),
-        'notes': notes,
-      };
-
-  factory InvestmentItem.fromJson(Map<String, dynamic> j) => InvestmentItem(
-        id: j['id'] ?? '',
-        symbol: j['symbol'] ?? '',
-        name: j['name'] ?? '',
-        shares: j['shares'] ?? 0,
-        costPerShare: j['costPerShare'] ?? 0,
-        purchaseDate: DateTime.parse(j['purchaseDate']),
-        notes: j['notes'] ?? '',
-      );
-}
-
-class FixedItem {
-  final String id;
-  final String title;
-  final int amount;
-  FixedItem({String? id, required this.title, required this.amount})
-      : id = id ?? DateTime.now().microsecondsSinceEpoch.toString();
-  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'amount': amount};
-  factory FixedItem.fromJson(Map<String, dynamic> j) =>
-      FixedItem(id: j['id'], title: j['title'], amount: j['amount']);
-}
-
-// ─── 狀態管理 ───
-class AppState extends ChangeNotifier {
-  List<ExpenseItem> expenses = [];
-  List<IncomeItem> incomes = [];
-  List<InvestmentItem> investments = [];
-  List<FixedItem> fixedItems = [];
-  int budget = 30000;
-  int streak = 0;
-  String _lastDate = '';
-  SharedPreferences? _prefs;
-  bool loaded = false;
-
-  AppState() { _load(); }
-
-  Future<void> _load() async {
-    _prefs = await SharedPreferences.getInstance();
-    _lastDate = _prefs?.getString('lastDate') ?? '';
-    budget = _prefs?.getInt('budget') ?? 30000;
-    streak = _prefs?.getInt('streak') ?? 0;
-
-    final expJson = _prefs?.getStringList('expenses') ?? [];
-    final incJson = _prefs?.getStringList('incomes') ?? [];
-    final invJson = _prefs?.getStringList('investments') ?? [];
-    final fixJson = _prefs?.getStringList('fixed') ?? [];
-
-    expenses = expJson.map((e) => ExpenseItem.fromJson(jsonDecode(e))).toList();
-    incomes = incJson.map((e) => IncomeItem.fromJson(jsonDecode(e))).toList();
-    investments = invJson.map((e) => InvestmentItem.fromJson(jsonDecode(e))).toList();
-    fixedItems = fixJson.map((e) => FixedItem.fromJson(jsonDecode(e))).toList();
-
-    _updateStreak();
-    loaded = true;
-    notifyListeners();
-  }
-
-  Future<void> _save() async {
-    if (_prefs == null) return;
-    _prefs!.setStringList('expenses', expenses.map((e) => jsonEncode(e.toJson())).toList());
-    _prefs!.setStringList('incomes', incomes.map((e) => jsonEncode(e.toJson())).toList());
-    _prefs!.setStringList('investments', investments.map((e) => jsonEncode(e.toJson())).toList());
-    _prefs!.setStringList('fixed', fixedItems.map((e) => jsonEncode(e.toJson())).toList());
-    _prefs!.setInt('budget', budget);
-    _prefs!.setInt('streak', streak);
-    _prefs!.setString('lastDate', _lastDate);
-  }
-
-  void addExpense(ExpenseItem e) {
-    expenses.add(e);
-    _updateStreak();
-    _save();
-    notifyListeners();
-    AppLogger.info('Expense added: ${e.title}');
-  }
-
-  void updateExpense(String id, ExpenseItem newItem) {
-    final idx = expenses.indexWhere((e) => e.id == id);
-    if (idx >= 0) {
-      expenses[idx] = newItem;
-      _save();
-      notifyListeners();
-      AppLogger.info('Expense updated: ${newItem.title}');
-    }
-  }
-
-  void deleteExpense(String id) {
-    expenses.removeWhere((e) => e.id == id);
-    _updateStreak();
-    _save();
-    notifyListeners();
-  }
-
-  void addIncome(IncomeItem i) {
-    incomes.add(i);
-    _save();
-    notifyListeners();
-  }
-
-  void deleteIncome(String id) {
-    incomes.removeWhere((i) => i.id == id);
-    _save();
-    notifyListeners();
-  }
-
-  void addInvestment(InvestmentItem inv) {
-    investments.add(inv);
-    _save();
-    notifyListeners();
-  }
-
-  void deleteInvestment(String id) {
-    investments.removeWhere((inv) => inv.id == id);
-    _save();
-    notifyListeners();
-  }
-
-  void addFixed(FixedItem f) {
-    fixedItems.add(f);
-    _save();
-    notifyListeners();
-  }
-
-  void updateFixed(String id, FixedItem f) {
-    final idx = fixedItems.indexWhere((e) => e.id == id);
-    if (idx >= 0) {
-      fixedItems[idx] = f;
-      _save();
-      notifyListeners();
-    }
-  }
-
-  void deleteFixed(String id) {
-    fixedItems.removeWhere((e) => e.id == id);
-    _save();
-    notifyListeners();
-  }
-
-  void setBudget(int b) {
-    budget = b;
-    _save();
-    notifyListeners();
-  }
-
-  void clearAll() {
-    expenses.clear();
-    fixedItems.clear();
-    _save();
-    notifyListeners();
-  }
-
-  ExpenseItem? getExpense(String id) => expenses.cast<ExpenseItem?>().firstWhere((e) => e?.id == id, orElse: () => null);
-  FixedItem? getFixed(String id) => fixedItems.cast<FixedItem?>().firstWhere((e) => e?.id == id, orElse: () => null);
-
-  List<ExpenseItem> monthExpenses(DateTime month) =>
-      expenses.where((e) => e.date.year == month.year && e.date.month == month.month).toList();
-
-  int usedTotal(DateTime month) {
-    final monthExp = monthExpenses(month).fold<int>(0, (s, e) => s + e.amount);
-    final now = DateTime.now();
-    final isCurrentMonth = month.year == now.year && month.month == now.month;
-    final fixedAmount = fixedItems.fold<int>(0, (s, e) => s + e.amount) * (isCurrentMonth ? now.day : DateTime(month.year, month.month + 1, 0).day);
-    return monthExp + fixedAmount;
-  }
-
-  double usedRate(DateTime month) => (usedTotal(month) / budget).clamp(0.0, double.infinity);
-  int remaining(DateTime month) => budget - usedTotal(month);
-  int dailyAvg(DateTime month) {
-    final days = DateTime(month.year, month.month + 1, 0).day;
-    return (usedTotal(month) / days).round();
-  }
-
-  int recommendedDaily(DateTime month) => (remaining(month) / (DateTime(month.year, month.month + 1, 0).day)).round();
-
-  Map<String, int> categoryTotals(DateTime month) {
-    final result = <String, int>{};
-    for (final e in monthExpenses(month)) {
-      result[e.category] = (result[e.category] ?? 0) + e.amount;
-    }
-    return result;
-  }
-
-  int get fixedTotal => fixedItems.fold<int>(0, (s, e) => s + e.amount);
-
-  void _updateStreak() {
-    final now = DateTime.now();
-    final today = DateFormat('yyyy-MM-dd').format(now);
-    if (_lastDate == today) return;
-    _lastDate = today;
-    final yesterday = now.subtract(const Duration(days: 1));
-    final yesterdayStr = DateFormat('yyyy-MM-dd').format(yesterday);
-
-    final hasYesterdayExp = expenses.any((e) => DateFormat('yyyy-MM-dd').format(e.date) == yesterdayStr);
-    streak = hasYesterdayExp ? (streak + 1) : 1;
-  }
-
-  String exportToJson() => jsonEncode({
-    'budget': budget,
-    'expenses': expenses.map((e) => e.toJson()).toList(),
-    'fixedItems': fixedItems.map((e) => e.toJson()).toList(),
-  });
-
-  Future<void> importFromJson(String json) async {
-    try {
-      final data = jsonDecode(json);
-      budget = data['budget'] ?? 30000;
-      expenses = (data['expenses'] ?? []).map<ExpenseItem>((e) => ExpenseItem.fromJson(e)).toList();
-      fixedItems = (data['fixedItems'] ?? []).map<FixedItem>((e) => FixedItem.fromJson(e)).toList();
-      await _save();
-      notifyListeners();
-      AppLogger.info('Data imported successfully');
-    } catch (e) {
-      AppLogger.error('Import failed', error: e);
-      rethrow;
-    }
-  }
 }
 
 /// Main app widget with providers
@@ -426,12 +66,8 @@ class _MoneyAppState extends State<MoneyApp> {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: '錢錢管家',
-            theme: ThemeData(
-              useMaterial3: true,
-              scaffoldBackgroundColor: kBg,
-              colorScheme: ColorScheme.fromSeed(seedColor: kGold),
-            ),
-            darkTheme: ThemeData.dark(),
+            theme: themeProvider.lightTheme,
+            darkTheme: themeProvider.darkTheme,
             themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: Consumer<AppState>(
               builder: (context, appState, _) {
@@ -478,247 +114,60 @@ class _MainShellState extends State<MainShell> {
     return DateFormat('M月').format(_displayMonth);
   }
 
-  void _setMonth(int offset) => setState(() => _monthOffset = offset.clamp(-1, 1));
-
-  void _openAdd() {
-    showModalBottomSheet<String>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(bottom: 20),
-                child: Text(
-                  '新增',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-                ),
-              ),
-              _AddOptionButton(
-                icon: Icons.shopping_cart,
-                label: '新增支出',
-                color: kRed,
-                onTap: () => Navigator.pop(ctx, 'expense'),
-              ),
-              const SizedBox(height: 12),
-              _AddOptionButton(
-                icon: Icons.trending_up,
-                label: '新增收入',
-                color: kGreen,
-                onTap: () => Navigator.pop(ctx, 'income'),
-              ),
-              const SizedBox(height: 12),
-              _AddOptionButton(
-                icon: Icons.receipt,
-                label: '新增固定開銷',
-                color: kGold,
-                onTap: () => Navigator.pop(ctx, 'fixed'),
-              ),
-              const SizedBox(height: 12),
-              _AddOptionButton(
-                icon: Icons.show_chart,
-                label: '新增投資',
-                color: const Color(0xFF4D8ED8),
-                onTap: () => Navigator.pop(ctx, 'invest'),
-              ),
-            ],
-          ),
+  void _openSearch() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SearchPage(
+          expenses: s.expenses,
+          fixedItems: s.fixedItems,
         ),
-      ),
-    ).then((choice) async {
-      if (!mounted) return;
-      if (choice == 'expense') {
-        final item = await Navigator.push<ExpenseItem>(
-          context,
-          MaterialPageRoute(builder: (_) => AddExpensePage(state: s)),
-        );
-        if (item != null && mounted) s.addExpense(item);
-      } else if (choice == 'income') {
-        _showAddIncomeDialog();
-      } else if (choice == 'fixed') {
-        _showAddFixedDialog();
-      } else if (choice == 'invest') {
-        _showAddInvestmentDialog();
-      }
-    });
-  }
-
-  void _showAddExpenseDialog() {
-    final titleCtrl = TextEditingController();
-    final amtCtrl = TextEditingController();
-    final noteCtrl = TextEditingController();
-    String cat = '餐飲';
-    DateTime date = DateTime.now();
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('新增支出'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: '名稱')),
-              TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '金額')),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () { titleCtrl.dispose(); amtCtrl.dispose(); noteCtrl.dispose(); Navigator.pop(context); }, child: const Text('取消')),
-          TextButton(
-            onPressed: () {
-              final title = titleCtrl.text.trim();
-              final amt = int.tryParse(amtCtrl.text.trim());
-              if (title.isNotEmpty && amt != null && amt > 0) {
-                s.addExpense(ExpenseItem(title: title, category: cat, amount: amt, date: date, note: noteCtrl.text.trim()));
-                titleCtrl.dispose(); amtCtrl.dispose(); noteCtrl.dispose(); Navigator.pop(context);
-              }
-            },
-            child: const Text('新增'),
-          ),
-        ],
       ),
     );
   }
 
-  void _showAddIncomeDialog() {
-    final titleCtrl = TextEditingController();
-    final amtCtrl = TextEditingController();
-    String source = '薪資';
-    DateTime date = DateTime.now();
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('新增收入'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: '名稱')),
-              TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '金額')),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
-          TextButton(
-            onPressed: () {
-              final title = titleCtrl.text.trim();
-              final amt = int.tryParse(amtCtrl.text.trim());
-              if (title.isNotEmpty && amt != null && amt > 0) {
-                s.addIncome(IncomeItem(title: title, amount: amt, date: date, source: source));
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('新增'),
-          ),
-        ],
-      ),
+  Future<void> _openAdd() async {
+    final result = await Navigator.push<ExpenseItem>(
+      context,
+      MaterialPageRoute(builder: (_) => const AddEditExpensePage()),
     );
+    if (result != null && mounted) {
+      s.addExpense(result);
+    }
   }
 
-  void _showAddFixedDialog() {
-    final titleCtrl = TextEditingController();
-    final amtCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('新增固定開銷'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: '名稱')),
-              TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '每月金額')),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
-          TextButton(
-            onPressed: () {
-              final title = titleCtrl.text.trim();
-              final amt = int.tryParse(amtCtrl.text.trim());
-              if (title.isNotEmpty && amt != null && amt > 0) {
-                s.addFixed(FixedItem(title: title, amount: amt));
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('新增'),
-          ),
-        ],
+  Future<void> _editExpense(ExpenseItem expense) async {
+    final result = await Navigator.push<ExpenseItem>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddEditExpensePage(existingItem: expense),
       ),
     );
-  }
-
-  void _showAddInvestmentDialog() {
-    final symbolCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
-    final sharesCtrl = TextEditingController();
-    final costCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('新增投資'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: symbolCtrl, decoration: const InputDecoration(labelText: '代號')),
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '名稱')),
-              TextField(controller: sharesCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '股數')),
-              TextField(controller: costCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '成本單價')),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
-          TextButton(
-            onPressed: () {
-              final symbol = symbolCtrl.text.trim();
-              final name = nameCtrl.text.trim();
-              final shares = int.tryParse(sharesCtrl.text.trim());
-              final cost = int.tryParse(costCtrl.text.trim());
-              if (symbol.isNotEmpty && name.isNotEmpty && shares != null && cost != null && shares > 0 && cost > 0) {
-                s.addInvestment(InvestmentItem(
-                  symbol: symbol,
-                  name: name,
-                  shares: shares,
-                  costPerShare: cost,
-                  purchaseDate: DateTime.now(),
-                ));
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('新增'),
-          ),
-        ],
-      ),
-    );
+    if (result != null && mounted) {
+      s.updateExpense(expense.id, result);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (!s.loaded) {
-      return const Scaffold(backgroundColor: kBg,
-          body: Center(child: CircularProgressIndicator(color: kGold)));
+      return const Scaffold(
+        backgroundColor: kBg,
+        body: Center(child: CircularProgressIndicator(color: kGold)),
+      );
     }
 
     final pages = [
-      DashboardPage(state: s, displayMonth: _displayMonth, monthLabel: _monthLabel,
-          onPrev: () => _setMonth(-1),
-          onCur: () => _setMonth(0),
-          onNext: () => _setMonth(1),
-          onGoDetail: () => setState(() => _tab = 1)),
-      DetailPage(state: s, displayMonth: _displayMonth),
+      DashboardPage(
+        state: s,
+        displayMonth: _displayMonth,
+        monthLabel: _monthLabel,
+        onPrev: () => setState(() => _monthOffset--),
+        onCur: () => setState(() => _monthOffset = 0),
+        onNext: () => setState(() => _monthOffset++),
+        onGoDetail: () => setState(() => _tab = 1),
+      ),
+      DetailPage(state: s, displayMonth: _displayMonth, onEdit: _editExpense),
       InvestPage(state: s),
       ManagePage(state: s),
     ];
@@ -728,6 +177,12 @@ class _MainShellState extends State<MainShell> {
       appBar: AppBar(
         title: const Text('錢錢管家', style: TextStyle(fontWeight: FontWeight.w800)),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _openSearch,
+          ),
+        ],
       ),
       body: IndexedStack(index: _tab, children: pages),
       floatingActionButton: FloatingActionButton(
@@ -749,7 +204,7 @@ class _MainShellState extends State<MainShell> {
           _NavItem(icon: Icons.pie_chart_rounded, label: '記帳', selected: _tab == 0, onTap: () => setState(() => _tab = 0)),
           _NavItem(icon: Icons.list_alt_rounded, label: '明細', selected: _tab == 1, onTap: () => setState(() => _tab = 1)),
           const SizedBox(width: 56),
-          _NavItem(icon: Icons.candlestick_chart_rounded, label: '投資', selected: _tab == 2, onTap: () => setState(() => _tab = 2)),
+          _NavItem(icon: Icons.show_chart_rounded, label: '統計', selected: _tab == 2, onTap: () => setState(() => _tab = 2)),
           _NavItem(icon: Icons.settings_rounded, label: '管理', selected: _tab == 3, onTap: () => setState(() => _tab = 3)),
         ]),
       ),
@@ -887,7 +342,7 @@ class DashboardPage extends StatelessWidget {
                   const SizedBox(height: 16),
                   Wrap(spacing: 16, runSpacing: 8,
                     children: catMap.entries.map((e) {
-                      final cat = catOf(e.key);
+                      final cat = categoryOf(e.key);
                       return Row(mainAxisSize: MainAxisSize.min, children: [
                         Container(width: 10, height: 10,
                             decoration: BoxDecoration(color: cat.color, shape: BoxShape.circle)),
@@ -911,13 +366,37 @@ class DashboardPage extends StatelessWidget {
 class DetailPage extends StatefulWidget {
   final AppState state;
   final DateTime displayMonth;
-  const DetailPage({super.key, required this.state, required this.displayMonth});
+  final Function(ExpenseItem)? onEdit;
+
+  const DetailPage({
+    super.key,
+    required this.state,
+    required this.displayMonth,
+    this.onEdit,
+  });
+
   @override
   State<DetailPage> createState() => _DetailPageState();
 }
 
 class _DetailPageState extends State<DetailPage> {
   String _filterCat = '全部';
+
+  void _deleteWithUndo(ExpenseItem item) {
+    widget.state.deleteExpense(item.id);
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('已刪除「${item.title}」'),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: '復原',
+          textColor: Colors.amber,
+          onPressed: () => widget.state.addExpense(item),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -973,45 +452,42 @@ class _DetailPageState extends State<DetailPage> {
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (_, i) {
                   final item = items[i];
-                  final cat = catOf(item.category);
-                  return Dismissible(
-                    key: Key(item.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      decoration: BoxDecoration(color: kRed, borderRadius: BorderRadius.circular(18)),
-                      child: const Icon(Icons.delete_outline, color: Colors.white, size: 26),
-                    ),
-                    confirmDismiss: (_) async {
-                      return await showDialog<bool>(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('刪除支出'),
-                          content: Text('確定刪除「${item.title}」？'),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-                            TextButton(onPressed: () => Navigator.pop(context, true),
-                                child: const Text('刪除', style: TextStyle(color: kRed))),
-                          ],
+                  final cat = categoryOf(item.category);
+                  return GestureDetector(
+                    onLongPress: () => _showItemMenu(item),
+                    child: Dismissible(
+                      key: Key(item.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        decoration: BoxDecoration(color: kRed, borderRadius: BorderRadius.circular(18)),
+                        child: const Icon(Icons.delete_outline, color: Colors.white, size: 26),
+                      ),
+                      onDismissed: (_) => _deleteWithUndo(item),
+                      child: Card(
+                        elevation: 0, color: kCard,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          leading: CircleAvatar(
+                            backgroundColor: cat.color.withOpacity(0.15),
+                            child: Icon(cat.icon, color: cat.color, size: 22),
+                          ),
+                          title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('${item.category}・${item.note.isEmpty ? "無備註" : item.note}'),
+                              Text(DateFormat('yyyy/MM/dd').format(item.date)),
+                              if (item.isEdited)
+                                const Text('已編輯', style: TextStyle(fontSize: 11, color: Colors.orange)),
+                            ],
+                          ),
+                          isThreeLine: true,
+                          trailing: Text('NT\$ ${_fmt(item.amount)}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                         ),
-                      ) ?? false;
-                    },
-                    onDismissed: (_) => widget.state.deleteExpense(item.id),
-                    child: Card(
-                      elevation: 0, color: kCard,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        leading: CircleAvatar(
-                          backgroundColor: cat.color.withOpacity(0.15),
-                          child: Icon(cat.icon, color: cat.color, size: 22),
-                        ),
-                        title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                        subtitle: Text('${item.category}・${item.note.isEmpty ? "無備註" : item.note}\n${DateFormat('yyyy/MM/dd').format(item.date)}'),
-                        isThreeLine: true,
-                        trailing: Text('NT\$ ${_fmt(item.amount)}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                       ),
                     ),
                   );
@@ -1021,152 +497,66 @@ class _DetailPageState extends State<DetailPage> {
       ]),
     );
   }
-}
 
-// ─── 新增支出頁 ───
-class AddExpensePage extends StatefulWidget {
-  final AppState state;
-  const AddExpensePage({super.key, required this.state});
-  @override
-  State<AddExpensePage> createState() => _AddExpensePageState();
-}
-
-class _AddExpensePageState extends State<AddExpensePage> {
-  final _titleCtrl = TextEditingController();
-  final _amtCtrl = TextEditingController();
-  final _noteCtrl = TextEditingController();
-  String _cat = '餐飲';
-  DateTime _date = DateTime.now();
-
-  @override
-  void dispose() { _titleCtrl.dispose(); _amtCtrl.dispose(); _noteCtrl.dispose(); super.dispose(); }
-
-  void _save() {
-    final title = _titleCtrl.text.trim();
-    final amt = int.tryParse(_amtCtrl.text.trim());
-    if (title.isEmpty || amt == null || amt <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('請填寫正確的名稱與金額'), backgroundColor: kRed));
-      return;
-    }
-    Navigator.pop(context, ExpenseItem(
-        title: title, category: _cat, amount: amt, date: _date, note: _noteCtrl.text.trim()));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kBg,
-      appBar: AppBar(
-        title: const Text('新增支出', style: TextStyle(fontWeight: FontWeight.w800)),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pop(context),
+  void _showItemMenu(ExpenseItem item) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('編輯'),
+              onTap: () {
+                Navigator.pop(context);
+                widget.onEdit?.call(item);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('複製'),
+              onTap: () {
+                Navigator.pop(context);
+                widget.state.addExpense(item.copyWith(title: '${item.title}（副本）'));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: kRed),
+              title: const Text('刪除', style: TextStyle(color: kRed)),
+              onTap: () {
+                Navigator.pop(context);
+                _deleteWithUndo(item);
+              },
+            ),
+          ],
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _FormLabel('項目名稱'),
-          _FormField(ctrl: _titleCtrl, hint: '例如：午餐、咖啡、課程'),
-          const SizedBox(height: 18),
-          _FormLabel('金額 (NT\$)'),
-          _FormField(ctrl: _amtCtrl, hint: '請輸入金額', type: TextInputType.number),
-          const SizedBox(height: 18),
-          _FormLabel('日期'),
-          GestureDetector(
-            onTap: () async {
-              final p = await showDatePicker(context: context, initialDate: _date,
-                  firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 1)));
-              if (p != null) setState(() => _date = p);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey.shade300)),
-              child: Row(children: [
-                const Icon(Icons.calendar_today, color: kGold, size: 18),
-                const SizedBox(width: 10),
-                Text(DateFormat('yyyy / MM / dd').format(_date), style: const TextStyle(fontSize: 15)),
-                const Spacer(),
-                const Icon(Icons.edit_outlined, color: kGray, size: 16),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 18),
-          _FormLabel('類別'),
-          Wrap(
-            spacing: 10, runSpacing: 10,
-            children: kCategories.map((c) {
-              final sel = _cat == c.name;
-              return GestureDetector(
-                onTap: () => setState(() => _cat = c.name),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: sel ? c.color.withOpacity(0.12) : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: sel ? c.color : Colors.grey.shade300, width: sel ? 1.5 : 1),
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(c.icon, color: sel ? c.color : Colors.grey, size: 18),
-                    const SizedBox(width: 6),
-                    Text(c.name, style: TextStyle(
-                        color: sel ? c.color : Colors.black87,
-                        fontWeight: sel ? FontWeight.w700 : FontWeight.w500, fontSize: 14)),
-                  ]),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 18),
-          _FormLabel('備註（選填）'),
-          TextField(
-            controller: _noteCtrl, maxLines: 3,
-            decoration: InputDecoration(
-              hintText: '可填可不填', filled: true, fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: Colors.grey.shade300)),
-            ),
-          ),
-          const SizedBox(height: 28),
-          SizedBox(width: double.infinity, height: 56,
-            child: ElevatedButton(
-              onPressed: _save,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kGold, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                elevation: 0,
-              ),
-              child: const Text('儲存', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-            ),
-          ),
-        ]),
       ),
     );
   }
 }
 
 // ─── 統計頁 ───
-class InvestPage extends StatelessWidget {
+class InvestPage extends StatefulWidget {
   final AppState state;
   const InvestPage({super.key, required this.state});
+  @override
+  State<InvestPage> createState() => _InvestPageState();
+}
+
+class _InvestPageState extends State<InvestPage> {
+  DateTime? _selectedMonth;
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final months = List.generate(6, (i) => DateTime(now.year, now.month - 5 + i, 1));
-    final values = months.map((m) => state.usedTotal(m).toDouble()).toList();
-    final maxMonth = months.reduce((a, b) => state.usedTotal(a) >= state.usedTotal(b) ? a : b);
-    final minMonth = months.reduce((a, b) => state.usedTotal(a) <= state.usedTotal(b) ? a : b);
+    final values = months.map((m) => widget.state.usedTotal(m).toDouble()).toList();
+    final maxMonth = months.reduce((a, b) => widget.state.usedTotal(a) >= widget.state.usedTotal(b) ? a : b);
+    final minMonth = months.reduce((a, b) => widget.state.usedTotal(a) <= widget.state.usedTotal(b) ? a : b);
+    final sel = _selectedMonth ?? now;
+    final catMap = widget.state.categoryTotals(sel);
+    final catTotal = catMap.values.fold(0, (s, v) => s + v);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -1179,10 +569,10 @@ class InvestPage extends StatelessWidget {
           _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('近6個月支出趨勢', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
-            Text('預算線 NT\$ ${_fmt(state.budget)}',
+            Text('預算線 NT\$ ${_fmt(widget.state.budget)}',
                 style: const TextStyle(color: kGray, fontSize: 12)),
             const SizedBox(height: 18),
-            SizedBox(height: 150, child: _BarChart(months: months, values: values, budget: state.budget.toDouble())),
+            SizedBox(height: 150, child: _BarChart(months: months, values: values, budget: widget.state.budget.toDouble())),
           ])),
           const SizedBox(height: 16),
 
@@ -1193,7 +583,7 @@ class InvestPage extends StatelessWidget {
               const SizedBox(height: 8),
               Text(DateFormat('M月').format(maxMonth),
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: kRed)),
-              Text('NT\$ ${_fmt(state.usedTotal(maxMonth))}',
+              Text('NT\$ ${_fmt(widget.state.usedTotal(maxMonth))}',
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
             ]))),
             const SizedBox(width: 12),
@@ -1202,10 +592,92 @@ class InvestPage extends StatelessWidget {
               const SizedBox(height: 8),
               Text(DateFormat('M月').format(minMonth),
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: kGreen)),
-              Text('NT\$ ${_fmt(state.usedTotal(minMonth))}',
+              Text('NT\$ ${_fmt(widget.state.usedTotal(minMonth))}',
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
             ]))),
           ]),
+          const SizedBox(height: 16),
+
+          // 分類細項（可切換月份）
+          _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Expanded(child: Text('分類細項', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+              SizedBox(
+                height: 32,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  scrollDirection: Axis.horizontal,
+                  itemCount: months.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  itemBuilder: (_, i) {
+                    final m = months[i];
+                    final isSel = m.year == sel.year && m.month == sel.month;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedMonth = m),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSel ? kGold : const Color(0xFFEDEBE7),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(DateFormat('M月').format(m),
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
+                                color: isSel ? Colors.white : Colors.black87)),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ]),
+            const SizedBox(height: 16),
+            if (catMap.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: Text('該月無支出記錄', style: TextStyle(color: Colors.grey))),
+              )
+            else
+              Builder(builder: (context) {
+                final sorted = catMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+                return Column(
+                  children: sorted.map((e) {
+                    final cat = categoryOf(e.key);
+                    final pct = catTotal > 0 ? e.value / catTotal : 0.0;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(children: [
+                        Row(children: [
+                          CircleAvatar(
+                            radius: 12,
+                            backgroundColor: cat.color.withOpacity(0.15),
+                            child: Icon(cat.icon, color: cat.color, size: 13),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(e.key, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                          Text('NT\$ ${_fmt(e.value)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 38,
+                            child: Text('${(pct * 100).round()}%',
+                                textAlign: TextAlign.end,
+                                style: TextStyle(fontSize: 12, color: cat.color, fontWeight: FontWeight.w700)),
+                          ),
+                        ]),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(99),
+                          child: LinearProgressIndicator(
+                            value: pct, minHeight: 5,
+                            backgroundColor: const Color(0xFFE8E6E2),
+                            valueColor: AlwaysStoppedAnimation(cat.color),
+                          ),
+                        ),
+                      ]),
+                    );
+                  }).toList(),
+                );
+              }),
+          ])),
           const SizedBox(height: 16),
 
           // 月份詳細清單
@@ -1213,8 +685,8 @@ class InvestPage extends StatelessWidget {
             const Text('各月詳情', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 14),
             ...months.reversed.map((m) {
-              final used = state.usedTotal(m);
-              final pct = (used / state.budget * 100).round().clamp(0, 100);
+              final used = widget.state.usedTotal(m);
+              final pct = (used / widget.state.budget * 100).round().clamp(0, 100);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1301,12 +773,29 @@ class _ManagePageState extends State<ManagePage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('管理', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 18),
+
+          // 外觀設定
+          _AppCard(child: Row(children: [
+            const Icon(Icons.dark_mode_rounded, color: kGold),
+            const SizedBox(width: 12),
+            const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('深色模式', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              Text('切換深色/淺色介面', style: TextStyle(color: kGray, fontSize: 12)),
+            ])),
+            Switch(
+              value: themeProvider.isDarkMode,
+              onChanged: (_) => themeProvider.toggleTheme(),
+              activeColor: kGold,
+            ),
+          ])),
+          const SizedBox(height: 16),
 
           // 月預算
           _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1485,34 +974,6 @@ class _BudgetStat extends StatelessWidget {
   );
 }
 
-class _FormLabel extends StatelessWidget {
-  final String text;
-  const _FormLabel(this.text);
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Text(text, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-  );
-}
-
-class _FormField extends StatelessWidget {
-  final TextEditingController ctrl; final String hint; final TextInputType type;
-  const _FormField({required this.ctrl, required this.hint, this.type = TextInputType.text});
-  @override
-  Widget build(BuildContext context) => TextField(
-    controller: ctrl, keyboardType: type,
-    decoration: InputDecoration(
-      hintText: hint, filled: true, fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: kGold, width: 1.5)),
-    ),
-  );
-}
-
 class _NavItem extends StatelessWidget {
   final IconData icon; final String label; final bool selected; final VoidCallback onTap;
   const _NavItem({required this.icon, required this.label, required this.selected, required this.onTap});
@@ -1552,7 +1013,6 @@ class _DoughnutPainter extends CustomPainter {
     const sw = 40.0;
     final cx = size.width / 2, cy = size.height / 2;
     final r = min(cx, cy) - sw;
-    // 底圈
     canvas.drawCircle(Offset(cx, cy), r, Paint()
       ..color = const Color(0xFFE6E3DE)
       ..style = PaintingStyle.stroke
@@ -1565,7 +1025,7 @@ class _DoughnutPainter extends CustomPainter {
         Rect.fromCircle(center: Offset(cx, cy), radius: r),
         start, sweep, false,
         Paint()
-          ..color = catOf(e.key).color
+          ..color = categoryOf(e.key).color
           ..style = PaintingStyle.stroke
           ..strokeWidth = sw
           ..strokeCap = StrokeCap.round,
@@ -1621,39 +1081,6 @@ class _BarChart extends StatelessWidget {
       }),
     );
   }
-}
-
-
-// ─── 新增選項按鈕 ───
-class _AddOptionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  const _AddOptionButton({required this.icon, required this.label, required this.color, required this.onTap});
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.25)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-        ],
-      ),
-    ),
-  );
 }
 
 // ─── 工具函式 ───
