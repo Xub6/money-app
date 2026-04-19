@@ -55,68 +55,6 @@ Category catOf(String name) =>
     kCategories.firstWhere((c) => c.name == name, orElse: () => kCategories.last);
 
 // âââ è³ææ¨¡å âââ
-import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-
-// ─── 新增模組化導入 ───
-import 'core/constants/app_colors.dart';
-import 'core/utils/logger.dart';
-import 'providers/theme_provider.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
-  // 添加全局錯誤處理
-  FlutterError.onError = (FlutterErrorDetails details) {
-    AppLogger.error('Flutter Error', error: details.exception, stackTrace: details.stack);
-  };
-
-  AppLogger.info('App starting...');
-  runApp(const MoneyApp());
-}
-
-// ─── 顏色常數 ───
-const kGold = Color(0xFFC59B63);
-const kGoldLight = Color(0xFFF5ECD8);
-const kBg = Color(0xFFF6F3F1);
-const kCard = Color(0xFFFFFFFD);
-const kGreen = Color(0xFF88A89A);
-const kRed = Color(0xFFE05C5C);
-const kGray = Color(0xFF7A7A7A);
-
-// ─── 類別設定 ───
-class Category {
-  final String name;
-  final IconData icon;
-  final Color color;
-  const Category(this.name, this.icon, this.color);
-}
-
-const kCategories = [
-  Category('餐飲', Icons.restaurant, Color(0xFFD7BC74)),
-  Category('教育', Icons.school, Color(0xFF7B9BB5)),
-  Category('娛樂', Icons.sports_esports, Color(0xFF98AF82)),
-  Category('交通', Icons.directions_bus, Color(0xFFC59B63)),
-  Category('購物', Icons.shopping_bag, Color(0xFFC48DA0)),
-  Category('醫療', Icons.local_hospital, Color(0xFF88A89A)),
-  Category('住居', Icons.home, Color(0xFFB8956A)),
-  Category('其他', Icons.more_horiz, Color(0xFFB4B2A9)),
-];
-
-Category catOf(String name) =>
-    kCategories.firstWhere((c) => c.name == name, orElse: () => kCategories.last);
-
-// ─── 資料模型 ───
-class ExpenseItem {
-  final String id;
-  final String title;
-  final String category;
-  final int amount;
 class ExpenseItem {
   final String id;
   final String title;
@@ -1682,4 +1620,3 @@ class _BarChart extends StatelessWidget {
 // âââ å·¥å·å½å¼ âââ
 String _fmt(int n) => NumberFormat('#,###').format(n);
 String _fmtK(int n) => n >= 10000 ? '${(n / 1000).toStringAsFixed(0)}K' : _fmt(n);
-  @override
