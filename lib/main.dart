@@ -16,7 +16,10 @@ void main() async {
 
   // 添加全局錯誤處理
   FlutterError.onError = (FlutterErrorDetails details) {
-    AppLogger.error('Flutter Error', error: details.exception, stackTrace: details.stack);
+    FlutterError.presentError(details);
+    debugPrint('=== FLUTTER ERROR ===');
+    debugPrint(details.exception.toString());
+    debugPrint(details.stack.toString());
   };
 
   AppLogger.info('App starting...');
