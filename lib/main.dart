@@ -6,6 +6,62 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+// âââ æ°å¢æ¨¡çµåå°å¥ âââ
+import 'core/utils/logger.dart';
+import 'providers/theme_provider.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  // æ·»å å¨å±é¯èª¤èç
+  FlutterError.onError = (FlutterErrorDetails details) {
+    AppLogger.error('Flutter Error', error: details.exception, stackTrace: details.stack);
+  };
+
+  AppLogger.info('App starting...');
+  runApp(const MoneyApp());
+}
+
+// âââ é¡è²å¸¸æ¸ âââ
+const kGold = Color(0xFFC59B63);
+const kGoldLight = Color(0xFFF5ECD8);
+const kBg = Color(0xFFF6F3F1);
+const kCard = Color(0xFFFFFFFD);
+const kGreen = Color(0xFF88A89A);
+const kRed = Color(0xFFE05C5C);
+const kGray = Color(0xFF7A7A7A);
+
+// âââ é¡å¥è¨­å® âââ
+class Category {
+  final String name;
+  final IconData icon;
+  final Color color;
+  const Category(this.name, this.icon, this.color);
+}
+
+const kCategories = [
+  Category('é¤é£²', Icons.restaurant, Color(0xFFD7BC74)),
+  Category('æè²', Icons.school, Color(0xFF7B9BB5)),
+  Category('å¨æ¨', Icons.sports_esports, Color(0xFF98AF82)),
+  Category('äº¤é', Icons.directions_bus, Color(0xFFC59B63)),
+  Category('è³¼ç©', Icons.shopping_bag, Color(0xFFC48DA0)),
+  Category('é«ç', Icons.local_hospital, Color(0xFF88A89A)),
+  Category('ä½å±', Icons.home, Color(0xFFB8956A)),
+  Category('å¶ä»', Icons.more_horiz, Color(0xFFB4B2A9)),
+];
+
+Category catOf(String name) =>
+    kCategories.firstWhere((c) => c.name == name, orElse: () => kCategories.last);
+
+// âââ è³ææ¨¡å âââ
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
 // ─── 新增模組化導入 ───
 import 'core/constants/app_colors.dart';
 import 'core/utils/logger.dart';
@@ -61,6 +117,11 @@ class ExpenseItem {
   final String title;
   final String category;
   final int amount;
+class ExpenseItem {
+  final String id;
+  final String title;
+  final String category;
+  final int amount;
   final DateTime date;
   final String note;
   final DateTime? editedAt;
@@ -83,7 +144,7 @@ class ExpenseItem {
 
   factory ExpenseItem.fromJson(Map<String, dynamic> j) => ExpenseItem(
         id: j['id'] ?? '', title: j['title'] ?? '',
-        category: j['category'] ?? '其他', amount: j['amount'] ?? 0,
+        category: j['category'] ?? 'å¶ä»', amount: j['amount'] ?? 0,
         date: DateTime.parse(j['date']), note: j['note'] ?? '',
         editedAt: j['editedAt'] != null ? DateTime.parse(j['editedAt']) : null,
       );
@@ -110,7 +171,7 @@ class ExpenseItem {
   bool get isEdited => editedAt != null;
 }
 
-// 收入項目
+// æ¶å¥é ç®
 class IncomeItem {
   final String id;
   final String title;
@@ -139,11 +200,11 @@ class IncomeItem {
         title: j['title'] ?? '',
         amount: j['amount'] ?? 0,
         date: DateTime.parse(j['date']),
-        source: j['source'] ?? '其他',
+        source: j['source'] ?? 'å¶ä»',
       );
 }
 
-// 投資項目
+// æè³é ç®
 class InvestmentItem {
   final String id;
   final String symbol;
@@ -197,7 +258,7 @@ class FixedItem {
       FixedItem(id: j['id'], title: j['title'], amount: j['amount']);
 }
 
-// ─── 狀態管理 ───
+// âââ çæç®¡ç âââ
 class AppState extends ChangeNotifier {
   List<ExpenseItem> expenses = [];
   List<IncomeItem> incomes = [];
@@ -423,7 +484,7 @@ class _MoneyAppState extends State<MoneyApp> {
         builder: (context, themeProvider, _) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: '錢錢管家',
+            title: 'é¢é¢ç®¡å®¶',
             theme: ThemeData(
               useMaterial3: true,
               scaffoldBackgroundColor: kBg,
@@ -470,10 +531,10 @@ class _MainShellState extends State<MainShell> {
   }
 
   String get _monthLabel {
-    if (_monthOffset == 0) return '本月';
-    if (_monthOffset == -1) return '上月';
-    if (_monthOffset == 1) return '下月';
-    return DateFormat('M月').format(_displayMonth);
+    if (_monthOffset == 0) return 'æ¬æ';
+    if (_monthOffset == -1) return 'ä¸æ';
+    if (_monthOffset == 1) return 'ä¸æ';
+    return DateFormat('Mæ').format(_displayMonth);
   }
 
   void _openAdd() {
@@ -491,23 +552,27 @@ class _MainShellState extends State<MainShell> {
               const Padding(
                 padding: EdgeInsets.only(bottom: 20),
                 child: Text(
-                  '新增',
+                  'æ°å¢',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
                 ),
               ),
               _AddOptionButton(
                 icon: Icons.shopping_cart,
-                label: '新增支出',
+                label: 'æ°å¢æ¯åº',
                 color: kRed,
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
-                  _showAddExpenseDialog();
+                  final item = await Navigator.push<ExpenseItem>(
+                    context,
+                    MaterialPageRoute(builder: (_) => AddExpensePage(state: s)),
+                  );
+                  if (item != null && mounted) s.addExpense(item);
                 },
               ),
               const SizedBox(height: 12),
               _AddOptionButton(
                 icon: Icons.trending_up,
-                label: '新增收入',
+                label: 'æ°å¢æ¶å¥',
                 color: kGreen,
                 onTap: () {
                   Navigator.pop(context);
@@ -517,7 +582,7 @@ class _MainShellState extends State<MainShell> {
               const SizedBox(height: 12),
               _AddOptionButton(
                 icon: Icons.receipt,
-                label: '新增固定開銷',
+                label: 'æ°å¢åºå®éé·',
                 color: kGold,
                 onTap: () {
                   Navigator.pop(context);
@@ -527,7 +592,7 @@ class _MainShellState extends State<MainShell> {
               const SizedBox(height: 12),
               _AddOptionButton(
                 icon: Icons.show_chart,
-                label: '新增投資',
+                label: 'æ°å¢æè³',
                 color: const Color(0xFF4D8ED8),
                 onTap: () {
                   Navigator.pop(context);
@@ -545,34 +610,34 @@ class _MainShellState extends State<MainShell> {
     final titleCtrl = TextEditingController();
     final amtCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
-    String cat = '餐飲';
+    String cat = 'é¤é£²';
     DateTime date = DateTime.now();
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('新增支出'),
+        title: const Text('æ°å¢æ¯åº'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: '名稱')),
-              TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '金額')),
+              TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'åç¨±')),
+              TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'éé¡')),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          TextButton(onPressed: () { titleCtrl.dispose(); amtCtrl.dispose(); noteCtrl.dispose(); Navigator.pop(context); }, child: const Text('åæ¶')),
           TextButton(
             onPressed: () {
               final title = titleCtrl.text.trim();
               final amt = int.tryParse(amtCtrl.text.trim());
               if (title.isNotEmpty && amt != null && amt > 0) {
                 s.addExpense(ExpenseItem(title: title, category: cat, amount: amt, date: date, note: noteCtrl.text.trim()));
-                Navigator.pop(context);
+                titleCtrl.dispose(); amtCtrl.dispose(); noteCtrl.dispose(); Navigator.pop(context);
               }
             },
-            child: const Text('新增'),
+            child: const Text('æ°å¢'),
           ),
         ],
       ),
@@ -582,24 +647,24 @@ class _MainShellState extends State<MainShell> {
   void _showAddIncomeDialog() {
     final titleCtrl = TextEditingController();
     final amtCtrl = TextEditingController();
-    String source = '薪資';
+    String source = 'èªè³';
     DateTime date = DateTime.now();
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('新增收入'),
+        title: const Text('æ°å¢æ¶å¥'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: '名稱')),
-              TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '金額')),
+              TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'åç¨±')),
+              TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'éé¡')),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('åæ¶')),
           TextButton(
             onPressed: () {
               final title = titleCtrl.text.trim();
@@ -609,7 +674,7 @@ class _MainShellState extends State<MainShell> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('新增'),
+            child: const Text('æ°å¢'),
           ),
         ],
       ),
@@ -623,18 +688,18 @@ class _MainShellState extends State<MainShell> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('新增固定開銷'),
+        title: const Text('æ°å¢åºå®éé·'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: '名稱')),
-              TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '每月金額')),
+              TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'åç¨±')),
+              TextField(controller: amtCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'æ¯æéé¡')),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('åæ¶')),
           TextButton(
             onPressed: () {
               final title = titleCtrl.text.trim();
@@ -644,7 +709,7 @@ class _MainShellState extends State<MainShell> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('新增'),
+            child: const Text('æ°å¢'),
           ),
         ],
       ),
@@ -660,20 +725,20 @@ class _MainShellState extends State<MainShell> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('新增投資'),
+        title: const Text('æ°å¢æè³'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: symbolCtrl, decoration: const InputDecoration(labelText: '代號')),
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '名稱')),
-              TextField(controller: sharesCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '股數')),
-              TextField(controller: costCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '成本單價')),
+              TextField(controller: symbolCtrl, decoration: const InputDecoration(labelText: 'ä»£è')),
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'åç¨±')),
+              TextField(controller: sharesCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'è¡æ¸')),
+              TextField(controller: costCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ææ¬å®å¹')),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('åæ¶')),
           TextButton(
             onPressed: () {
               final symbol = symbolCtrl.text.trim();
@@ -691,7 +756,7 @@ class _MainShellState extends State<MainShell> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('新增'),
+            child: const Text('æ°å¢'),
           ),
         ],
       ),
@@ -719,7 +784,7 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
-        title: const Text('錢錢管家', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('é¢é¢ç®¡å®¶', style: TextStyle(fontWeight: FontWeight.w800)),
         elevation: 0,
       ),
       body: IndexedStack(index: _tab, children: pages),
@@ -739,18 +804,18 @@ class _MainShellState extends State<MainShell> {
         color: Colors.white,
         elevation: 8,
         child: Row(children: [
-          _NavItem(icon: Icons.pie_chart_rounded, label: '記帳', selected: _tab == 0, onTap: () => setState(() => _tab = 0)),
-          _NavItem(icon: Icons.list_alt_rounded, label: '明細', selected: _tab == 1, onTap: () => setState(() => _tab = 1)),
+          _NavItem(icon: Icons.pie_chart_rounded, label: 'è¨å¸³', selected: _tab == 0, onTap: () => setState(() => _tab = 0)),
+          _NavItem(icon: Icons.list_alt_rounded, label: 'æç´°', selected: _tab == 1, onTap: () => setState(() => _tab = 1)),
           const SizedBox(width: 56),
-          _NavItem(icon: Icons.show_chart_rounded, label: '統計', selected: _tab == 2, onTap: () => setState(() => _tab = 2)),
-          _NavItem(icon: Icons.settings_rounded, label: '管理', selected: _tab == 3, onTap: () => setState(() => _tab = 3)),
+          _NavItem(icon: Icons.show_chart_rounded, label: 'çµ±è¨', selected: _tab == 2, onTap: () => setState(() => _tab = 2)),
+          _NavItem(icon: Icons.settings_rounded, label: 'ç®¡ç', selected: _tab == 3, onTap: () => setState(() => _tab = 3)),
         ]),
       ),
     );
   }
 }
 
-// ─── 首頁 ───
+// âââ é¦é  âââ
 class DashboardPage extends StatelessWidget {
   final AppState state;
   final DateTime displayMonth;
@@ -774,35 +839,35 @@ class DashboardPage extends StatelessWidget {
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('記帳', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+          const Text('è¨å¸³', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 18),
 
-          // 月份切換
+          // æä»½åæ
           _AppCard(child: Column(children: [
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(color: const Color(0xFFF3E7E7), borderRadius: BorderRadius.circular(20)),
-                child: Text('🔥 ${state.streak}天連勝',
+                child: Text('ð¥ ${state.streak}å¤©é£å',
                     style: const TextStyle(color: Color(0xFF8A5A5A), fontWeight: FontWeight.w700, fontSize: 13)),
               ),
             ]),
             const SizedBox(height: 14),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              _MonthBtn(text: '上月', selected: monthLabel == '上月', onTap: onPrev),
+              _MonthBtn(text: 'ä¸æ', selected: monthLabel == 'ä¸æ', onTap: onPrev),
               const SizedBox(width: 10),
-              _MonthBtn(text: '本月', selected: monthLabel == '本月', onTap: onCur),
+              _MonthBtn(text: 'æ¬æ', selected: monthLabel == 'æ¬æ', onTap: onCur),
               const SizedBox(width: 10),
-              _MonthBtn(text: '下月', selected: monthLabel == '下月', onTap: onNext),
+              _MonthBtn(text: 'ä¸æ', selected: monthLabel == 'ä¸æ', onTap: onNext),
             ]),
           ])),
           const SizedBox(height: 16),
 
-          // 預算進度
+          // é ç®é²åº¦
           _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
               const Expanded(
-                child: Text('預算進度（含固定開銷）',
+                child: Text('é ç®é²åº¦ï¼å«åºå®éé·ï¼',
                     style: TextStyle(color: kGray, fontSize: 13, fontWeight: FontWeight.w600)),
               ),
               Text('NT\$ ${_fmt(used)}',
@@ -832,24 +897,24 @@ class DashboardPage extends StatelessWidget {
             ),
             const Divider(height: 20),
             Row(children: [
-              Expanded(child: _BudgetStat(label: '日均支出', value: 'NT\$ ${_fmt(daily)}')),
+              Expanded(child: _BudgetStat(label: 'æ¥åæ¯åº', value: 'NT\$ ${_fmt(daily)}')),
               Expanded(child: _BudgetStat(
-                  label: '建議日均',
+                  label: 'å»ºè­°æ¥å',
                   value: 'NT\$ ${_fmt(rec.clamp(0, 9999999))}',
                   valueColor: rec < 0 ? kRed : kGreen, alignEnd: true)),
             ]),
             const SizedBox(height: 14),
-            const Text('剩餘預算', style: TextStyle(color: kGray, fontSize: 13, fontWeight: FontWeight.w600)),
+            const Text('å©é¤é ç®', style: TextStyle(color: kGray, fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
             Text('NT\$ ${_fmt(remain)}',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: over ? kRed : kGreen)),
           ])),
           const SizedBox(height: 16),
 
-          // 圓餅圖
+          // åé¤å
           _AppCard(child: Column(children: [
             Row(children: [
-              const Text('本月明細', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              const Text('æ¬ææç´°', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(width: 10),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -857,14 +922,14 @@ class DashboardPage extends StatelessWidget {
                 child: const Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.calendar_month, color: Colors.white, size: 14),
                   SizedBox(width: 4),
-                  Text('年度', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                  Text('å¹´åº¦', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
                 ]),
               ),
               const Spacer(),
               GestureDetector(
                 onTap: onGoDetail,
                 child: const Row(children: [
-                  Text('查看更多', style: TextStyle(color: kGray, fontSize: 13)),
+                  Text('æ¥çæ´å¤', style: TextStyle(color: kGray, fontSize: 13)),
                   Icon(Icons.chevron_right, color: kGray, size: 18),
                 ]),
               ),
@@ -873,7 +938,7 @@ class DashboardPage extends StatelessWidget {
             catMap.isEmpty
               ? const Padding(
                   padding: EdgeInsets.symmetric(vertical: 30),
-                  child: Text('新增支出後顯示圖表', style: TextStyle(color: Colors.grey, fontSize: 15)),
+                  child: Text('æ°å¢æ¯åºå¾é¡¯ç¤ºåè¡¨', style: TextStyle(color: Colors.grey, fontSize: 15)),
                 )
               : Column(children: [
                   SizedBox(height: 220, child: _DoughnutChart(catMap: catMap)),
@@ -900,7 +965,7 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-// ─── 明細頁 ───
+// âââ æç´°é  âââ
 class DetailPage extends StatefulWidget {
   final AppState state;
   final DateTime displayMonth;
@@ -910,13 +975,13 @@ class DetailPage extends StatefulWidget {
 }
 
 class _DetailPageState extends State<DetailPage> {
-  String _filterCat = '全部';
+  String _filterCat = 'å¨é¨';
 
   @override
   Widget build(BuildContext context) {
     var items = widget.state.monthExpenses(widget.displayMonth);
-    final cats = ['全部', ...items.map((e) => e.category).toSet().toList()];
-    if (_filterCat != '全部') items = items.where((e) => e.category == _filterCat).toList();
+    final cats = ['å¨é¨', ...items.map((e) => e.category).toSet().toList()];
+    if (_filterCat != 'å¨é¨') items = items.where((e) => e.category == _filterCat).toList();
     final totalShown = items.fold(0, (s, e) => s + e.amount);
 
     return SafeArea(
@@ -924,8 +989,8 @@ class _DetailPageState extends State<DetailPage> {
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
           child: Row(children: [
-            const Expanded(child: Text('明細', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800))),
-            Text('合計 NT\$ ${_fmt(totalShown)}',
+            const Expanded(child: Text('æç´°', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800))),
+            Text('åè¨ NT\$ ${_fmt(totalShown)}',
                 style: const TextStyle(color: kGold, fontWeight: FontWeight.w700, fontSize: 13)),
           ]),
         ),
@@ -959,7 +1024,7 @@ class _DetailPageState extends State<DetailPage> {
         const SizedBox(height: 10),
         Expanded(
           child: items.isEmpty
-            ? const Center(child: Text('沒有記錄', style: TextStyle(color: Colors.grey)))
+            ? const Center(child: Text('æ²æè¨é', style: TextStyle(color: Colors.grey)))
             : ListView.separated(
                 padding: const EdgeInsets.fromLTRB(18, 4, 18, 100),
                 itemCount: items.length,
@@ -980,12 +1045,12 @@ class _DetailPageState extends State<DetailPage> {
                       return await showDialog<bool>(
                         context: context,
                         builder: (_) => AlertDialog(
-                          title: const Text('刪除支出'),
-                          content: Text('確定刪除「${item.title}」？'),
+                          title: const Text('åªé¤æ¯åº'),
+                          content: Text('ç¢ºå®åªé¤ã${item.title}ãï¼'),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('åæ¶')),
                             TextButton(onPressed: () => Navigator.pop(context, true),
-                                child: const Text('刪除', style: TextStyle(color: kRed))),
+                                child: const Text('åªé¤', style: TextStyle(color: kRed))),
                           ],
                         ),
                       ) ?? false;
@@ -1001,7 +1066,7 @@ class _DetailPageState extends State<DetailPage> {
                           child: Icon(cat.icon, color: cat.color, size: 22),
                         ),
                         title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                        subtitle: Text('${item.category}・${item.note.isEmpty ? "無備註" : item.note}\n${DateFormat('yyyy/MM/dd').format(item.date)}'),
+                        subtitle: Text('${item.category}ã»${item.note.isEmpty ? "ç¡åè¨»" : item.note}\n${DateFormat('yyyy/MM/dd').format(item.date)}'),
                         isThreeLine: true,
                         trailing: Text('NT\$ ${_fmt(item.amount)}',
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
@@ -1016,7 +1081,7 @@ class _DetailPageState extends State<DetailPage> {
   }
 }
 
-// ─── 新增支出頁 ───
+// âââ æ°å¢æ¯åºé  âââ
 class AddExpensePage extends StatefulWidget {
   final AppState state;
   const AddExpensePage({super.key, required this.state});
@@ -1028,7 +1093,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   final _titleCtrl = TextEditingController();
   final _amtCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
-  String _cat = '餐飲';
+  String _cat = 'é¤é£²';
   DateTime _date = DateTime.now();
 
   @override
@@ -1039,7 +1104,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
     final amt = int.tryParse(_amtCtrl.text.trim());
     if (title.isEmpty || amt == null || amt <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('請填寫正確的名稱與金額'), backgroundColor: kRed));
+          const SnackBar(content: Text('è«å¡«å¯«æ­£ç¢ºçåç¨±èéé¡'), backgroundColor: kRed));
       return;
     }
     Navigator.pop(context, ExpenseItem(
@@ -1051,7 +1116,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
-        title: const Text('新增支出', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('æ°å¢æ¯åº', style: TextStyle(fontWeight: FontWeight.w800)),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -1064,13 +1129,13 @@ class _AddExpensePageState extends State<AddExpensePage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _FormLabel('項目名稱'),
-          _FormField(ctrl: _titleCtrl, hint: '例如：午餐、咖啡、課程'),
+          _FormLabel('é ç®åç¨±'),
+          _FormField(ctrl: _titleCtrl, hint: 'ä¾å¦ï¼åé¤ãåå¡ãèª²ç¨'),
           const SizedBox(height: 18),
-          _FormLabel('金額 (NT\$)'),
-          _FormField(ctrl: _amtCtrl, hint: '請輸入金額', type: TextInputType.number),
+          _FormLabel('éé¡ (NT\$)'),
+          _FormField(ctrl: _amtCtrl, hint: 'è«è¼¸å¥éé¡', type: TextInputType.number),
           const SizedBox(height: 18),
-          _FormLabel('日期'),
+          _FormLabel('æ¥æ'),
           GestureDetector(
             onTap: () async {
               final p = await showDatePicker(context: context, initialDate: _date,
@@ -1092,7 +1157,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
             ),
           ),
           const SizedBox(height: 18),
-          _FormLabel('類別'),
+          _FormLabel('é¡å¥'),
           Wrap(
             spacing: 10, runSpacing: 10,
             children: kCategories.map((c) {
@@ -1119,11 +1184,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
             }).toList(),
           ),
           const SizedBox(height: 18),
-          _FormLabel('備註（選填）'),
+          _FormLabel('åè¨»ï¼é¸å¡«ï¼'),
           TextField(
             controller: _noteCtrl, maxLines: 3,
             decoration: InputDecoration(
-              hintText: '可填可不填', filled: true, fillColor: Colors.white,
+              hintText: 'å¯å¡«å¯ä¸å¡«', filled: true, fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide(color: Colors.grey.shade300)),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
@@ -1139,7 +1204,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                 elevation: 0,
               ),
-              child: const Text('儲存', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              child: const Text('å²å­', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
             ),
           ),
         ]),
@@ -1148,7 +1213,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   }
 }
 
-// ─── 統計頁 ───
+// âââ çµ±è¨é  âââ
 class InvestPage extends StatelessWidget {
   final AppState state;
   const InvestPage({super.key, required this.state});
@@ -1165,35 +1230,35 @@ class InvestPage extends StatelessWidget {
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('統計', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+          const Text('çµ±è¨', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 18),
 
-          // 趨勢
+          // è¶¨å¢
           _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('近6個月支出趨勢', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            const Text('è¿6åææ¯åºè¶¨å¢', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
-            Text('預算線 NT\$ ${_fmt(state.budget)}',
+            Text('é ç®ç· NT\$ ${_fmt(state.budget)}',
                 style: const TextStyle(color: kGray, fontSize: 12)),
             const SizedBox(height: 18),
             SizedBox(height: 150, child: _BarChart(months: months, values: values, budget: state.budget.toDouble())),
           ])),
           const SizedBox(height: 16),
 
-          // 最高/最低月
+          // æé«/æä½æ
           Row(children: [
             Expanded(child: _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('花最多的月', style: TextStyle(color: kGray, fontSize: 12, fontWeight: FontWeight.w600)),
+              const Text('è±æå¤çæ', style: TextStyle(color: kGray, fontSize: 12, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              Text(DateFormat('M月').format(maxMonth),
+              Text(DateFormat('Mæ').format(maxMonth),
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: kRed)),
               Text('NT\$ ${_fmt(state.usedTotal(maxMonth))}',
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
             ]))),
             const SizedBox(width: 12),
             Expanded(child: _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('花最少的月', style: TextStyle(color: kGray, fontSize: 12, fontWeight: FontWeight.w600)),
+              const Text('è±æå°çæ', style: TextStyle(color: kGray, fontSize: 12, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              Text(DateFormat('M月').format(minMonth),
+              Text(DateFormat('Mæ').format(minMonth),
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: kGreen)),
               Text('NT\$ ${_fmt(state.usedTotal(minMonth))}',
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
@@ -1201,9 +1266,9 @@ class InvestPage extends StatelessWidget {
           ]),
           const SizedBox(height: 16),
 
-          // 月份詳細清單
+          // æä»½è©³ç´°æ¸å®
           _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('各月詳情', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            const Text('åæè©³æ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 14),
             ...months.reversed.map((m) {
               final used = state.usedTotal(m);
@@ -1212,7 +1277,7 @@ class InvestPage extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
-                    Text(DateFormat('yyyy年M月').format(m),
+                    Text(DateFormat('yyyyå¹´Mæ').format(m),
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                     const Spacer(),
                     Text('NT\$ ${_fmt(used)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
@@ -1239,7 +1304,7 @@ class InvestPage extends StatelessWidget {
   }
 }
 
-// ─── 管理頁 ───
+// âââ ç®¡çé  âââ
 class ManagePage extends StatefulWidget {
   final AppState state;
   const ManagePage({super.key, required this.state});
@@ -1265,17 +1330,17 @@ class _ManagePageState extends State<ManagePage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('新增固定開銷'),
+        title: const Text('æ°å¢åºå®éé·'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(controller: titleCtrl,
-              decoration: const InputDecoration(labelText: '名稱', hintText: '例如：Netflix')),
+              decoration: const InputDecoration(labelText: 'åç¨±', hintText: 'ä¾å¦ï¼Netflix')),
           const SizedBox(height: 12),
           TextField(controller: amtCtrl, keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: '每月金額 (NT\$)')),
+              decoration: const InputDecoration(labelText: 'æ¯æéé¡ (NT\$)')),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('åæ¶')),
           TextButton(
             onPressed: () {
               final title = titleCtrl.text.trim();
@@ -1285,7 +1350,7 @@ class _ManagePageState extends State<ManagePage> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('新增', style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+            child: const Text('æ°å¢', style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -1298,12 +1363,12 @@ class _ManagePageState extends State<ManagePage> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('管理', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+          const Text('ç®¡ç', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 18),
 
-          // 月預算
+          // æé ç®
           _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('月預算', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+            const Text('æé ç®', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
             Row(children: [
               Expanded(
@@ -1326,7 +1391,7 @@ class _ManagePageState extends State<ManagePage> {
                   if (val != null && val > 0) {
                     widget.state.setBudget(val);
                     ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('✓ 預算已更新'), backgroundColor: kGreen, duration: Duration(seconds: 2)));
+                        const SnackBar(content: Text('â é ç®å·²æ´æ°'), backgroundColor: kGreen, duration: Duration(seconds: 2)));
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -1335,17 +1400,17 @@ class _ManagePageState extends State<ManagePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   elevation: 0,
                 ),
-                child: const Text('更新', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: const Text('æ´æ°', style: TextStyle(fontWeight: FontWeight.w700)),
               ),
             ]),
           ])),
           const SizedBox(height: 16),
 
-          // 固定開銷
+          // åºå®éé·
           _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              const Expanded(child: Text('固定開銷', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
-              Text('每月 NT\$ ${_fmt(widget.state.fixedTotal)}',
+              const Expanded(child: Text('åºå®éé·', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
+              Text('æ¯æ NT\$ ${_fmt(widget.state.fixedTotal)}',
                   style: const TextStyle(color: kGold, fontWeight: FontWeight.w700, fontSize: 12)),
               const SizedBox(width: 10),
               GestureDetector(
@@ -1360,7 +1425,7 @@ class _ManagePageState extends State<ManagePage> {
             const SizedBox(height: 14),
             if (widget.state.fixedItems.isEmpty)
               const Padding(padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Text('點右上角 + 新增固定開銷', style: TextStyle(color: Colors.grey))),
+                  child: Text('é»å³ä¸è§ + æ°å¢åºå®éé·', style: TextStyle(color: Colors.grey))),
             ...widget.state.fixedItems.map((f) => Dismissible(
               key: Key(f.id),
               direction: DismissDirection.endToStart,
@@ -1388,9 +1453,9 @@ class _ManagePageState extends State<ManagePage> {
           ])),
           const SizedBox(height: 16),
 
-          // 危險區
+          // å±éªå
           _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('危險區', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kRed)),
+            const Text('å±éªå', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kRed)),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -1399,24 +1464,24 @@ class _ManagePageState extends State<ManagePage> {
                   final ok = await showDialog<bool>(
                     context: context,
                     builder: (_) => AlertDialog(
-                      title: const Text('確定清除？'),
-                      content: const Text('所有支出記錄將被永久刪除，無法還原。'),
+                      title: const Text('ç¢ºå®æ¸é¤ï¼'),
+                      content: const Text('æææ¯åºè¨éå°è¢«æ°¸ä¹åªé¤ï¼ç¡æ³éåã'),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('åæ¶')),
                         TextButton(onPressed: () => Navigator.pop(context, true),
-                            child: const Text('清除', style: TextStyle(color: kRed, fontWeight: FontWeight.w700))),
+                            child: const Text('æ¸é¤', style: TextStyle(color: kRed, fontWeight: FontWeight.w700))),
                       ],
                     ),
                   );
                   if (ok == true) {
                     widget.state.clearAll();
                     if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('所有記錄已清除')));
+                        const SnackBar(content: Text('ææè¨éå·²æ¸é¤')));
                   }
                 },
                 icon: const Icon(Icons.delete_forever, color: kRed),
-                label: const Text('清除所有支出記錄', style: TextStyle(color: kRed)),
+                label: const Text('æ¸é¤æææ¯åºè¨é', style: TextStyle(color: kRed)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: kRed),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1431,7 +1496,7 @@ class _ManagePageState extends State<ManagePage> {
   }
 }
 
-// ─── 小元件 ───
+// âââ å°åä»¶ âââ
 class _AppCard extends StatelessWidget {
   final Widget child;
   const _AppCard({required this.child});
@@ -1526,7 +1591,7 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-// ─── 環形圖 ───
+// âââ ç°å½¢å âââ
 class _DoughnutChart extends StatelessWidget {
   final Map<String, int> catMap;
   const _DoughnutChart({required this.catMap});
@@ -1545,7 +1610,7 @@ class _DoughnutPainter extends CustomPainter {
     const sw = 40.0;
     final cx = size.width / 2, cy = size.height / 2;
     final r = min(cx, cy) - sw;
-    // 底圈
+    // åºå
     canvas.drawCircle(Offset(cx, cy), r, Paint()
       ..color = const Color(0xFFE6E3DE)
       ..style = PaintingStyle.stroke
@@ -1570,7 +1635,7 @@ class _DoughnutPainter extends CustomPainter {
   bool shouldRepaint(_DoughnutPainter o) => o.catMap != catMap;
 }
 
-// ─── 長條圖 ───
+// âââ é·æ¢å âââ
 class _BarChart extends StatelessWidget {
   final List<DateTime> months; final List<double> values; final double budget;
   const _BarChart({required this.months, required this.values, required this.budget});
@@ -1604,7 +1669,7 @@ class _BarChart extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(DateFormat('M月').format(months[i]),
+              Text(DateFormat('Mæ').format(months[i]),
                   style: const TextStyle(fontSize: 10, color: kGray, fontWeight: FontWeight.w600)),
             ]),
           ),
@@ -1614,6 +1679,7 @@ class _BarChart extends StatelessWidget {
   }
 }
 
-// ─── 工具函式 ───
+// âââ å·¥å·å½å¼ âââ
 String _fmt(int n) => NumberFormat('#,###').format(n);
 String _fmtK(int n) => n >= 10000 ? '${(n / 1000).toStringAsFixed(0)}K' : _fmt(n);
+  @override
