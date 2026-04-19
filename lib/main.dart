@@ -478,6 +478,8 @@ class _MainShellState extends State<MainShell> {
     return DateFormat('M月').format(_displayMonth);
   }
 
+  void _setMonth(int offset) => setState(() => _monthOffset = offset.clamp(-1, 1));
+
   void _openAdd() {
     showModalBottomSheet<String>(
       context: context,
@@ -712,9 +714,9 @@ class _MainShellState extends State<MainShell> {
 
     final pages = [
       DashboardPage(state: s, displayMonth: _displayMonth, monthLabel: _monthLabel,
-          onPrev: () => setState(() => _monthOffset--),
-          onCur: () => setState(() => _monthOffset = 0),
-          onNext: () => setState(() => _monthOffset++),
+          onPrev: () => _setMonth(-1),
+          onCur: () => _setMonth(0),
+          onNext: () => _setMonth(1),
           onGoDetail: () => setState(() => _tab = 1)),
       DetailPage(state: s, displayMonth: _displayMonth),
       InvestPage(state: s),
@@ -747,7 +749,7 @@ class _MainShellState extends State<MainShell> {
           _NavItem(icon: Icons.pie_chart_rounded, label: '記帳', selected: _tab == 0, onTap: () => setState(() => _tab = 0)),
           _NavItem(icon: Icons.list_alt_rounded, label: '明細', selected: _tab == 1, onTap: () => setState(() => _tab = 1)),
           const SizedBox(width: 56),
-          _NavItem(icon: Icons.show_chart_rounded, label: '統計', selected: _tab == 2, onTap: () => setState(() => _tab = 2)),
+          _NavItem(icon: Icons.candlestick_chart_rounded, label: '投資', selected: _tab == 2, onTap: () => setState(() => _tab = 2)),
           _NavItem(icon: Icons.settings_rounded, label: '管理', selected: _tab == 3, onTap: () => setState(() => _tab = 3)),
         ]),
       ),
