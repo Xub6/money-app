@@ -1,33 +1,29 @@
 # 進度追蹤文件
 
 ## 工作協議
-每次開始新的程式更改前，Claude 會在此記錄：
-- 任務目標
-- 目前進度
-- 已完成的步驟
-- 下一步要做什麼
-
+每次開始新的程式更改前，Claude 會在此記錄任務目標、目前進度、已完成步驟、下一步。
 重開對話後，Claude 會先讀取此文件，從中斷點繼續。
 
 ---
 
 ## 目前狀態：待機中
-最後完成任務：券商打字篩選 + 台股/美股費率分開（2026-04-21）✅
+最後完成任務：AI 設計圖示 + 投資總現值修正（2026-04-21）✅
 
 ### 完成紀錄
 - [x] 深色模式修復
-- [x] 投資頁面改版（對齊參考設計）
+- [x] 投資頁面改版
 - [x] 即時股價（Yahoo Finance API）
-- [x] 中央 FAB 統一入口（依頁面切換功能）
-- [x] 頁面左右滑動切換（PageView + KeepAlive）
-- [x] SSH 金鑰設定（不再需要 PAT 推送）
-- [x] App 名稱改為「錢錢管家」
-- [x] 月份按鈕顯示實際月份數字，點擊直接跳轉（非相對偏移）
-- [x] 預算進度「含固定開銷」切換按鈕
-- [x] 台股中文名稱搜尋（TWSE 官方 API，過濾權證）
-- [x] 券商選擇 + 手續費自訂（台股12家/美股9家，打字即時篩選）
-- [x] 損益計算扣除手續費＋交易稅（台股 0.3% 固定，美股無稅）
-- [x] 總覽損益也改用扣費後淨值
+- [x] 中央 FAB 統一入口
+- [x] 頁面左右滑動切換
+- [x] SSH 金鑰設定
+- [x] App 名稱「錢錢管家」
+- [x] 月份按鈕顯示實際月份，直接跳轉
+- [x] 預算進度「含固定開銷」切換
+- [x] 台股中文名稱搜尋（TWSE API）
+- [x] 券商選擇 + 手續費自訂（台股/美股分開，打字篩選）
+- [x] 損益扣手續費＋交易稅（總覽/明細/詳情全部修正）
+- [x] AI 設計圖示（金幣¥漸層，SVG → PNG）
+- [x] 投資總現值改用扣費後淨值（三數一致）
 
 ### APK 安裝方式
 用手機 SSH app（Server Auditor）連接電腦，直接下載：
@@ -38,3 +34,7 @@
 cd ~/money-app && git push origin main
 ```
 （SSH，無需 PAT）
+
+### 圖示重新設計方式
+1. 修改 `assets/icon.svg`
+2. 執行：`cd /tmp && node -e "const sharp=require('sharp'); const fs=require('fs'); const svg=fs.readFileSync('C:/Users/sshuser/money-app/assets/icon.svg'); const res='C:/Users/sshuser/money-app/android/app/src/main/res/'; [[192,res+'mipmap-xxxhdpi/ic_launcher.png'],[144,res+'mipmap-xxhdpi/ic_launcher.png'],[96,res+'mipmap-xhdpi/ic_launcher.png'],[72,res+'mipmap-hdpi/ic_launcher.png'],[48,res+'mipmap-mdpi/ic_launcher.png']].forEach(([s,p])=>sharp(svg).resize(s,s).png().toFile(p))"`
