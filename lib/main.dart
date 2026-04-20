@@ -104,7 +104,24 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _tab = 0;
   int _monthOffset = 0;
+  late final PageController _pageController = PageController();
   AppState get s => widget.state;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _goToTab(int tab) {
+    if (_tab == tab) return;
+    setState(() => _tab = tab);
+    _pageController.animateToPage(
+      tab,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
 
   DateTime get _displayMonth {
     final now = DateTime.now();
@@ -206,7 +223,7 @@ class _MainShellState extends State<MainShell> {
         onPrev: () => setState(() => _monthOffset--),
         onCur: () => setState(() => _monthOffset = 0),
         onNext: () => setState(() => _monthOffset++),
-        onGoDetail: () => setState(() => _tab = 1),
+        onGoDetail: () => _goToTab(1),
       ),
       DetailPage(state: s, displayMonth: _displayMonth, onEdit: _editExpense),
       InvestPage(state: s),
@@ -224,7 +241,11 @@ class _MainShellState extends State<MainShell> {
           ),
         ],
       ),
-      body: IndexedStack(index: _tab, children: pages),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (i) => setState(() => _tab = i),
+        children: pages.map((p) => _KeepAlivePage(child: p)).toList(),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _fabTap,
         backgroundColor: kGold,
@@ -246,11 +267,11 @@ class _MainShellState extends State<MainShell> {
         notchMargin: 8,
         elevation: 8,
         child: Row(children: [
-          _NavItem(icon: Icons.pie_chart_rounded, label: '記帳', selected: _tab == 0, onTap: () => setState(() => _tab = 0)),
-          _NavItem(icon: Icons.list_alt_rounded, label: '明細', selected: _tab == 1, onTap: () => setState(() => _tab = 1)),
+          _NavItem(icon: Icons.pie_chart_rounded, label: '記帳', selected: _tab == 0, onTap: () => _goToTab(0)),
+          _NavItem(icon: Icons.list_alt_rounded, label: '明細', selected: _tab == 1, onTap: () => _goToTab(1)),
           const SizedBox(width: 56),
-          _NavItem(icon: Icons.candlestick_chart_rounded, label: '投資', selected: _tab == 2, onTap: () => setState(() => _tab = 2)),
-          _NavItem(icon: Icons.settings_rounded, label: '管理', selected: _tab == 3, onTap: () => setState(() => _tab = 3)),
+          _NavItem(icon: Icons.candlestick_chart_rounded, label: '投資', selected: _tab == 2, onTap: () => _goToTab(2)),
+          _NavItem(icon: Icons.settings_rounded, label: '管理', selected: _tab == 3, onTap: () => _goToTab(3)),
         ]),
       ),
     );
@@ -1067,6 +1088,24 @@ class _AnnualStat extends StatelessWidget {
 
 // ─── 工具函式 ───
 String _fmt(int n) => NumberFormat('#,###').format(n);
+
+class _KeepAlivePage extends StatefulWidget {
+  final Widget child;
+  const _KeepAlivePage({required this.child});
+  @override
+  State<_KeepAlivePage> createState() => _KeepAlivePageState();
+}
+
+class _KeepAlivePageState extends State<_KeepAlivePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
 
 void _showFixedItemDialog(BuildContext context, AppState state,
     {FixedItem? existing}) {
