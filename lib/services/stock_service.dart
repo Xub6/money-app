@@ -60,42 +60,67 @@ class StockService {
     }
   }
 
-  /// Search stocks by keyword (for autocomplete)
-  static Future<List<StockSearchResult>> search(
-      String query, bool isTwd) async {
-    if (query.isEmpty) return [];
+  /// Search Taiwan stocks via TWSE codeQuery (supports Chinese name search)
+  static Future<List<StockSearchResult>> _searchTwse(String query) async {
     final q = Uri.encodeComponent(query);
-    final lang = isTwd ? 'zh-TW' : 'en-US';
-    final uri = Uri.parse(
-        'https://query1.finance.yahoo.com/v1/finance/search?q=$q&quotesCount=8&newsCount=0&lang=$lang');
+    final uri = Uri.parse('https://www.twse.com.tw/rwd/zh/api/codeQuery?query=$q');
     try {
-      final resp =
-          await http.get(uri, headers: _headers).timeout(_timeout);
+      final resp = await http.get(uri, headers: _headers).timeout(_timeout);
+      if (resp.statusCode != 200) return [];
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final suggestions = (data['suggestions'] as List?) ?? [];
+      return suggestions
+          .where((s) => s != 'more')
+          .map((s) {
+            final str = s as String;
+            final parts = str.split('\t');
+            if (parts.length < 2) return null;
+            final sym = parts[0].trim();
+            // 只保留股票/ETF（4~5碼數字），排除權證（6碼以上）
+            if (sym.length > 5) return null;
+            return StockSearchResult(
+              symbol: sym,
+              name: parts[1].trim(),
+              exchange: 'TWSE',
+            );
+          })
+          .whereType<StockSearchResult>()
+          .take(8)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Search US stocks via Yahoo Finance
+  static Future<List<StockSearchResult>> _searchYahoo(String query) async {
+    final q = Uri.encodeComponent(query);
+    final uri = Uri.parse(
+        'https://query1.finance.yahoo.com/v1/finance/search?q=$q&quotesCount=8&newsCount=0&lang=en-US');
+    try {
+      final resp = await http.get(uri, headers: _headers).timeout(_timeout);
       if (resp.statusCode != 200) return [];
       final data = jsonDecode(resp.body) as Map<String, dynamic>;
       final quotes = (data['quotes'] as List?) ?? [];
       return quotes
           .where((q) => q['quoteType'] == 'EQUITY')
-          .where((q) {
-            final sym = (q['symbol'] as String?) ?? '';
-            return isTwd
-                ? sym.endsWith('.TW') || sym.endsWith('.TWO')
-                : !sym.contains('.');
-          })
-          .map((q) {
-            final raw = (q['symbol'] as String);
-            final cleanSym =
-                raw.replaceAll('.TW', '').replaceAll('.TWO', '');
-            return StockSearchResult(
-              symbol: cleanSym,
-              name: (q['shortname'] ?? q['longname'] ?? cleanSym) as String,
-              exchange: (q['exchange'] ?? '') as String,
-            );
-          })
+          .where((q) => !((q['symbol'] as String?) ?? '').contains('.'))
+          .map((q) => StockSearchResult(
+                symbol: (q['symbol'] as String),
+                name: (q['shortname'] ?? q['longname'] ?? q['symbol']) as String,
+                exchange: (q['exchange'] ?? '') as String,
+              ))
           .toList();
     } catch (_) {
       return [];
     }
+  }
+
+  /// Search stocks by keyword (for autocomplete)
+  static Future<List<StockSearchResult>> search(
+      String query, bool isTwd) async {
+    if (query.isEmpty) return [];
+    return isTwd ? _searchTwse(query) : _searchYahoo(query);
   }
 
   /// Fetch quotes for multiple symbols, returns Map<id, quote>
