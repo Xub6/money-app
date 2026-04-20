@@ -173,7 +173,7 @@ class AppState extends ChangeNotifier {
 
   double get totalPortfolioValue => holdings.fold(0.0, (s, h) => s + h.currentValueTwd(usdTwdRate));
   double get totalPortfolioCost => holdings.fold(0.0, (s, h) => s + h.totalCost);
-  double get totalPortfolioProfit => totalPortfolioValue - totalPortfolioCost;
+  double get totalPortfolioProfit => holdings.fold(0.0, (s, h) => s + h.netCurrentValueTwd(usdTwdRate)) - totalPortfolioCost;
   double get totalPortfolioProfitPct => totalPortfolioCost == 0 ? 0 : totalPortfolioProfit / totalPortfolioCost * 100;
 
   /// Set budget
