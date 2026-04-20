@@ -12,17 +12,19 @@
 ---
 
 ## 目前狀態：待機中
-任務：修復深色模式切換無效的問題（2026-04-20）✅ 已完成
+最後完成任務：即時股價查詢功能（2026-04-20）✅
 
-### 修復摘要
-ThemeProvider 切換正常，硬編碼顏色已全數改為 Theme.of(context)。
+### 完成紀錄
+- [x] 深色模式修復（全部硬編碼顏色改 Theme）
+- [x] 投資頁面改版（對齊參考設計）
+- [x] 即時股價功能（Yahoo Finance API）
 
-### 已完成步驟
-- [x] Scaffold / BottomAppBar：已確認無硬編碼背景色
-- [x] _AppCard：已用 Theme.of(context).colorScheme.surfaceContainerLow
-- [x] _MonthBtn：已用 Theme 顏色
-- [x] DetailPage 篩選標籤：已用 Theme 顏色
-- [x] ManagePage 固定開銷 container：已用 Theme.of(context).colorScheme.surfaceContainer
-- [x] 進度條背景色：改用 colorScheme.surfaceContainerHighest（3 處）
-- [x] _DoughnutChart 背景圓環：改用 colorScheme.surfaceContainerHighest（傳入 trackColor）
-- [x] 連續記帳徽章：改用 errorContainer / tertiaryContainer
+### 最新架構
+- `lib/services/stock_service.dart`：Yahoo Finance API 封裝
+- `StockHolding` model 新增 `name` 欄位
+- `AppState.updateHoldingPrice()` 批量更新現價
+- 新增投資時：選市場 → 輸入代碼 → 查詢現價 → 自動帶入
+- 投資主頁：刷新按鈕一鍵更新所有持股現價
+
+### APK
+v2.2.0：https://github.com/Xub6/money-app/releases/download/v2.2.0/money-app-v2.2.0.apk
