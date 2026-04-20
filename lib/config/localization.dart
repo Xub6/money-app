@@ -253,6 +253,3 @@ class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
     return false;
   }
 }
-
-// Required imports
-import 'package:intl/intl.dart';

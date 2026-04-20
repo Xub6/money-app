@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_pkg;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/utils/logger.dart';
@@ -109,7 +111,6 @@ class EncryptionService {
   /// Encrypt a map to JSON string
   String encryptMap(Map<String, dynamic> data) {
     try {
-      import 'dart:convert';
       final json = jsonEncode(data);
       return encrypt(json);
     } catch (e) {
@@ -121,7 +122,6 @@ class EncryptionService {
   /// Decrypt JSON string to map
   Map<String, dynamic>? decryptMap(String encryptedBase64) {
     try {
-      import 'dart:convert';
       final decrypted = decrypt(encryptedBase64);
       return jsonDecode(decrypted) as Map<String, dynamic>;
     } catch (e) {
@@ -182,8 +182,6 @@ class EncryptionService {
 
   /// Hash a string (one-way, for verification)
   static String hash(String data) {
-    import 'dart:convert';
-    import 'package:crypto/crypto.dart';
     return sha256.convert(utf8.encode(data)).toString();
   }
 
@@ -192,6 +190,3 @@ class EncryptionService {
     return EncryptionService.hash(data) == hash;
   }
 }
-
-// Required imports
-import 'dart:convert';

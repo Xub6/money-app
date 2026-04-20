@@ -24,6 +24,8 @@ dependencies:
   flutter_secure_storage: ^9.0.0    # Encrypted storage
   encrypt: ^5.0.3                   # AES encryption (null-safe)
   provider: ^6.0.0                  # State management upgrade
+  path: ^1.9.0                      # Path utilities
+  crypto: ^3.0.0                    # SHA256 hashing
 
 dev_dependencies:
   flutter_test:

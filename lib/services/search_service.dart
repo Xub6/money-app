@@ -1,8 +1,23 @@
 import 'dart:async';
 import '../data/models/expense_item.dart';
 import '../data/models/fixed_item.dart';
-import '../data/models/backup_metadata.dart';
 import '../core/utils/logger.dart';
+
+class SearchResult {
+  final String id;
+  final String type; // 'expense' or 'fixed'
+  final dynamic item;
+  final double relevance;
+  final List<String> matchedFields;
+
+  const SearchResult({
+    required this.id,
+    required this.type,
+    required this.item,
+    this.relevance = 1.0,
+    this.matchedFields = const [],
+  });
+}
 
 /// Service for searching expenses and fixed items
 class SearchService {
@@ -252,7 +267,8 @@ class SearchService {
         }
       }
 
-      return suggestions.toList()..sort().take(limit);
+      final list = suggestions.toList()..sort();
+      return list.take(limit).toList();
     } catch (e) {
       AppLogger.error('Get suggestions failed', error: e);
       return [];

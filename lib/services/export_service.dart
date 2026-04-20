@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:csv/csv.dart';
@@ -66,7 +67,7 @@ class ExportService {
       final timestamp = DateTime.now().toString().replaceAll(':', '').substring(0, 15);
       final filename = 'expenses_$timestamp.csv';
       final file = File('${exportDir.path}/$filename');
-      await file.writeAsString(csv, encoding: const Utf8Codec());
+      await file.writeAsString(csv, encoding: utf8);
 
       AppLogger.info('CSV exported: $filename');
       return filename;
@@ -114,7 +115,7 @@ class ExportService {
       final timestamp = DateTime.now().toString().replaceAll(':', '').substring(0, 15);
       final filename = 'fixed_items_$timestamp.csv';
       final file = File('${exportDir.path}/$filename');
-      await file.writeAsString(csv, encoding: const Utf8Codec());
+      await file.writeAsString(csv, encoding: utf8);
 
       AppLogger.info('Fixed items CSV exported: $filename');
       return filename;
@@ -205,7 +206,7 @@ class ExportService {
       final timestamp = DateTime.now().toString().replaceAll(':', '').substring(0, 15);
       final filename = 'report_${DateFormat('yyyyMM').format(month)}_$timestamp.csv';
       final file = File('${exportDir.path}/$filename');
-      await file.writeAsString(csv, encoding: const Utf8Codec());
+      await file.writeAsString(csv, encoding: utf8);
 
       AppLogger.info('Report exported: $filename');
       return filename;
@@ -263,6 +264,3 @@ class ExportService {
     }
   }
 }
-
-// Required imports
-import 'package:intl/intl.dart';

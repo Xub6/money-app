@@ -77,30 +77,30 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  Future<void> _selectStartDate() async {
-    final picked = await showDatePicker(
+  Future<void> _selectDateRange() async {
+    final start = await showDatePicker(
       context: context,
       initialDate: _startDate ?? DateTime.now().subtract(const Duration(days: 30)),
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
+      helpText: '選擇開始日期',
     );
-    if (picked != null) {
-      setState(() => _startDate = picked);
-      _performSearch();
-    }
-  }
+    if (start == null || !mounted) return;
 
-  Future<void> _selectEndDate() async {
-    final picked = await showDatePicker(
+    final end = await showDatePicker(
       context: context,
       initialDate: _endDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
+      firstDate: start,
       lastDate: DateTime.now(),
+      helpText: '選擇結束日期',
     );
-    if (picked != null) {
-      setState(() => _endDate = picked);
-      _performSearch();
-    }
+    if (end == null) return;
+
+    setState(() {
+      _startDate = start;
+      _endDate = end;
+    });
+    _performSearch();
   }
 
   void _toggleCategory(String category) {
@@ -183,7 +183,7 @@ class _SearchPageState extends State<SearchPage> {
                         ? '${DateFormat('M/d').format(_startDate!)} - ${DateFormat('M/d').format(_endDate!)}'
                         : '日期範圍',
                   ),
-                  onSelected: (_) => _selectStartDate(),
+                  onSelected: (_) => _selectDateRange(),
                   backgroundColor: _startDate != null ? AppColors.goldLight : Colors.white,
                 ),
                 const SizedBox(width: 8),
@@ -198,9 +198,11 @@ class _SearchPageState extends State<SearchPage> {
                 else
                   Wrap(
                     spacing: 8,
-                    children: _selectedCategories.map((cat) {
+                    children: _selectedCategories.map<Widget>((cat) {
                       return FilterChip(
                         label: Text(cat),
+                        selected: true,
+                        onSelected: (_) => _toggleCategory(cat),
                         onDeleted: () => _toggleCategory(cat),
                         backgroundColor: AppColors.goldLight,
                       );

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/expense_item.dart';
@@ -391,7 +392,3 @@ class AppDatabase {
     }
   }
 }
-
-// Required imports
-import 'package:path/path.dart';
-import 'dart:io';

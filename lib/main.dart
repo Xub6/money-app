@@ -13,6 +13,9 @@ import 'data/models/fixed_item.dart';
 import 'providers/theme_provider.dart';
 import 'screens/search/search_page.dart';
 import 'screens/add_edit/add_edit_expense_page.dart';
+import 'screens/invest/invest_page.dart';
+import 'services/backup_service.dart';
+import 'services/export_service.dart';
 
 // ─── 顏色別名（相容現有 widget）───
 const kGold = AppColors.gold;
@@ -129,7 +132,9 @@ class _MainShellState extends State<MainShell> {
   Future<void> _openAdd() async {
     final result = await Navigator.push<ExpenseItem>(
       context,
-      MaterialPageRoute(builder: (_) => const AddEditExpensePage()),
+      MaterialPageRoute(
+        builder: (_) => AddEditExpensePage(allExpenses: s.expenses),
+      ),
     );
     if (result != null && mounted) {
       s.addExpense(result);
@@ -140,7 +145,10 @@ class _MainShellState extends State<MainShell> {
     final result = await Navigator.push<ExpenseItem>(
       context,
       MaterialPageRoute(
-        builder: (_) => AddEditExpensePage(existingItem: expense),
+        builder: (_) => AddEditExpensePage(
+          existingItem: expense,
+          allExpenses: s.expenses,
+        ),
       ),
     );
     if (result != null && mounted) {
@@ -204,7 +212,7 @@ class _MainShellState extends State<MainShell> {
           _NavItem(icon: Icons.pie_chart_rounded, label: '記帳', selected: _tab == 0, onTap: () => setState(() => _tab = 0)),
           _NavItem(icon: Icons.list_alt_rounded, label: '明細', selected: _tab == 1, onTap: () => setState(() => _tab = 1)),
           const SizedBox(width: 56),
-          _NavItem(icon: Icons.show_chart_rounded, label: '統計', selected: _tab == 2, onTap: () => setState(() => _tab = 2)),
+          _NavItem(icon: Icons.candlestick_chart_rounded, label: '投資', selected: _tab == 2, onTap: () => setState(() => _tab = 2)),
           _NavItem(icon: Icons.settings_rounded, label: '管理', selected: _tab == 3, onTap: () => setState(() => _tab = 3)),
         ]),
       ),
@@ -221,6 +229,75 @@ class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key, required this.state, required this.displayMonth,
     required this.monthLabel, required this.onPrev, required this.onCur,
     required this.onNext, required this.onGoDetail});
+
+  void _showAnnualSummary(BuildContext context) {
+    final now = DateTime.now();
+    final months = List.generate(12, (i) => DateTime(now.year, i + 1, 1));
+    final monthlyTotals = months.map((m) => state.usedTotal(m)).toList();
+    final annualTotal = monthlyTotals.fold(0, (s, v) => s + v);
+    final annualBudget = state.budget * 12;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Text('${now.year} 年度總覽',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            const Spacer(),
+            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+          ]),
+          const SizedBox(height: 16),
+          Row(children: [
+            Expanded(child: _AnnualStat(label: '年度支出', value: 'NT\$ ${_fmt(annualTotal)}',
+                color: annualTotal > annualBudget ? kRed : kGreen)),
+            Expanded(child: _AnnualStat(label: '年度預算', value: 'NT\$ ${_fmt(annualBudget)}', color: kGold)),
+          ]),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: (annualTotal / annualBudget).clamp(0.0, 1.0),
+              minHeight: 10,
+              backgroundColor: const Color(0xFFE8E6E2),
+              valueColor: AlwaysStoppedAnimation(annualTotal > annualBudget ? kRed : kGreen),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text('各月支出', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          const SizedBox(height: 12),
+          ...List.generate(12, (i) {
+            final v = monthlyTotals[i];
+            if (v == 0) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(children: [
+                SizedBox(width: 36, child: Text('${i + 1}月',
+                    style: const TextStyle(color: kGray, fontWeight: FontWeight.w600))),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(99),
+                    child: LinearProgressIndicator(
+                      value: (v / (state.budget > 0 ? state.budget : 1)).clamp(0.0, 1.0),
+                      minHeight: 8,
+                      backgroundColor: const Color(0xFFE8E6E2),
+                      valueColor: AlwaysStoppedAnimation(v > state.budget ? kRed : kGold),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text('NT\$ ${_fmt(v)}',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+              ]),
+            );
+          }),
+        ]),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -242,11 +319,29 @@ class DashboardPage extends StatelessWidget {
           // 月份切換
           _AppCard(child: Column(children: [
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: const Color(0xFFF3E7E7), borderRadius: BorderRadius.circular(20)),
-                child: Text('🔥 ${state.streak}天連勝',
-                    style: const TextStyle(color: Color(0xFF8A5A5A), fontWeight: FontWeight.w700, fontSize: 13)),
+              Tooltip(
+                message: '每天記帳可維持連續天數',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: state.recordedToday ? const Color(0xFFF3E7E7) : const Color(0xFFF5F0E8),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text(state.recordedToday ? '🔥' : '⚠️', style: const TextStyle(fontSize: 13)),
+                    const SizedBox(width: 4),
+                    Text(
+                      state.recordedToday
+                          ? '連續記帳 ${state.streak} 天'
+                          : '今天還沒記帳（${state.streak} 天）',
+                      style: TextStyle(
+                        color: state.recordedToday ? const Color(0xFF8A5A5A) : const Color(0xFF9A7A3A),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ]),
+                ),
               ),
             ]),
             const SizedBox(height: 14),
@@ -313,14 +408,17 @@ class DashboardPage extends StatelessWidget {
             Row(children: [
               const Text('本月明細', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: kGold, borderRadius: BorderRadius.circular(16)),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.calendar_month, color: Colors.white, size: 14),
-                  SizedBox(width: 4),
-                  Text('年度', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
-                ]),
+              GestureDetector(
+                onTap: () => _showAnnualSummary(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(color: kGold, borderRadius: BorderRadius.circular(16)),
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.calendar_month, color: Colors.white, size: 14),
+                    SizedBox(width: 4),
+                    Text('年度', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                  ]),
+                ),
               ),
               const Spacer(),
               GestureDetector(
@@ -383,7 +481,7 @@ class _DetailPageState extends State<DetailPage> {
   String _filterCat = '全部';
 
   void _deleteWithUndo(ExpenseItem item) {
-    widget.state.deleteExpense(item.id);
+    final originalIndex = widget.state.deleteExpense(item.id);
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -392,7 +490,7 @@ class _DetailPageState extends State<DetailPage> {
         action: SnackBarAction(
           label: '復原',
           textColor: Colors.amber,
-          onPressed: () => widget.state.addExpense(item),
+          onPressed: () => widget.state.insertExpenseAt(originalIndex, item),
         ),
       ),
     );
@@ -536,188 +634,6 @@ class _DetailPageState extends State<DetailPage> {
   }
 }
 
-// ─── 統計頁 ───
-class InvestPage extends StatefulWidget {
-  final AppState state;
-  const InvestPage({super.key, required this.state});
-  @override
-  State<InvestPage> createState() => _InvestPageState();
-}
-
-class _InvestPageState extends State<InvestPage> {
-  DateTime? _selectedMonth;
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final months = List.generate(6, (i) => DateTime(now.year, now.month - 5 + i, 1));
-    final values = months.map((m) => widget.state.usedTotal(m).toDouble()).toList();
-    final maxMonth = months.reduce((a, b) => widget.state.usedTotal(a) >= widget.state.usedTotal(b) ? a : b);
-    final minMonth = months.reduce((a, b) => widget.state.usedTotal(a) <= widget.state.usedTotal(b) ? a : b);
-    final sel = _selectedMonth ?? now;
-    final catMap = widget.state.categoryTotals(sel);
-    final catTotal = catMap.values.fold(0, (s, v) => s + v);
-
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('統計', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 18),
-
-          // 趨勢
-          _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('近6個月支出趨勢', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            Text('預算線 NT\$ ${_fmt(widget.state.budget)}',
-                style: const TextStyle(color: kGray, fontSize: 12)),
-            const SizedBox(height: 18),
-            SizedBox(height: 150, child: _BarChart(months: months, values: values, budget: widget.state.budget.toDouble())),
-          ])),
-          const SizedBox(height: 16),
-
-          // 最高/最低月
-          Row(children: [
-            Expanded(child: _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('花最多的月', style: TextStyle(color: kGray, fontSize: 12, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Text(DateFormat('M月').format(maxMonth),
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: kRed)),
-              Text('NT\$ ${_fmt(widget.state.usedTotal(maxMonth))}',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-            ]))),
-            const SizedBox(width: 12),
-            Expanded(child: _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('花最少的月', style: TextStyle(color: kGray, fontSize: 12, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Text(DateFormat('M月').format(minMonth),
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: kGreen)),
-              Text('NT\$ ${_fmt(widget.state.usedTotal(minMonth))}',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-            ]))),
-          ]),
-          const SizedBox(height: 16),
-
-          // 分類細項（可切換月份）
-          _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Expanded(child: Text('分類細項', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
-              SizedBox(
-                height: 32,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  scrollDirection: Axis.horizontal,
-                  itemCount: months.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 6),
-                  itemBuilder: (_, i) {
-                    final m = months[i];
-                    final isSel = m.year == sel.year && m.month == sel.month;
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedMonth = m),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isSel ? kGold : const Color(0xFFEDEBE7),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(DateFormat('M月').format(m),
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
-                                color: isSel ? Colors.white : Colors.black87)),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ]),
-            const SizedBox(height: 16),
-            if (catMap.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(child: Text('該月無支出記錄', style: TextStyle(color: Colors.grey))),
-              )
-            else
-              Builder(builder: (context) {
-                final sorted = catMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-                return Column(
-                  children: sorted.map((e) {
-                    final cat = categoryOf(e.key);
-                    final pct = catTotal > 0 ? e.value / catTotal : 0.0;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Column(children: [
-                        Row(children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundColor: cat.color.withOpacity(0.15),
-                            child: Icon(cat.icon, color: cat.color, size: 13),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(child: Text(e.key, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
-                          Text('NT\$ ${_fmt(e.value)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            width: 38,
-                            child: Text('${(pct * 100).round()}%',
-                                textAlign: TextAlign.end,
-                                style: TextStyle(fontSize: 12, color: cat.color, fontWeight: FontWeight.w700)),
-                          ),
-                        ]),
-                        const SizedBox(height: 6),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(99),
-                          child: LinearProgressIndicator(
-                            value: pct, minHeight: 5,
-                            backgroundColor: const Color(0xFFE8E6E2),
-                            valueColor: AlwaysStoppedAnimation(cat.color),
-                          ),
-                        ),
-                      ]),
-                    );
-                  }).toList(),
-                );
-              }),
-          ])),
-          const SizedBox(height: 16),
-
-          // 月份詳細清單
-          _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('各月詳情', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 14),
-            ...months.reversed.map((m) {
-              final used = widget.state.usedTotal(m);
-              final pct = (used / widget.state.budget * 100).round().clamp(0, 100);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Text(DateFormat('yyyy年M月').format(m),
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                    const Spacer(),
-                    Text('NT\$ ${_fmt(used)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                    const SizedBox(width: 8),
-                    Text('$pct%', style: TextStyle(
-                        color: pct > 90 ? kRed : kGreen, fontSize: 12, fontWeight: FontWeight.w600)),
-                  ]),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(99),
-                    child: LinearProgressIndicator(
-                      value: pct / 100, minHeight: 6,
-                      backgroundColor: const Color(0xFFE8E6E2),
-                      valueColor: AlwaysStoppedAnimation(pct > 90 ? kRed : kGreen),
-                    ),
-                  ),
-                ]),
-              );
-            }),
-          ])),
-        ]),
-      ),
-    );
-  }
-}
-
 // ─── 管理頁 ───
 class ManagePage extends StatefulWidget {
   final AppState state;
@@ -728,6 +644,8 @@ class ManagePage extends StatefulWidget {
 
 class _ManagePageState extends State<ManagePage> {
   late final TextEditingController _budgetCtrl;
+  final _backupService = BackupService();
+  final _exportService = ExportService();
 
   @override
   void initState() {
@@ -738,13 +656,49 @@ class _ManagePageState extends State<ManagePage> {
   @override
   void dispose() { _budgetCtrl.dispose(); super.dispose(); }
 
-  void _addFixed() {
-    final titleCtrl = TextEditingController();
-    final amtCtrl = TextEditingController();
+  Future<void> _doBackup() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final filename = await _backupService.exportBackup(
+        expenses: widget.state.expenses,
+        fixedItems: widget.state.fixedItems,
+        budget: widget.state.budget,
+      );
+      messenger.showSnackBar(
+        SnackBar(content: Text('✓ 備份已儲存：$filename'), backgroundColor: kGreen),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('備份失敗：$e'), backgroundColor: kRed),
+      );
+    }
+  }
+
+  Future<void> _doExportCsv() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final filename = await _exportService.exportExpensesAsCsv(
+        expenses: widget.state.expenses,
+        title: '支出記錄',
+      );
+      messenger.showSnackBar(
+        SnackBar(content: Text('✓ CSV 已匯出：$filename'), backgroundColor: kGreen),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('匯出失敗：$e'), backgroundColor: kRed),
+      );
+    }
+  }
+
+  void _openFixedDialog({FixedItem? existing}) {
+    final titleCtrl = TextEditingController(text: existing?.title ?? '');
+    final amtCtrl = TextEditingController(text: existing != null ? existing.amount.toString() : '');
+    final isEdit = existing != null;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('新增固定開銷'),
+        title: Text(isEdit ? '編輯固定開銷' : '新增固定開銷'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(controller: titleCtrl,
@@ -760,16 +714,23 @@ class _ManagePageState extends State<ManagePage> {
               final title = titleCtrl.text.trim();
               final amt = int.tryParse(amtCtrl.text.trim());
               if (title.isNotEmpty && amt != null && amt > 0) {
-                widget.state.addFixed(FixedItem(title: title, amount: amt));
+                if (isEdit) {
+                  widget.state.updateFixed(existing.id, existing.copyWith(title: title, amount: amt));
+                } else {
+                  widget.state.addFixed(FixedItem(title: title, amount: amt));
+                }
                 Navigator.pop(context);
               }
             },
-            child: const Text('新增', style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+            child: Text(isEdit ? '儲存' : '新增',
+                style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
     );
   }
+
+  void _addFixed() => _openFixedDialog();
 
   @override
   Widget build(BuildContext context) {
@@ -867,20 +828,62 @@ class _ManagePageState extends State<ManagePage> {
                 child: const Icon(Icons.delete_outline, color: Colors.white),
               ),
               onDismissed: (_) => widget.state.deleteFixed(f.id),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(color: const Color(0xFFF8F6F3), borderRadius: BorderRadius.circular(12)),
-                child: Row(children: [
-                  const Icon(Icons.receipt_long, color: kGold, size: 18),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(f.title, style: const TextStyle(fontWeight: FontWeight.w600))),
-                  Text('NT\$ ${_fmt(f.amount)}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.drag_indicator, color: Colors.grey, size: 18),
-                ]),
+              child: GestureDetector(
+                onLongPress: () => _openFixedDialog(existing: f),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(color: const Color(0xFFF8F6F3), borderRadius: BorderRadius.circular(12)),
+                  child: Row(children: [
+                    const Icon(Icons.receipt_long, color: kGold, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(f.title, style: const TextStyle(fontWeight: FontWeight.w600))),
+                    Text('NT\$ ${_fmt(f.amount)}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _openFixedDialog(existing: f),
+                      child: const Icon(Icons.edit_outlined, color: kGold, size: 18),
+                    ),
+                  ]),
+                ),
               ),
             )),
+          ])),
+          const SizedBox(height: 16),
+
+          // 備份與匯出
+          _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('備份與匯出', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _doBackup,
+                icon: const Icon(Icons.backup),
+                label: const Text('備份資料'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kGold, foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _doExportCsv,
+                icon: const Icon(Icons.download_rounded),
+                label: const Text('匯出 CSV'),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: kGold),
+                  foregroundColor: kGold,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
           ])),
           const SizedBox(height: 16),
 
@@ -892,6 +895,7 @@ class _ManagePageState extends State<ManagePage> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
                   final ok = await showDialog<bool>(
                     context: context,
                     builder: (_) => AlertDialog(
@@ -907,8 +911,7 @@ class _ManagePageState extends State<ManagePage> {
                   );
                   if (ok == true) {
                     widget.state.clearAll();
-                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('所有記錄已清除')));
+                    messenger.showSnackBar(const SnackBar(content: Text('所有記錄已清除')));
                   }
                 },
                 icon: const Icon(Icons.delete_forever, color: kRed),
@@ -1037,52 +1040,17 @@ class _DoughnutPainter extends CustomPainter {
   bool shouldRepaint(_DoughnutPainter o) => o.catMap != catMap;
 }
 
-// ─── 長條圖 ───
-class _BarChart extends StatelessWidget {
-  final List<DateTime> months; final List<double> values; final double budget;
-  const _BarChart({required this.months, required this.values, required this.budget});
+
+class _AnnualStat extends StatelessWidget {
+  final String label, value; final Color color;
+  const _AnnualStat({required this.label, required this.value, required this.color});
   @override
-  Widget build(BuildContext context) {
-    final maxV = [...values, budget].fold<double>(0, max) * 1.15;
-    const barAreaHeight = 100.0;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: List.generate(months.length, (i) {
-        final v = values[i];
-        final pct = (maxV > 0 ? (v / maxV).clamp(0.0, 1.0) : 0.0);
-        final over = v > budget;
-        final barH = (pct * barAreaHeight).clamp(2.0, barAreaHeight);
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: Column(mainAxisAlignment: MainAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-              if (v > 0) Text(_fmtK(v.round()),
-                  style: TextStyle(fontSize: 9, color: over ? kRed : kGray, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: barH),
-                duration: Duration(milliseconds: 350 + i * 80), curve: Curves.easeOut,
-                builder: (_, h, __) => SizedBox(
-                  height: h,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: over ? kRed : kGold,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(7)),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(DateFormat('M月').format(months[i]),
-                  style: const TextStyle(fontSize: 10, color: kGray, fontWeight: FontWeight.w600)),
-            ]),
-          ),
-        );
-      }),
-    );
-  }
+  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text(label, style: const TextStyle(color: kGray, fontSize: 12, fontWeight: FontWeight.w600)),
+    const SizedBox(height: 4),
+    Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: color)),
+  ]);
 }
 
 // ─── 工具函式 ───
 String _fmt(int n) => NumberFormat('#,###').format(n);
-String _fmtK(int n) => n >= 10000 ? '${(n / 1000).toStringAsFixed(0)}K' : _fmt(n);

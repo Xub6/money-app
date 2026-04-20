@@ -5,12 +5,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import '../models/expense_item.dart';
 import '../models/fixed_item.dart';
+import '../models/stock_holding.dart';
 import '../../core/utils/logger.dart';
+import '../databases/migration_helper.dart';
 
 /// Enhanced app state with CRUD operations
 class AppState extends ChangeNotifier {
   List<ExpenseItem> expenses = [];
   List<FixedItem> fixedItems = [];
+  List<StockHolding> holdings = [];
+  double usdTwdRate = 32.0;
   int budget = 30000;
   int streak = 0;
   String _lastDate = '';
@@ -22,6 +26,11 @@ class AppState extends ChangeNotifier {
   }
 
   int get fixedTotal => fixedItems.fold(0, (s, i) => s + i.amount);
+
+  bool get recordedToday {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return _lastDate == today;
+  }
 
   List<ExpenseItem> monthExpenses(DateTime m) => expenses.where(
     (e) => e.date.year == m.year && e.date.month == m.month,
@@ -79,12 +88,22 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Delete expense
-  void deleteExpense(String id) {
-    expenses.removeWhere((e) => e.id == id);
+  /// Delete expense, returns original index for undo
+  int deleteExpense(String id) {
+    final index = expenses.indexWhere((e) => e.id == id);
+    if (index >= 0) expenses.removeAt(index);
     _save();
     notifyListeners();
     AppLogger.info('Expense deleted: $id');
+    return index;
+  }
+
+  /// Insert expense at specific index (for undo)
+  void insertExpenseAt(int index, ExpenseItem item) {
+    final safeIndex = index.clamp(0, expenses.length);
+    expenses.insert(safeIndex, item);
+    _save();
+    notifyListeners();
   }
 
   /// Add fixed item
@@ -113,6 +132,40 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     AppLogger.info('Fixed item deleted: $id');
   }
+
+  // ─── Stock Holdings ───
+
+  void addHolding(StockHolding h) {
+    holdings.insert(0, h);
+    _save();
+    notifyListeners();
+  }
+
+  void updateHolding(String id, StockHolding updated) {
+    final i = holdings.indexWhere((h) => h.id == id);
+    if (i >= 0) {
+      holdings[i] = updated;
+      _save();
+      notifyListeners();
+    }
+  }
+
+  void deleteHolding(String id) {
+    holdings.removeWhere((h) => h.id == id);
+    _save();
+    notifyListeners();
+  }
+
+  void setUsdTwdRate(double rate) {
+    usdTwdRate = rate;
+    _save();
+    notifyListeners();
+  }
+
+  double get totalPortfolioValue => holdings.fold(0.0, (s, h) => s + h.currentValueTwd(usdTwdRate));
+  double get totalPortfolioCost => holdings.fold(0.0, (s, h) => s + h.totalCost);
+  double get totalPortfolioProfit => totalPortfolioValue - totalPortfolioCost;
+  double get totalPortfolioProfitPct => totalPortfolioCost == 0 ? 0 : totalPortfolioProfit / totalPortfolioCost * 100;
 
   /// Set budget
   void setBudget(int v) {
@@ -162,9 +215,24 @@ class AppState extends ChangeNotifier {
     }
 
     try {
+      if (!await MigrationHelper.hasMigrated()) {
+        AppLogger.info('Starting SharedPreferences → SQLite migration...');
+        final result = await MigrationHelper.migrateFromSharedPreferences();
+        if (result.success) {
+          AppLogger.info('✓ Migration completed: ${result.message}');
+        } else {
+          AppLogger.warning('⚠ Migration failed: ${result.message}');
+        }
+      }
+    } catch (e) {
+      AppLogger.warning('⚠ Migration skipped: $e');
+    }
+
+    try {
       budget = _prefs?.getInt('budget') ?? 30000;
       streak = _prefs?.getInt('streak') ?? 0;
       _lastDate = _prefs?.getString('lastDate') ?? '';
+      usdTwdRate = (_prefs?.getDouble('usdTwdRate')) ?? 32.0;
 
       final raw = _prefs?.getString('expenses');
       if (raw != null) {
@@ -174,11 +242,11 @@ class AppState extends ChangeNotifier {
       } else {
         final now = DateTime.now();
         expenses = [
-          ExpenseItem(title: '午餐便當', category: '餐飲', amount: 120, date: now, note: '公司附近便當店'),
-          ExpenseItem(title: '咖啡', category: '餐飲', amount: 65, date: now, note: '超商咖啡'),
-          ExpenseItem(title: '線上課程', category: '教育', amount: 1800, date: now, note: '購買課程'),
-          ExpenseItem(title: '電影', category: '娛樂', amount: 420, date: now, note: '週末娛樂'),
-          ExpenseItem(title: '文具', category: '教育', amount: 430, date: now, note: '筆記用品'),
+          ExpenseItem(title: '午餐便當', category: '餐飲', amount: 120, date: now, note: '【範例】可左滑刪除'),
+          ExpenseItem(title: '咖啡', category: '餐飲', amount: 65, date: now, note: '【範例】可左滑刪除'),
+          ExpenseItem(title: '線上課程', category: '教育', amount: 1800, date: now, note: '【範例】可左滑刪除'),
+          ExpenseItem(title: '電影', category: '娛樂', amount: 420, date: now, note: '【範例】可左滑刪除'),
+          ExpenseItem(title: '文具', category: '教育', amount: 430, date: now, note: '【範例】可左滑刪除'),
         ];
         AppLogger.info('✓ Using default expenses');
       }
@@ -198,6 +266,13 @@ class AppState extends ChangeNotifier {
         AppLogger.info('✓ Using default fixed items');
       }
 
+      final holdingsRaw = _prefs?.getString('holdings');
+      if (holdingsRaw != null) {
+        final list = jsonDecode(holdingsRaw) as List;
+        holdings = list.map((j) => StockHolding.fromJson(j)).toList();
+        AppLogger.info('✓ Loaded ${holdings.length} holdings');
+      }
+
       loaded = true;
       AppLogger.info('✓ AppState loaded successfully');
       notifyListeners();
@@ -212,6 +287,8 @@ class AppState extends ChangeNotifier {
     try {
       _prefs?.setString('expenses', jsonEncode(expenses.map((e) => e.toJson()).toList()));
       _prefs?.setString('fixed', jsonEncode(fixedItems.map((f) => f.toJson()).toList()));
+      _prefs?.setString('holdings', jsonEncode(holdings.map((h) => h.toJson()).toList()));
+      _prefs?.setDouble('usdTwdRate', usdTwdRate);
       _prefs?.setInt('budget', budget);
       AppLogger.debug('Data saved to SharedPreferences');
     } catch (e) {

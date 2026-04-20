@@ -212,6 +212,3 @@ class HistoryManager<T> {
     return _history.where((s) => s.description.contains(desc)).toList();
   }
 }
-
-// Required imports
-import '../core/utils/logger.dart';

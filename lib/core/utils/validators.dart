@@ -24,8 +24,7 @@ class Validators {
     if (amount <= 0) {
       return '金額必須大於 0';
     }
-    if (amount > 99999999) {
-      // 99,999,999 max
+    if (amount >= 99999999) {
       return '金額過大';
     }
     return null;

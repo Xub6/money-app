@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
 /// Sync status for items
@@ -162,5 +163,3 @@ class ExpenseItem {
   String toString() => 'ExpenseItem(id: $id, title: $title, amount: $amount)';
 }
 
-// Import for jsonEncode - add at top if needed
-import 'dart:convert';
