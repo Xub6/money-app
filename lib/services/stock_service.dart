@@ -76,8 +76,10 @@ class StockService {
             final parts = str.split('\t');
             if (parts.length < 2) return null;
             final sym = parts[0].trim();
-            // 只保留股票/ETF（4~5碼數字），排除權證（6碼以上）
-            if (sym.length > 5) return null;
+            // 只保留正股（4碼首位1-9）和 ETF（00 開頭）
+            final isStock = RegExp(r'^[1-9]\d{3}$').hasMatch(sym);
+            final isEtf = RegExp(r'^00\d+$').hasMatch(sym);
+            if (!isStock && !isEtf) return null;
             return StockSearchResult(
               symbol: sym,
               name: parts[1].trim(),
