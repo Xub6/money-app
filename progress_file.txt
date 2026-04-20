@@ -12,19 +12,21 @@
 ---
 
 ## 目前狀態：待機中
-最後完成任務：即時股價查詢功能（2026-04-20）✅
+最後完成任務：頁面左右滑動 + SSH 設定（2026-04-20）✅
 
 ### 完成紀錄
-- [x] 深色模式修復（全部硬編碼顏色改 Theme）
+- [x] 深色模式修復
 - [x] 投資頁面改版（對齊參考設計）
-- [x] 即時股價功能（Yahoo Finance API）
+- [x] 即時股價（Yahoo Finance API）
+- [x] 中央 FAB 統一入口（依頁面切換功能）
+- [x] 頁面左右滑動切換（PageView + KeepAlive）
+- [x] SSH 金鑰設定（不再需要 PAT 推送）
 
-### 最新架構
-- `lib/services/stock_service.dart`：Yahoo Finance API 封裝
-- `StockHolding` model 新增 `name` 欄位
-- `AppState.updateHoldingPrice()` 批量更新現價
-- 新增投資時：選市場 → 輸入代碼 → 查詢現價 → 自動帶入
-- 投資主頁：刷新按鈕一鍵更新所有持股現價
+### 推送方式
+```
+cd ~/money-app && git push origin main
+```
+（SSH，無需 PAT）
 
-### APK
-v2.2.0：https://github.com/Xub6/money-app/releases/download/v2.2.0/money-app-v2.2.0.apk
+### APK 待上傳
+v2.3.0（頁面滑動功能）APK 已建置，等待 PAT 上傳到 GitHub Releases。
