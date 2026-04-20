@@ -508,9 +508,10 @@ class _HoldingDetailSheet extends StatelessWidget {
               _DetailRow('現值', 'NT\$ ${_fmt(currentValue)}', cs: cs),
             ],
             _DetailRow(
-              '損益',
+              '預估損益',
               '${isGain ? '+' : ''}NT\$ ${_fmt(profit)}  (${isGain ? '+' : ''}${pct.toStringAsFixed(2)}%)',
               valueColor: profitColor,
+              subtitle: isUsd ? null : '已扣手續費 0.1425%＋交易稅 0.3%',
               cs: cs,
             ),
             _DetailRow('買入日期', DateFormat('yyyy/MM/dd').format(h.purchaseDate), cs: cs),
@@ -541,28 +542,37 @@ class _HoldingDetailSheet extends StatelessWidget {
 
 class _DetailRow extends StatelessWidget {
   final String label, value;
+  final String? subtitle;
   final Color? valueColor;
   final ColorScheme cs;
-  const _DetailRow(this.label, this.value, {this.valueColor, required this.cs});
+  const _DetailRow(this.label, this.value, {this.valueColor, this.subtitle, required this.cs});
 
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(children: [
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           SizedBox(
             width: 72,
-            child: Text(label,
-                style: TextStyle(
-                    color: cs.onSurfaceVariant,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600)),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Text(label,
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: valueColor ?? cs.onSurface)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(value,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: valueColor ?? cs.onSurface)),
+              if (subtitle != null)
+                Text(subtitle!,
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            ]),
           ),
         ]),
       );

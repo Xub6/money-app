@@ -30,14 +30,25 @@ class StockHolding {
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now();
 
+  // 台股賣出成本：手續費 0.1425% + 交易稅 0.3%
+  static const _twdSellFeeRate = 0.001425;
+  static const _twdTxTaxRate = 0.003;
+
   double currentValueTwd(double usdTwd) {
-    if (currency == StockCurrency.usd) {
-      return shares * currentPrice * usdTwd;
-    }
+    if (currency == StockCurrency.usd) return shares * currentPrice * usdTwd;
     return shares * currentPrice;
   }
 
-  double profitTwd(double usdTwd) => currentValueTwd(usdTwd) - totalCost;
+  // 預估實收現值（扣賣出手續費＋交易稅）
+  double netCurrentValueTwd(double usdTwd) {
+    final gross = currentValueTwd(usdTwd);
+    if (currency == StockCurrency.twd) {
+      return gross * (1 - _twdSellFeeRate - _twdTxTaxRate);
+    }
+    return gross;
+  }
+
+  double profitTwd(double usdTwd) => netCurrentValueTwd(usdTwd) - totalCost;
 
   double profitPct(double usdTwd) {
     if (totalCost == 0) return 0;
