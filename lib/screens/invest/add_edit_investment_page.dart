@@ -5,7 +5,6 @@ import '../../core/constants/app_colors.dart';
 
 class AddEditInvestmentPage extends StatefulWidget {
   final StockHolding? existing;
-
   const AddEditInvestmentPage({super.key, this.existing});
 
   @override
@@ -29,7 +28,8 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
     _codeCtrl = TextEditingController(text: e?.code ?? '');
     _sharesCtrl = TextEditingController(text: e != null ? e.shares.toString() : '');
     _costCtrl = TextEditingController(text: e != null ? e.totalCost.toStringAsFixed(0) : '');
-    _priceCtrl = TextEditingController(text: e != null && e.currentPrice > 0 ? e.currentPrice.toString() : '');
+    _priceCtrl = TextEditingController(
+        text: e != null && e.currentPrice > 0 ? e.currentPrice.toString() : '');
     _reasonCtrl = TextEditingController(text: e?.buyReason ?? '');
     _strategyCtrl = TextEditingController(text: e?.sellStrategy ?? '');
     _currency = e?.currency ?? StockCurrency.twd;
@@ -60,54 +60,53 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
   void _save() {
     final code = _codeCtrl.text.trim().toUpperCase();
     if (code.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('請輸入股票代碼')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('請輸入股票代碼')));
       return;
     }
     final shares = double.tryParse(_sharesCtrl.text.trim());
     if (shares == null || shares <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('請輸入有效的股數')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('請輸入有效的股數')));
       return;
     }
     final cost = double.tryParse(_costCtrl.text.trim());
     if (cost == null || cost <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('請輸入有效的成本（TWD）')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('請輸入有效的成本（TWD）')));
       return;
     }
 
-    final result = StockHolding(
-      id: widget.existing?.id,
-      code: code,
-      shares: shares,
-      totalCost: cost,
-      currency: _currency,
-      purchaseDate: _purchaseDate,
-      currentPrice: double.tryParse(_priceCtrl.text.trim()) ?? 0,
-      buyReason: _reasonCtrl.text.trim(),
-      sellStrategy: _strategyCtrl.text.trim(),
-      createdAt: widget.existing?.createdAt,
+    Navigator.pop(
+      context,
+      StockHolding(
+        id: widget.existing?.id,
+        code: code,
+        shares: shares,
+        totalCost: cost,
+        currency: _currency,
+        purchaseDate: _purchaseDate,
+        currentPrice: double.tryParse(_priceCtrl.text.trim()) ?? 0,
+        buyReason: _reasonCtrl.text.trim(),
+        sellStrategy: _strategyCtrl.text.trim(),
+        createdAt: widget.existing?.createdAt,
+      ),
     );
-
-    Navigator.pop(context, result);
   }
 
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
-        title: Text(isEdit ? '編輯持股' : '新增持股',
-            style: const TextStyle(fontWeight: FontWeight.w800)),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: cs.surface,
         elevation: 0,
+        centerTitle: true,
+        title: Text(isEdit ? '編輯持股' : '新增投資',
+            style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('取消', style: TextStyle(color: AppColors.gold)),
@@ -122,219 +121,291 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 40),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // 幣別
-          _SectionLabel('幣別'),
-          const SizedBox(height: 10),
-          Row(children: [
-            _CurrencyBtn(
+          // ── 幣別切換 ──
+          _SectionHeader('幣別'),
+          _GroupCard(cs: cs, child: Row(children: [
+            _CurrencyChip(
               label: 'TWD 台股',
               selected: _currency == StockCurrency.twd,
               onTap: () => setState(() => _currency = StockCurrency.twd),
+              cs: cs,
             ),
-            const SizedBox(width: 12),
-            _CurrencyBtn(
+            const SizedBox(width: 10),
+            _CurrencyChip(
               label: 'USD 美股',
               selected: _currency == StockCurrency.usd,
               onTap: () => setState(() => _currency = StockCurrency.usd),
+              cs: cs,
             ),
-          ]),
-          const SizedBox(height: 24),
+          ])),
+          const SizedBox(height: 20),
 
-          // 股票代碼
-          _SectionLabel('股票代碼'),
-          const SizedBox(height: 10),
-          _InputField(
-            controller: _codeCtrl,
-            hint: _currency == StockCurrency.usd ? 'NVDA' : '2330',
-            textCapitalization: TextCapitalization.characters,
+          // ── 股票資訊 ──
+          _SectionHeader('股票資訊'),
+          _GroupCard(
+            cs: cs,
+            child: Column(children: [
+              _InlineRow(
+                label: '代碼',
+                child: TextField(
+                  controller: _codeCtrl,
+                  textAlign: TextAlign.right,
+                  textCapitalization: TextCapitalization.characters,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, color: cs.onSurface),
+                  decoration: InputDecoration(
+                    hintText: _currency == StockCurrency.usd ? 'NVDA' : '2330',
+                    hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+              Divider(height: 1, color: cs.outlineVariant),
+              _InlineRow(
+                label: '股數',
+                child: TextField(
+                  controller: _sharesCtrl,
+                  textAlign: TextAlign.right,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, color: cs.onSurface),
+                  decoration: InputDecoration(
+                    hintText: '100',
+                    hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+              Divider(height: 1, color: cs.outlineVariant),
+              _InlineRow(
+                label: '總成本',
+                child: TextField(
+                  controller: _costCtrl,
+                  textAlign: TextAlign.right,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, color: cs.onSurface),
+                  decoration: InputDecoration(
+                    hintText: '58000',
+                    hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    prefixText: 'NT\$ ',
+                    prefixStyle: TextStyle(color: cs.onSurfaceVariant),
+                  ),
+                ),
+              ),
+            ]),
           ),
           const SizedBox(height: 20),
 
-          // 股數 / 成本
-          Row(children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _SectionLabel('股數'),
-              const SizedBox(height: 10),
-              _InputField(
-                controller: _sharesCtrl,
-                hint: '100',
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          // ── 購買日期 ──
+          _SectionHeader('購買日期'),
+          _GroupCard(
+            cs: cs,
+            child: GestureDetector(
+              onTap: _pickDate,
+              behavior: HitTestBehavior.opaque,
+              child: _InlineRow(
+                label: '日期',
+                child: Text(
+                  DateFormat('MMM d, yyyy', 'en_US').format(_purchaseDate),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600, color: cs.onSurfaceVariant),
+                ),
               ),
-            ])),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _SectionLabel('總成本（TWD）'),
-              const SizedBox(height: 10),
-              _InputField(
-                controller: _costCtrl,
-                hint: '50000',
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              ),
-            ])),
-          ]),
-          const SizedBox(height: 20),
-
-          // 現價（選填）
-          _SectionLabel('現價（選填，${_currency == StockCurrency.usd ? 'USD' : 'TWD'}）'),
-          const SizedBox(height: 10),
-          _InputField(
-            controller: _priceCtrl,
-            hint: '0',
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          ),
-          const SizedBox(height: 20),
-
-          // 買入日期
-          _SectionLabel('買入日期'),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: _pickDate,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(children: [
-                const Icon(Icons.calendar_today_outlined, size: 18, color: Colors.grey),
-                const SizedBox(width: 10),
-                Text(DateFormat('yyyy/MM/dd').format(_purchaseDate),
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                const Spacer(),
-                const Icon(Icons.chevron_right, color: Colors.grey),
-              ]),
             ),
           ),
           const SizedBox(height: 20),
 
-          // 買入理由
-          _SectionLabel('買入理由（選填）'),
-          const SizedBox(height: 10),
-          _InputField(
-            controller: _reasonCtrl,
-            hint: '例如：看好 AI 趨勢',
-            maxLines: 2,
+          // ── 現價（選填）──
+          _SectionHeader('現價（選填，${_currency == StockCurrency.usd ? 'USD' : 'TWD'}）'),
+          _GroupCard(
+            cs: cs,
+            child: _InlineRow(
+              label: '每股現價',
+              child: TextField(
+                controller: _priceCtrl,
+                textAlign: TextAlign.right,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface),
+                decoration: InputDecoration(
+                  hintText: '0',
+                  hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 20),
 
-          // 出場策略
-          _SectionLabel('出場策略（選填）'),
-          const SizedBox(height: 10),
-          _InputField(
-            controller: _strategyCtrl,
-            hint: '例如：漲 30% 賣出一半',
-            maxLines: 2,
+          // ── 投資筆記 ──
+          _SectionHeader('投資筆記（選填）'),
+          _GroupCard(
+            cs: cs,
+            child: Column(children: [
+              _NoteRow(
+                emoji: '💡',
+                label: '買入理由',
+                controller: _reasonCtrl,
+                hint: '例如：看好 AI 趨勢',
+                cs: cs,
+              ),
+              Divider(height: 1, color: cs.outlineVariant),
+              _NoteRow(
+                emoji: '🏳️',
+                label: '賣出時機',
+                controller: _strategyCtrl,
+                hint: '例如：漲 30% 賣出一半',
+                cs: cs,
+              ),
+            ]),
           ),
           const SizedBox(height: 32),
-
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed: _save,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.gold,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
-              ),
-              child: Text(
-                isEdit ? '更新持股' : '新增持股',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
         ]),
       ),
     );
   }
 }
 
-class _SectionLabel extends StatelessWidget {
+// ── Section header ──
+class _SectionHeader extends StatelessWidget {
   final String text;
-  const _SectionLabel(this.text);
+  const _SectionHeader(this.text);
   @override
-  Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.black54),
-  );
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 8, left: 4),
+        child: Text(text,
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant)),
+      );
 }
 
-class _CurrencyBtn extends StatelessWidget {
+// ── Grouped card container ──
+class _GroupCard extends StatelessWidget {
+  final Widget child;
+  final ColorScheme cs;
+  const _GroupCard({required this.child, required this.cs});
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: child,
+      );
+}
+
+// ── Inline label + right widget row ──
+class _InlineRow extends StatelessWidget {
+  final String label;
+  final Widget child;
+  const _InlineRow({required this.label, required this.child});
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: 52,
+        child: Row(children: [
+          Text(label,
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface)),
+          const SizedBox(width: 12),
+          Expanded(child: child),
+        ]),
+      );
+}
+
+// ── Note textarea row ──
+class _NoteRow extends StatelessWidget {
+  final String emoji, label, hint;
+  final TextEditingController controller;
+  final ColorScheme cs;
+  const _NoteRow({
+    required this.emoji,
+    required this.label,
+    required this.hint,
+    required this.controller,
+    required this.cs,
+  });
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('$emoji  $label',
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+              filled: true,
+              fillColor: cs.surfaceContainer,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:
+                    const BorderSide(color: AppColors.gold, width: 1.5),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ),
+          ),
+        ]),
+      );
+}
+
+// ── Currency chip ──
+class _CurrencyChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _CurrencyBtn({required this.label, required this.selected, required this.onTap});
+  final ColorScheme cs;
+  const _CurrencyChip(
+      {required this.label,
+      required this.selected,
+      required this.onTap,
+      required this.cs});
 
   @override
   Widget build(BuildContext context) => Expanded(
-    child: GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.gold : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? AppColors.gold : Colors.grey.shade200,
-            width: selected ? 1.5 : 1,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.gold : cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(label,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? Colors.white : cs.onSurfaceVariant)),
+            ),
           ),
         ),
-        child: Center(
-          child: Text(label, style: TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w700,
-            color: selected ? Colors.white : Colors.black54,
-          )),
-        ),
-      ),
-    ),
-  );
-}
-
-class _InputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final TextInputType? keyboardType;
-  final int maxLines;
-  final TextCapitalization textCapitalization;
-
-  const _InputField({
-    required this.controller,
-    required this.hint,
-    this.keyboardType,
-    this.maxLines = 1,
-    this.textCapitalization = TextCapitalization.none,
-  });
-
-  @override
-  Widget build(BuildContext context) => TextField(
-    controller: controller,
-    keyboardType: keyboardType,
-    maxLines: maxLines,
-    textCapitalization: textCapitalization,
-    decoration: InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.black26),
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade200),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade200),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    ),
-  );
+      );
 }
