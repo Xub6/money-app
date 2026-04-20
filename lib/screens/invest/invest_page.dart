@@ -511,7 +511,7 @@ class _HoldingDetailSheet extends StatelessWidget {
               '預估損益',
               '${isGain ? '+' : ''}NT\$ ${_fmt(profit)}  (${isGain ? '+' : ''}${pct.toStringAsFixed(2)}%)',
               valueColor: profitColor,
-              subtitle: isUsd ? null : '已扣手續費 0.1425%＋交易稅 0.3%',
+              subtitle: isUsd ? null : '已扣手續費 ${(h.feeRate * 100).toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '')}%＋交易稅 0.3%',
               cs: cs,
             ),
             _DetailRow('買入日期', DateFormat('yyyy/MM/dd').format(h.purchaseDate), cs: cs),

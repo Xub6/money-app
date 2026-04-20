@@ -4,6 +4,27 @@ import '../../data/models/stock_holding.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/stock_service.dart';
 
+class _BrokerPreset {
+  final String name;
+  final double feeRate;
+  const _BrokerPreset(this.name, this.feeRate);
+  String get feeLabel => '${(feeRate * 100).toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '')}%';
+}
+
+const _brokerPresets = [
+  _BrokerPreset('標準 0.1425%', 0.001425),
+  _BrokerPreset('元大證券', 0.000855),   // e-Leader 6折
+  _BrokerPreset('富邦證券', 0.0007),     // e點通
+  _BrokerPreset('永豐金證券', 0.001425), // iSmartStock 標準
+  _BrokerPreset('凱基證券', 0.0007),     // 行動達人
+  _BrokerPreset('國泰證券', 0.0007),
+  _BrokerPreset('中信證券', 0.0007),
+  _BrokerPreset('群益證券', 0.0007),
+  _BrokerPreset('台新證券', 0.0007),
+  _BrokerPreset('玉山證券', 0.0007),
+  _BrokerPreset('自訂', 0.001425),
+];
+
 class AddEditInvestmentPage extends StatefulWidget {
   final StockHolding? existing;
   const AddEditInvestmentPage({super.key, this.existing});
@@ -27,6 +48,8 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
   String? _fetchError;
   List<StockSearchResult> _suggestions = [];
   bool _loadingSuggestions = false;
+  int _selectedBrokerIndex = 0;
+  late final TextEditingController _feeRateCtrl;
 
   @override
   void initState() {
@@ -42,6 +65,11 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
     _currency = e?.currency ?? StockCurrency.twd;
     _purchaseDate = e?.purchaseDate ?? DateTime.now();
     if (e?.name.isNotEmpty == true) _fetchedName = e!.name;
+    final existingRate = e?.feeRate ?? 0.001425;
+    final matchIdx = _brokerPresets.indexWhere((b) => b.feeRate == existingRate && b.name != '自訂');
+    _selectedBrokerIndex = matchIdx >= 0 ? matchIdx : _brokerPresets.length - 1;
+    _feeRateCtrl = TextEditingController(
+        text: (existingRate * 100).toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), ''));
   }
 
   @override
@@ -52,6 +80,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
     _priceCtrl.dispose();
     _reasonCtrl.dispose();
     _strategyCtrl.dispose();
+    _feeRateCtrl.dispose();
     super.dispose();
   }
 
@@ -131,6 +160,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
       _snack('請輸入有效的成本（TWD）');
       return;
     }
+    final feeRate = (double.tryParse(_feeRateCtrl.text.trim()) ?? 0.1425) / 100;
     Navigator.pop(
       context,
       StockHolding(
@@ -145,6 +175,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
         buyReason: _reasonCtrl.text.trim(),
         sellStrategy: _strategyCtrl.text.trim(),
         createdAt: widget.existing?.createdAt,
+        feeRate: feeRate.clamp(0, 0.01),
       ),
     );
   }
@@ -342,6 +373,94 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                   ),
               ]),
             ),
+            const SizedBox(height: 20),
+
+            // ── 券商 & 手續費 ──
+            _SectionHeader('券商與手續費'),
+            _GroupCard(cs: cs, child: Column(children: [
+              // 券商選單
+              GestureDetector(
+                onTap: () async {
+                  final idx = await showModalBottomSheet<int>(
+                    context: context,
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                    builder: (_) => ListView.builder(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
+                      itemCount: _brokerPresets.length,
+                      itemBuilder: (_, i) => ListTile(
+                        title: Text(_brokerPresets[i].name,
+                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: i < _brokerPresets.length - 1
+                            ? Text('手續費 ${_brokerPresets[i].feeLabel}',
+                                style: const TextStyle(fontSize: 12))
+                            : null,
+                        trailing: _selectedBrokerIndex == i
+                            ? const Icon(Icons.check_rounded, color: AppColors.gold)
+                            : null,
+                        onTap: () => Navigator.pop(context, i),
+                      ),
+                    ),
+                  );
+                  if (idx != null) {
+                    setState(() {
+                      _selectedBrokerIndex = idx;
+                      if (idx < _brokerPresets.length - 1) {
+                        _feeRateCtrl.text = _brokerPresets[idx].feeLabel.replaceAll('%', '');
+                      }
+                    });
+                  }
+                },
+                child: _InlineRow(
+                  label: '券商',
+                  cs: cs,
+                  child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                    Text(_brokerPresets[_selectedBrokerIndex].name,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right_rounded,
+                        color: cs.onSurfaceVariant, size: 18),
+                  ]),
+                ),
+              ),
+              Divider(height: 1, color: cs.outlineVariant),
+              // 手續費率
+              _InlineRow(
+                label: '手續費',
+                cs: cs,
+                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  SizedBox(
+                    width: 80,
+                    child: TextField(
+                      controller: _feeRateCtrl,
+                      textAlign: TextAlign.right,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface),
+                      decoration: InputDecoration(
+                        hintText: '0.1425',
+                        hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onChanged: (_) => setState(() => _selectedBrokerIndex = _brokerPresets.length - 1),
+                    ),
+                  ),
+                  Text(' %', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                ]),
+              ),
+              Divider(height: 1, color: cs.outlineVariant),
+              // 交易稅（固定）
+              _InlineRow(
+                label: '交易稅',
+                cs: cs,
+                child: Text('0.3%（固定）',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
+              ),
+            ])),
             const SizedBox(height: 20),
 
             // ── 股票資訊 ──
