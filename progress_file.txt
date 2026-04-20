@@ -1,1 +1,24 @@
-這是用於追踪對話的信息和要求的文件。
+# 進度追蹤文件
+
+## 工作協議
+每次開始新的程式更改前，Claude 會在此記錄：
+- 任務目標
+- 目前進度
+- 已完成的步驟
+- 下一步要做什麼
+
+重開對話後，Claude 會先讀取此文件，從中斷點繼續。
+
+---
+
+## 目前狀態：待機中
+上次完成：建立進度追蹤機制（2026-04-20）
+
+### 已完成的功能
+- [x] 投資功能：stock_holding 模型、invest_page、add_edit_investment_page
+- [x] Web 平台支援
+- [x] .gitignore、analysis_options.yaml
+- [x] 更新 app_state、database、services
+
+### 下一個任務
+（等待用戶指派）
