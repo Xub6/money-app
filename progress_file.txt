@@ -12,7 +12,7 @@
 ---
 
 ## 目前狀態：待機中
-最後完成任務：頁面左右滑動 + SSH 設定（2026-04-20）✅
+最後完成任務：券商手續費自訂 + 總損益修正（2026-04-21）✅
 
 ### 完成紀錄
 - [x] 深色模式修復
@@ -21,12 +21,19 @@
 - [x] 中央 FAB 統一入口（依頁面切換功能）
 - [x] 頁面左右滑動切換（PageView + KeepAlive）
 - [x] SSH 金鑰設定（不再需要 PAT 推送）
+- [x] App 名稱改為「錢錢管家」
+- [x] 月份按鈕顯示實際月份數字（3月/4月/5月），點擊直接跳轉
+- [x] 預算進度「含固定開銷」切換按鈕
+- [x] 台股中文名稱搜尋（TWSE 官方 API，過濾權證）
+- [x] 券商選擇 + 手續費自訂（10家預設，可手動覆寫）
+- [x] 損益計算扣除手續費＋交易稅（含總覽）
+
+### APK 安裝方式
+用手機 SSH app（Server Auditor）連接電腦，直接下載：
+`C:\Users\sshuser\money-app\build\app\outputs\flutter-apk\app-release.apk`
 
 ### 推送方式
 ```
 cd ~/money-app && git push origin main
 ```
 （SSH，無需 PAT）
-
-### APK 待上傳
-v2.3.0（頁面滑動功能）APK 已建置，等待 PAT 上傳到 GitHub Releases。
