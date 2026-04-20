@@ -274,7 +274,7 @@ class _MainShellState extends State<MainShell> {
 }
 
 // ─── 首頁 ───
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   final AppState state;
   final DateTime displayMonth;
   final String monthLabel;
@@ -282,6 +282,21 @@ class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key, required this.state, required this.displayMonth,
     required this.monthLabel, required this.onPrev, required this.onCur,
     required this.onNext, required this.onGoDetail});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  bool _includeFixed = true;
+
+  AppState get state => widget.state;
+  DateTime get displayMonth => widget.displayMonth;
+  String get monthLabel => widget.monthLabel;
+  VoidCallback get onPrev => widget.onPrev;
+  VoidCallback get onCur => widget.onCur;
+  VoidCallback get onNext => widget.onNext;
+  VoidCallback get onGoDetail => widget.onGoDetail;
 
   void _showAnnualSummary(BuildContext context) {
     final now = DateTime.now();
@@ -354,11 +369,19 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final used = state.usedTotal(displayMonth);
-    final pct = (state.usedRate(displayMonth) * 100).round();
-    final remain = state.remaining(displayMonth);
-    final daily = state.dailyAvg(displayMonth);
-    final rec = state.recommendedDaily(displayMonth);
+    final dynamic_ = state.dynamicTotal(displayMonth);
+    final used = _includeFixed ? state.usedTotal(displayMonth) : dynamic_;
+    final remain = state.budget - used;
+    final rate = (used / (state.budget > 0 ? state.budget : 1)).clamp(0.0, 1.0);
+    final pct = (rate * 100).round();
+    final now = DateTime.now();
+    final days = (now.year == displayMonth.year && now.month == displayMonth.month)
+        ? max(1, now.day) : 30;
+    final lastDay = DateTime(displayMonth.year, displayMonth.month + 1, 0).day;
+    final daysLeft = (now.year == displayMonth.year && now.month == displayMonth.month)
+        ? max(1, lastDay - now.day + 1) : lastDay;
+    final daily = (dynamic_ / days).round();
+    final rec = (remain / daysLeft).round();
     final catMap = state.categoryTotals(displayMonth);
     final over = remain < 0;
 
@@ -415,9 +438,43 @@ class DashboardPage extends StatelessWidget {
           // 預算進度
           _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              const Expanded(
-                child: Text('預算進度（含固定開銷）',
-                    style: TextStyle(color: kGray, fontSize: 13, fontWeight: FontWeight.w600)),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('預算進度', style: TextStyle(color: kGray, fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: () => setState(() => _includeFixed = !_includeFixed),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _includeFixed
+                            ? Theme.of(context).colorScheme.primaryContainer
+                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(
+                          _includeFixed ? Icons.toggle_on_rounded : Icons.toggle_off_rounded,
+                          size: 16,
+                          color: _includeFixed
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '含固定開銷',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _includeFixed
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
+                ]),
               ),
               Text('NT\$ ${_fmt(used)}',
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
@@ -428,7 +485,7 @@ class DashboardPage extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(999),
               child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: state.usedRate(displayMonth)),
+                tween: Tween(begin: 0, end: rate),
                 duration: const Duration(milliseconds: 700),
                 curve: Curves.easeOut,
                 builder: (_, v, __) => LinearProgressIndicator(
