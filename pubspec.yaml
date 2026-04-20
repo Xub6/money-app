@@ -25,6 +25,7 @@ dependencies:
   encrypt: ^5.0.3                   # AES encryption (null-safe)
   provider: ^6.0.0                  # State management upgrade
   path: ^1.9.0                      # Path utilities
+  http: ^1.2.0                      # HTTP requests (Yahoo Finance)
   crypto: ^3.0.0                    # SHA256 hashing
 
 dev_dependencies:

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../data/repositories/app_state.dart';
 import '../../data/models/stock_holding.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/stock_service.dart';
 import 'add_edit_investment_page.dart';
 
 const _kGold = AppColors.gold;
@@ -35,6 +36,34 @@ class InvestPage extends StatefulWidget {
 
 class _InvestPageState extends State<InvestPage> {
   AppState get s => widget.state;
+  bool _refreshing = false;
+
+  Future<void> _refreshAllPrices() async {
+    if (_refreshing || s.holdings.isEmpty) return;
+    setState(() => _refreshing = true);
+
+    final items = s.holdings.map((h) => (
+      id: h.id,
+      code: h.code,
+      isTwd: h.currency == StockCurrency.twd,
+    )).toList();
+
+    final quotes = await StockService.fetchBatch(items);
+    if (!mounted) return;
+
+    for (final entry in quotes.entries) {
+      s.updateHoldingPrice(entry.key, entry.value.price, name: entry.value.name);
+    }
+
+    setState(() => _refreshing = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('已更新 ${quotes.length} 檔現價'),
+        backgroundColor: _kGreen,
+        duration: const Duration(seconds: 2),
+      ));
+    }
+  }
 
   Future<void> _openAdd() async {
     final result = await Navigator.push<StockHolding>(
@@ -131,6 +160,23 @@ class _InvestPageState extends State<InvestPage> {
               child: Row(children: [
                 const Text('投資', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
                 const Spacer(),
+                if (s.holdings.isNotEmpty)
+                  GestureDetector(
+                    onTap: _refreshAllPrices,
+                    child: Container(
+                      width: 36, height: 36,
+                      margin: const EdgeInsets.only(right: 10),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        shape: BoxShape.circle,
+                      ),
+                      child: _refreshing
+                          ? const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: _kGold))
+                          : const Icon(Icons.refresh_rounded, color: _kGold, size: 20),
+                    ),
+                  ),
                 GestureDetector(
                   onTap: _openAdd,
                   child: Container(
@@ -359,7 +405,14 @@ class _HoldingCard extends StatelessWidget {
                   ),
                 ],
               ]),
-              const SizedBox(height: 4),
+              if (h.name.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 1, bottom: 2),
+                  child: Text(h.name,
+                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+                      overflow: TextOverflow.ellipsis),
+                ),
+              const SizedBox(height: 2),
               if (h.currentPrice > 0) ...[
                 if (isUsd) ...[
                   Text('\$ ${_fmtPrice(h.currentPrice)} USD',

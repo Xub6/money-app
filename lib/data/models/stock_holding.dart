@@ -5,6 +5,7 @@ enum StockCurrency { twd, usd }
 class StockHolding {
   final String id;
   final String code;
+  final String name;
   final double shares;
   final double totalCost; // in TWD
   final StockCurrency currency;
@@ -17,6 +18,7 @@ class StockHolding {
   StockHolding({
     String? id,
     required this.code,
+    this.name = '',
     required this.shares,
     required this.totalCost,
     this.currency = StockCurrency.twd,
@@ -45,6 +47,7 @@ class StockHolding {
   Map<String, dynamic> toJson() => {
         'id': id,
         'code': code,
+        'name': name,
         'shares': shares,
         'totalCost': totalCost,
         'currency': currency.name,
@@ -58,6 +61,7 @@ class StockHolding {
   factory StockHolding.fromJson(Map<String, dynamic> j) => StockHolding(
         id: j['id'] as String,
         code: j['code'] as String,
+        name: j['name'] as String? ?? '',
         shares: (j['shares'] as num).toDouble(),
         totalCost: (j['totalCost'] as num).toDouble(),
         currency: j['currency'] == 'usd' ? StockCurrency.usd : StockCurrency.twd,
@@ -68,9 +72,10 @@ class StockHolding {
         createdAt: DateTime.parse(j['createdAt'] as String),
       );
 
-  StockHolding copyWith({double? currentPrice}) => StockHolding(
+  StockHolding copyWith({double? currentPrice, String? name}) => StockHolding(
         id: id,
         code: code,
+        name: name ?? this.name,
         shares: shares,
         totalCost: totalCost,
         currency: currency,

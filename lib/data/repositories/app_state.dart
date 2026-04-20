@@ -156,6 +156,15 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateHoldingPrice(String id, double price, {String? name}) {
+    final i = holdings.indexWhere((h) => h.id == id);
+    if (i >= 0) {
+      holdings[i] = holdings[i].copyWith(currentPrice: price, name: name);
+      _save();
+      notifyListeners();
+    }
+  }
+
   void setUsdTwdRate(double rate) {
     usdTwdRate = rate;
     _save();
