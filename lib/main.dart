@@ -140,12 +140,7 @@ class _MainShellState extends State<MainShell> {
         _ => '新增支出',
       };
 
-  String get _monthLabel {
-    if (_monthOffset == 0) return '本月';
-    if (_monthOffset == -1) return '上月';
-    if (_monthOffset == 1) return '下月';
-    return DateFormat('M月').format(_displayMonth);
-  }
+  String get _monthLabel => DateFormat('M月').format(_displayMonth);
 
   void _openSearch() {
     Navigator.push(
@@ -408,11 +403,11 @@ class DashboardPage extends StatelessWidget {
             ]),
             const SizedBox(height: 14),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              _MonthBtn(text: '上月', selected: monthLabel == '上月', onTap: onPrev),
+              _MonthBtn(text: DateFormat('M月').format(DateTime(DateTime.now().year, DateTime.now().month - 1, 1)), selected: monthLabel == DateFormat('M月').format(DateTime(DateTime.now().year, DateTime.now().month - 1, 1)), onTap: onPrev),
               const SizedBox(width: 10),
-              _MonthBtn(text: '本月', selected: monthLabel == '本月', onTap: onCur),
+              _MonthBtn(text: DateFormat('M月').format(DateTime.now()), selected: monthLabel == DateFormat('M月').format(DateTime.now()), onTap: onCur),
               const SizedBox(width: 10),
-              _MonthBtn(text: '下月', selected: monthLabel == '下月', onTap: onNext),
+              _MonthBtn(text: DateFormat('M月').format(DateTime(DateTime.now().year, DateTime.now().month + 1, 1)), selected: monthLabel == DateFormat('M月').format(DateTime(DateTime.now().year, DateTime.now().month + 1, 1)), onTap: onNext),
             ]),
           ])),
           const SizedBox(height: 16),
