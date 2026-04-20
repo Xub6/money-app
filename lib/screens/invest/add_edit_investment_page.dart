@@ -221,7 +221,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                   Expanded(
                     child: TextField(
                       controller: _codeCtrl,
-                      textCapitalization: TextCapitalization.characters,
+                      textCapitalization: _isTwd ? TextCapitalization.none : TextCapitalization.characters,
                       style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface, fontSize: 18),
                       onChanged: _searchSuggestions,
                       onSubmitted: (_) => _fetchPrice(),

@@ -64,9 +64,10 @@ class StockService {
   static Future<List<StockSearchResult>> search(
       String query, bool isTwd) async {
     if (query.isEmpty) return [];
-    final q = Uri.encodeComponent(isTwd ? '$query.TW' : query);
+    final q = Uri.encodeComponent(query);
+    final lang = isTwd ? 'zh-TW' : 'en-US';
     final uri = Uri.parse(
-        'https://query1.finance.yahoo.com/v1/finance/search?q=$q&quotesCount=8&newsCount=0&lang=en-US');
+        'https://query1.finance.yahoo.com/v1/finance/search?q=$q&quotesCount=8&newsCount=0&lang=$lang');
     try {
       final resp =
           await http.get(uri, headers: _headers).timeout(_timeout);
