@@ -165,7 +165,6 @@ class _InvestPageState extends State<InvestPage> {
                     onTap: _refreshAllPrices,
                     child: Container(
                       width: 36, height: 36,
-                      margin: const EdgeInsets.only(right: 10),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         shape: BoxShape.circle,
@@ -177,14 +176,6 @@ class _InvestPageState extends State<InvestPage> {
                           : const Icon(Icons.refresh_rounded, color: _kGold, size: 20),
                     ),
                   ),
-                GestureDetector(
-                  onTap: _openAdd,
-                  child: Container(
-                    width: 36, height: 36,
-                    decoration: const BoxDecoration(color: _kGold, shape: BoxShape.circle),
-                    child: const Icon(Icons.add, color: Colors.white, size: 22),
-                  ),
-                ),
               ]),
             ),
           ),

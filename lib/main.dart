@@ -14,6 +14,8 @@ import 'providers/theme_provider.dart';
 import 'screens/search/search_page.dart';
 import 'screens/add_edit/add_edit_expense_page.dart';
 import 'screens/invest/invest_page.dart';
+import 'screens/invest/add_edit_investment_page.dart';
+import 'data/models/stock_holding.dart';
 import 'services/backup_service.dart';
 import 'services/export_service.dart';
 
@@ -109,6 +111,18 @@ class _MainShellState extends State<MainShell> {
     return DateTime(now.year, now.month + _monthOffset, 1);
   }
 
+  IconData get _fabIcon => switch (_tab) {
+        2 => Icons.trending_up_rounded,
+        3 => Icons.playlist_add_rounded,
+        _ => Icons.add,
+      };
+
+  String get _fabTooltip => switch (_tab) {
+        2 => '新增投資',
+        3 => '新增固定開銷',
+        _ => '新增支出',
+      };
+
   String get _monthLabel {
     if (_monthOffset == 0) return '本月';
     if (_monthOffset == -1) return '上月';
@@ -137,6 +151,27 @@ class _MainShellState extends State<MainShell> {
     );
     if (result != null && mounted) {
       s.addExpense(result);
+    }
+  }
+
+  Future<void> _openAddInvestment() async {
+    final result = await Navigator.push<StockHolding>(
+      context,
+      MaterialPageRoute(builder: (_) => const AddEditInvestmentPage()),
+    );
+    if (result != null && mounted) s.addHolding(result);
+  }
+
+  void _openAddFixed() => _showFixedItemDialog(context, s);
+
+  void _fabTap() {
+    switch (_tab) {
+      case 2:
+        _openAddInvestment();
+      case 3:
+        _openAddFixed();
+      default:
+        _openAdd();
     }
   }
 
@@ -191,12 +226,18 @@ class _MainShellState extends State<MainShell> {
       ),
       body: IndexedStack(index: _tab, children: pages),
       floatingActionButton: FloatingActionButton(
-        onPressed: _openAdd,
+        onPressed: _fabTap,
         backgroundColor: kGold,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         elevation: 4,
-        child: const Icon(Icons.add, size: 32),
+        tooltip: _fabTooltip,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, anim) =>
+              ScaleTransition(scale: anim, child: child),
+          child: Icon(_fabIcon, key: ValueKey(_tab), size: 30),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
@@ -692,44 +733,8 @@ class _ManagePageState extends State<ManagePage> {
     }
   }
 
-  void _openFixedDialog({FixedItem? existing}) {
-    final titleCtrl = TextEditingController(text: existing?.title ?? '');
-    final amtCtrl = TextEditingController(text: existing != null ? existing.amount.toString() : '');
-    final isEdit = existing != null;
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(isEdit ? '編輯固定開銷' : '新增固定開銷'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: titleCtrl,
-              decoration: const InputDecoration(labelText: '名稱', hintText: '例如：Netflix')),
-          const SizedBox(height: 12),
-          TextField(controller: amtCtrl, keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: '每月金額 (NT\$)')),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
-          TextButton(
-            onPressed: () {
-              final title = titleCtrl.text.trim();
-              final amt = int.tryParse(amtCtrl.text.trim());
-              if (title.isNotEmpty && amt != null && amt > 0) {
-                if (isEdit) {
-                  widget.state.updateFixed(existing.id, existing.copyWith(title: title, amount: amt));
-                } else {
-                  widget.state.addFixed(FixedItem(title: title, amount: amt));
-                }
-                Navigator.pop(context);
-              }
-            },
-            child: Text(isEdit ? '儲存' : '新增',
-                style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-  }
+  void _openFixedDialog({FixedItem? existing}) =>
+      _showFixedItemDialog(context, widget.state, existing: existing);
 
   void _addFixed() => _openFixedDialog();
 
@@ -1062,3 +1067,51 @@ class _AnnualStat extends StatelessWidget {
 
 // ─── 工具函式 ───
 String _fmt(int n) => NumberFormat('#,###').format(n);
+
+void _showFixedItemDialog(BuildContext context, AppState state,
+    {FixedItem? existing}) {
+  final titleCtrl = TextEditingController(text: existing?.title ?? '');
+  final amtCtrl = TextEditingController(
+      text: existing != null ? existing.amount.toString() : '');
+  final isEdit = existing != null;
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Text(isEdit ? '編輯固定開銷' : '新增固定開銷'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        TextField(
+            controller: titleCtrl,
+            decoration:
+                const InputDecoration(labelText: '名稱', hintText: '例如：Netflix')),
+        const SizedBox(height: 12),
+        TextField(
+            controller: amtCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: '每月金額 (NT\$)')),
+      ]),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消')),
+        TextButton(
+          onPressed: () {
+            final title = titleCtrl.text.trim();
+            final amt = int.tryParse(amtCtrl.text.trim());
+            if (title.isNotEmpty && amt != null && amt > 0) {
+              if (isEdit) {
+                state.updateFixed(
+                    existing.id, existing.copyWith(title: title, amount: amt));
+              } else {
+                state.addFixed(FixedItem(title: title, amount: amt));
+              }
+              Navigator.pop(context);
+            }
+          },
+          child: Text(isEdit ? '儲存' : '新增',
+              style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+        ),
+      ],
+    ),
+  );
+}
