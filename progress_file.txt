@@ -12,13 +12,17 @@
 ---
 
 ## 目前狀態：待機中
-上次完成：建立進度追蹤機制（2026-04-20）
+任務：修復深色模式切換無效的問題（2026-04-20）✅ 已完成
 
-### 已完成的功能
-- [x] 投資功能：stock_holding 模型、invest_page、add_edit_investment_page
-- [x] Web 平台支援
-- [x] .gitignore、analysis_options.yaml
-- [x] 更新 app_state、database、services
+### 修復摘要
+ThemeProvider 切換正常，硬編碼顏色已全數改為 Theme.of(context)。
 
-### 下一個任務
-（等待用戶指派）
+### 已完成步驟
+- [x] Scaffold / BottomAppBar：已確認無硬編碼背景色
+- [x] _AppCard：已用 Theme.of(context).colorScheme.surfaceContainerLow
+- [x] _MonthBtn：已用 Theme 顏色
+- [x] DetailPage 篩選標籤：已用 Theme 顏色
+- [x] ManagePage 固定開銷 container：已用 Theme.of(context).colorScheme.surfaceContainer
+- [x] 進度條背景色：改用 colorScheme.surfaceContainerHighest（3 處）
+- [x] _DoughnutChart 背景圓環：改用 colorScheme.surfaceContainerHighest（傳入 trackColor）
+- [x] 連續記帳徽章：改用 errorContainer / tertiaryContainer

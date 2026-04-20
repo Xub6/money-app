@@ -76,7 +76,6 @@ class _MoneyAppState extends State<MoneyApp> {
               builder: (context, appState, _) {
                 if (!appState.loaded) {
                   return const Scaffold(
-                    backgroundColor: kBg,
                     body: Center(
                       child: CircularProgressIndicator(color: kGold),
                     ),
@@ -160,7 +159,6 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     if (!s.loaded) {
       return const Scaffold(
-        backgroundColor: kBg,
         body: Center(child: CircularProgressIndicator(color: kGold)),
       );
     }
@@ -181,7 +179,6 @@ class _MainShellState extends State<MainShell> {
     ];
 
     return Scaffold(
-      backgroundColor: kBg,
       appBar: AppBar(
         title: const Text('錢錢管家', style: TextStyle(fontWeight: FontWeight.w800)),
         elevation: 0,
@@ -206,7 +203,6 @@ class _MainShellState extends State<MainShell> {
         height: 70,
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
-        color: Colors.white,
         elevation: 8,
         child: Row(children: [
           _NavItem(icon: Icons.pie_chart_rounded, label: '記帳', selected: _tab == 0, onTap: () => setState(() => _tab = 0)),
@@ -262,7 +258,7 @@ class DashboardPage extends StatelessWidget {
             child: LinearProgressIndicator(
               value: (annualTotal / annualBudget).clamp(0.0, 1.0),
               minHeight: 10,
-              backgroundColor: const Color(0xFFE8E6E2),
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation(annualTotal > annualBudget ? kRed : kGreen),
             ),
           ),
@@ -283,7 +279,7 @@ class DashboardPage extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: (v / (state.budget > 0 ? state.budget : 1)).clamp(0.0, 1.0),
                       minHeight: 8,
-                      backgroundColor: const Color(0xFFE8E6E2),
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       valueColor: AlwaysStoppedAnimation(v > state.budget ? kRed : kGold),
                     ),
                   ),
@@ -324,7 +320,9 @@ class DashboardPage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: state.recordedToday ? const Color(0xFFF3E7E7) : const Color(0xFFF5F0E8),
+                    color: state.recordedToday
+                        ? Theme.of(context).colorScheme.errorContainer
+                        : Theme.of(context).colorScheme.tertiaryContainer,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -335,7 +333,9 @@ class DashboardPage extends StatelessWidget {
                           ? '連續記帳 ${state.streak} 天'
                           : '今天還沒記帳（${state.streak} 天）',
                       style: TextStyle(
-                        color: state.recordedToday ? const Color(0xFF8A5A5A) : const Color(0xFF9A7A3A),
+                        color: state.recordedToday
+                            ? Theme.of(context).colorScheme.onErrorContainer
+                            : Theme.of(context).colorScheme.onTertiaryContainer,
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
                       ),
@@ -376,7 +376,7 @@ class DashboardPage extends StatelessWidget {
                 curve: Curves.easeOut,
                 builder: (_, v, __) => LinearProgressIndicator(
                   value: v, minHeight: 10,
-                  backgroundColor: const Color(0xFFE8E6E2),
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation(over ? kRed : kGreen),
                 ),
               ),
@@ -529,11 +529,11 @@ class _DetailPageState extends State<DetailPage> {
                   duration: const Duration(milliseconds: 180),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: sel ? kGold : const Color(0xFFEDEBE7),
+                    color: sel ? kGold : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(cats[i], style: TextStyle(
-                      color: sel ? Colors.white : Colors.black87,
+                      color: sel ? Colors.white : Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w700, fontSize: 13)),
                 ),
               );
@@ -564,7 +564,8 @@ class _DetailPageState extends State<DetailPage> {
                       ),
                       onDismissed: (_) => _deleteWithUndo(item),
                       child: Card(
-                        elevation: 0, color: kCard,
+                        elevation: 0,
+                        color: Theme.of(context).colorScheme.surfaceContainerLow,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -833,7 +834,7 @@ class _ManagePageState extends State<ManagePage> {
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(color: const Color(0xFFF8F6F3), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(12)),
                   child: Row(children: [
                     const Icon(Icons.receipt_long, color: kGold, size: 18),
                     const SizedBox(width: 10),
@@ -936,7 +937,8 @@ class _AppCard extends StatelessWidget {
   const _AppCard({required this.child});
   @override
   Widget build(BuildContext context) => Card(
-    elevation: 0, color: kCard,
+    elevation: 0,
+    color: Theme.of(context).colorScheme.surfaceContainerLow,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
     child: Padding(padding: const EdgeInsets.all(20), child: child),
   );
@@ -952,11 +954,11 @@ class _MonthBtn extends StatelessWidget {
       duration: const Duration(milliseconds: 180),
       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
       decoration: BoxDecoration(
-        color: selected ? kGold : const Color(0xFFEDEBE7),
+        color: selected ? kGold : Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(text, style: TextStyle(
-          color: selected ? Colors.white : Colors.black87,
+          color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w700, fontSize: 14)),
     ),
   );
@@ -972,7 +974,7 @@ class _BudgetStat extends StatelessWidget {
       Text(label, style: const TextStyle(color: kGray, fontSize: 13, fontWeight: FontWeight.w600)),
       const SizedBox(height: 5),
       Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800,
-          color: valueColor ?? Colors.black87)),
+          color: valueColor ?? Theme.of(context).colorScheme.onSurface)),
     ],
   );
 }
@@ -1002,13 +1004,19 @@ class _DoughnutChart extends StatelessWidget {
   final Map<String, int> catMap;
   const _DoughnutChart({required this.catMap});
   @override
-  Widget build(BuildContext context) =>
-      CustomPaint(painter: _DoughnutPainter(catMap: catMap), child: const Center());
+  Widget build(BuildContext context) => CustomPaint(
+    painter: _DoughnutPainter(
+      catMap: catMap,
+      trackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+    ),
+    child: const Center(),
+  );
 }
 
 class _DoughnutPainter extends CustomPainter {
   final Map<String, int> catMap;
-  _DoughnutPainter({required this.catMap});
+  final Color trackColor;
+  _DoughnutPainter({required this.catMap, required this.trackColor});
   @override
   void paint(Canvas canvas, Size size) {
     final total = catMap.values.fold<int>(0, (s, v) => s + v).toDouble();
@@ -1017,7 +1025,7 @@ class _DoughnutPainter extends CustomPainter {
     final cx = size.width / 2, cy = size.height / 2;
     final r = min(cx, cy) - sw;
     canvas.drawCircle(Offset(cx, cy), r, Paint()
-      ..color = const Color(0xFFE6E3DE)
+      ..color = trackColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = sw);
     double start = -pi / 2;
@@ -1037,7 +1045,7 @@ class _DoughnutPainter extends CustomPainter {
     }
   }
   @override
-  bool shouldRepaint(_DoughnutPainter o) => o.catMap != catMap;
+  bool shouldRepaint(_DoughnutPainter o) => o.catMap != catMap || o.trackColor != trackColor;
 }
 
 
