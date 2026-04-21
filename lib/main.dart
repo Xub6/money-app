@@ -849,7 +849,7 @@ class _ManagePageState extends State<ManagePage> {
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                   decoration: InputDecoration(
                     prefixText: 'NT\$ ',
-                    filled: true, fillColor: kGoldLight,
+                    filled: true, fillColor: Theme.of(context).colorScheme.primaryContainer,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kGold, width: 1.5)),
                   ),
@@ -888,7 +888,7 @@ class _ManagePageState extends State<ManagePage> {
                 onTap: _addFixed,
                 child: Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(color: kGoldLight, borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(8)),
                   child: const Icon(Icons.add, color: kGold, size: 18),
                 ),
               ),
