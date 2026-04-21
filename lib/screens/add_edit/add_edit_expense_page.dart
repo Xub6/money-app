@@ -128,15 +128,16 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
   Widget build(BuildContext context) {
     final isEdit = widget.existingItem != null;
     final suggestions = _suggestions;
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: cs.surface,
       appBar: AppBar(
         title: Text(isEdit ? '編輯支出' : '新增記帳',
             style: const TextStyle(fontWeight: FontWeight.w800)),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: cs.surface,
+        foregroundColor: cs.onSurface,
         elevation: 0,
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
@@ -191,26 +192,26 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cs.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: !_isSameDay(_selectedDate, _today) &&
                           !_isSameDay(_selectedDate, _today.subtract(const Duration(days: 1))) &&
                           !_isSameDay(_selectedDate, _today.subtract(const Duration(days: 2)))
                       ? AppColors.gold
-                      : Colors.grey.shade200,
+                      : cs.outlineVariant,
                   width: 1.5,
                 ),
               ),
               child: Row(children: [
-                const Text('其他日期', style: TextStyle(color: Colors.black54, fontSize: 14)),
+                Text('其他日期', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
                 const Spacer(),
                 Text(
                   DateFormat('MMM d, yyyy').format(_selectedDate),
                   style: TextStyle(
                     color: _dateLabel(_selectedDate) == DateFormat('M/d').format(_selectedDate)
                         ? AppColors.gold
-                        : Colors.black38,
+                        : cs.onSurfaceVariant,
                     fontSize: 14,
                   ),
                 ),
@@ -236,19 +237,19 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   decoration: BoxDecoration(
-                    color: sel ? c.color.withValues(alpha: 0.15) : Colors.white,
+                    color: sel ? c.color.withValues(alpha: 0.15) : cs.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: sel ? c.color : Colors.grey.shade200,
+                      color: sel ? c.color : cs.outlineVariant,
                       width: sel ? 1.5 : 1,
                     ),
                   ),
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(c.icon, color: sel ? c.color : Colors.grey.shade400, size: 26),
+                    Icon(c.icon, color: sel ? c.color : cs.onSurfaceVariant, size: 26),
                     const SizedBox(height: 6),
                     Text(c.name, style: TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w600,
-                      color: sel ? c.color : Colors.black54,
+                      color: sel ? c.color : cs.onSurfaceVariant,
                     )),
                   ]),
                 ),
@@ -259,9 +260,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
 
           // ── 推薦項目 ──
           if (suggestions.isNotEmpty) ...[
-            Row(children: [
-              _SectionLabel('${_selectedCategory} 推薦項目'),
-            ]),
+            _SectionLabel('$_selectedCategory 推薦項目'),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -271,15 +270,15 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cs.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: cs.outlineVariant),
                   ),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Text(item.title,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface)),
                     Text('NT\$ ${item.amount}',
-                        style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
                   ]),
                 ),
               )).toList(),
@@ -290,11 +289,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
           // ── 支出明細 ──
           _SectionLabel('支出明細'),
           const SizedBox(height: 10),
-          _InputField(
-            controller: _titleCtrl,
-            hint: '項目名稱',
-            label: null,
-          ),
+          _InputField(controller: _titleCtrl, hint: '項目名稱', label: null),
           const SizedBox(height: 10),
           Row(children: [
             Expanded(
@@ -303,17 +298,12 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                 hint: '0',
                 label: '金額',
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                suffix: const Text('NT\$', style: TextStyle(color: Colors.grey)),
+                suffix: Text('NT\$', style: TextStyle(color: cs.onSurfaceVariant)),
               ),
             ),
           ]),
           const SizedBox(height: 10),
-          _InputField(
-            controller: _noteCtrl,
-            hint: '備註（選填）',
-            label: null,
-            maxLines: 2,
-          ),
+          _InputField(controller: _noteCtrl, hint: '備註（選填）', label: null, maxLines: 2),
           const SizedBox(height: 32),
 
           // ── 儲存按鈕 ──
@@ -349,7 +339,8 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     text,
-    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.black54),
+    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
+        color: Theme.of(context).colorScheme.onSurfaceVariant),
   );
 }
 
@@ -360,29 +351,32 @@ class _DateBtn extends StatelessWidget {
   const _DateBtn({required this.label, required this.sub, required this.selected, required this.onTap});
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      width: 72,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: selected ? AppColors.gold : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: selected ? AppColors.gold : Colors.grey.shade200),
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: 72,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.gold : cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: selected ? AppColors.gold : cs.outlineVariant),
+        ),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text(label, style: TextStyle(
+            fontSize: 13, fontWeight: FontWeight.w700,
+            color: selected ? Colors.white : cs.onSurfaceVariant,
+          )),
+          Text(sub, style: TextStyle(
+            fontSize: 20, fontWeight: FontWeight.w800,
+            color: selected ? Colors.white : cs.onSurface,
+          )),
+        ]),
       ),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text(label, style: TextStyle(
-          fontSize: 13, fontWeight: FontWeight.w700,
-          color: selected ? Colors.white : Colors.black54,
-        )),
-        Text(sub, style: TextStyle(
-          fontSize: 20, fontWeight: FontWeight.w800,
-          color: selected ? Colors.white : Colors.black87,
-        )),
-      ]),
-    ),
-  );
+    );
+  }
 }
 
 class _InputField extends StatelessWidget {
@@ -403,38 +397,42 @@ class _InputField extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade200),
-    ),
-    child: Row(children: [
-      if (label != null) ...[
-        Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: Text(label!, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-        ),
-        const SizedBox(width: 12),
-      ],
-      Expanded(
-        child: TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(color: Colors.black26),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: label != null ? 0 : 16,
-              vertical: 14,
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant),
+      ),
+      child: Row(children: [
+        if (label != null) ...[
+          Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Text(label!, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: cs.onSurface)),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            maxLines: maxLines,
+            style: TextStyle(color: cs.onSurface),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: label != null ? 0 : 16,
+                vertical: 14,
+              ),
             ),
           ),
         ),
-      ),
-      if (suffix != null)
-        Padding(padding: const EdgeInsets.only(right: 16), child: suffix!),
-    ]),
-  );
+        if (suffix != null)
+          Padding(padding: const EdgeInsets.only(right: 16), child: suffix!),
+      ]),
+    );
+  }
 }

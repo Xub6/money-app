@@ -127,12 +127,12 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('搜索', style: TextStyle(fontWeight: FontWeight.w800)),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
@@ -232,7 +232,7 @@ class _SearchPageState extends State<SearchPage> {
                     ? Center(
                       child: Text(
                         _searchCtrl.text.isEmpty ? '輸入搜索詞開始' : '沒有找到結果',
-                        style: const TextStyle(color: Colors.grey, fontSize: 15),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15),
                       ),
                     )
                     : ListView.separated(
