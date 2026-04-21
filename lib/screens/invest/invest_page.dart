@@ -374,12 +374,15 @@ class _HoldingCard extends StatelessWidget {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(children: [
-          // 左：代碼 + 現價
+          // 左：名稱 + 代碼 + 現價
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Text(h.code,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                Flexible(
+                  child: Text(h.name.isNotEmpty ? h.name : h.code,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                      overflow: TextOverflow.ellipsis),
+                ),
                 if (isUsd) ...[
                   const SizedBox(width: 6),
                   Container(
@@ -399,9 +402,8 @@ class _HoldingCard extends StatelessWidget {
               if (h.name.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 1, bottom: 2),
-                  child: Text(h.name,
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
-                      overflow: TextOverflow.ellipsis),
+                  child: Text(h.code,
+                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                 ),
               const SizedBox(height: 2),
               if (h.currentPrice > 0) ...[
@@ -470,24 +472,35 @@ class _HoldingDetailSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Text(h.code,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-              if (isUsd) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1565C0).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text('USD',
-                      style: TextStyle(
-                          color: Color(0xFF1565C0),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700)),
-                ),
-              ],
-              const Spacer(),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Flexible(
+                      child: Text(h.name.isNotEmpty ? h.name : h.code,
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    if (isUsd) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1565C0).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text('USD',
+                            style: TextStyle(
+                                color: Color(0xFF1565C0),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ]),
+                  if (h.name.isNotEmpty)
+                    Text(h.code,
+                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                ]),
+              ),
               IconButton(
                   icon: const Icon(Icons.edit_outlined, color: _kGold),
                   onPressed: onEdit),
