@@ -15,6 +15,7 @@ import 'screens/search/search_page.dart';
 import 'screens/add_edit/add_edit_expense_page.dart';
 import 'screens/invest/invest_page.dart';
 import 'screens/invest/add_edit_investment_page.dart';
+import 'screens/manage/add_edit_fixed_page.dart';
 import 'data/models/stock_holding.dart';
 import 'services/backup_service.dart';
 import 'services/export_service.dart';
@@ -926,38 +927,98 @@ class _ManagePageState extends State<ManagePage> {
             ]),
             const SizedBox(height: 14),
             if (widget.state.fixedItems.isEmpty)
-              const Padding(padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Text('點右上角 + 新增固定開銷', style: TextStyle(color: Colors.grey))),
-            ...widget.state.fixedItems.map((f) => Dismissible(
-              key: Key(f.id),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 16),
-                decoration: BoxDecoration(color: kRed, borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.delete_outline, color: Colors.white),
-              ),
-              onDismissed: (_) => widget.state.deleteFixed(f.id),
-              child: GestureDetector(
-                onLongPress: () => _openFixedDialog(existing: f),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(12)),
-                  child: Row(children: [
-                    const Icon(Icons.receipt_long, color: kGold, size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(f.title, style: const TextStyle(fontWeight: FontWeight.w600))),
-                    Text('NT\$ ${_fmt(f.amount)}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => _openFixedDialog(existing: f),
-                      child: const Icon(Icons.edit_outlined, color: kGold, size: 18),
-                    ),
-                  ]),
+              Padding(padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text('點右上角 + 新增固定開銷',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
+            ...widget.state.fixedItems.map((f) {
+              final now = DateTime.now();
+              final completed = f.isCompleted;
+              final remaining = f.remainingPeriods(now);
+              final cs = Theme.of(context).colorScheme;
+              return Dismissible(
+                key: Key(f.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 16),
+                  decoration: BoxDecoration(color: kRed, borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.delete_outline, color: Colors.white),
                 ),
-              ),
-            )),
+                onDismissed: (_) => widget.state.deleteFixed(f.id),
+                child: GestureDetector(
+                  onLongPress: () => _openFixedDialog(existing: f),
+                  child: Opacity(
+                    opacity: completed ? 0.45 : 1.0,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                          color: cs.surfaceContainer,
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [
+                          Icon(Icons.receipt_long,
+                              color: completed ? cs.onSurfaceVariant : kGold, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(f.title,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: completed ? cs.onSurfaceVariant : cs.onSurface))),
+                          Text('NT\$ ${_fmt(f.amount)}',
+                              style: const TextStyle(fontWeight: FontWeight.w800)),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => _openFixedDialog(existing: f),
+                            child: const Icon(Icons.edit_outlined, color: kGold, size: 18),
+                          ),
+                        ]),
+                        if (f.totalPeriods != null) ...[
+                          const SizedBox(height: 6),
+                          Row(children: [
+                            const SizedBox(width: 28),
+                            if (completed)
+                              Text('已完成全部 ${f.totalPeriods} 期',
+                                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))
+                            else ...[
+                              Text(
+                                '${DateFormat('yyyy/MM').format(f.startDate)} 起・共 ${f.totalPeriods} 期',
+                                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: kGold.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text('剩 $remaining 期',
+                                    style: const TextStyle(
+                                        fontSize: 11,
+                                        color: kGold,
+                                        fontWeight: FontWeight.w700)),
+                              ),
+                            ],
+                          ]),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(99),
+                            child: LinearProgressIndicator(
+                              value: completed
+                                  ? 1.0
+                                  : (f.totalPeriods! - (remaining ?? 0)) / f.totalPeriods!,
+                              minHeight: 4,
+                              backgroundColor: cs.surfaceContainerHighest,
+                              valueColor: AlwaysStoppedAnimation(
+                                  completed ? cs.onSurfaceVariant : kGold),
+                            ),
+                          ),
+                        ],
+                      ]),
+                    ),
+                  ),
+                ),
+              );
+            }),
           ])),
           const SizedBox(height: 16),
 
@@ -1191,49 +1252,18 @@ class _KeepAlivePageState extends State<_KeepAlivePage>
 }
 
 void _showFixedItemDialog(BuildContext context, AppState state,
-    {FixedItem? existing}) {
-  final titleCtrl = TextEditingController(text: existing?.title ?? '');
-  final amtCtrl = TextEditingController(
-      text: existing != null ? existing.amount.toString() : '');
-  final isEdit = existing != null;
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text(isEdit ? '編輯固定開銷' : '新增固定開銷'),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      content: Column(mainAxisSize: MainAxisSize.min, children: [
-        TextField(
-            controller: titleCtrl,
-            decoration:
-                const InputDecoration(labelText: '名稱', hintText: '例如：Netflix')),
-        const SizedBox(height: 12),
-        TextField(
-            controller: amtCtrl,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: '每月金額 (NT\$)')),
-      ]),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消')),
-        TextButton(
-          onPressed: () {
-            final title = titleCtrl.text.trim();
-            final amt = int.tryParse(amtCtrl.text.trim());
-            if (title.isNotEmpty && amt != null && amt > 0) {
-              if (isEdit) {
-                state.updateFixed(
-                    existing.id, existing.copyWith(title: title, amount: amt));
-              } else {
-                state.addFixed(FixedItem(title: title, amount: amt));
-              }
-              Navigator.pop(context);
-            }
-          },
-          child: Text(isEdit ? '儲存' : '新增',
-              style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
-        ),
-      ],
+    {FixedItem? existing}) async {
+  final result = await Navigator.push<FixedItem>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AddEditFixedPage(existing: existing),
+      fullscreenDialog: true,
     ),
   );
+  if (result == null) return;
+  if (existing != null) {
+    state.updateFixed(existing.id, result);
+  } else {
+    state.addFixed(result);
+  }
 }

@@ -32,7 +32,12 @@ class AppState extends ChangeNotifier {
     _load();
   }
 
-  int get fixedTotal => fixedItems.fold(0, (s, i) => s + i.amount);
+  int get fixedTotal {
+    final now = DateTime.now();
+    return fixedItems
+        .where((i) => i.isActiveAt(now))
+        .fold(0, (s, i) => s + i.amount);
+  }
 
   bool get recordedToday {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());

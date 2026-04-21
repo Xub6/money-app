@@ -1,6 +1,8 @@
 import 'package:uuid/uuid.dart';
 import 'expense_item.dart';
 
+const _sentinel = Object();
+
 /// Renewal cycle for fixed items
 enum RenewalCycle {
   monthly('monthly', '每月'),
@@ -23,15 +25,16 @@ class FixedItem {
   final String id;
   final String title;
   final int amount;                  // Amount in cents
-  final String category;             // e.g., 'streaming', 'subscription', 'utility'
+  final String category;
   final DateTime startDate;          // When subscription started
-  final DateTime? endDate;           // When ended (null = ongoing)
-  final RenewalCycle renewalCycle;   // Monthly or yearly
+  final DateTime? endDate;           // Explicit end (null = ongoing)
+  final int? totalPeriods;           // Number of installments (null = no limit)
+  final RenewalCycle renewalCycle;
   final DateTime createdAt;
   final DateTime? editedAt;
-  final bool isActive;               // Is currently active
-  final SyncStatus syncStatus;       // Sync state
-  final String? notes;               // Optional notes
+  final bool isActive;
+  final SyncStatus syncStatus;
+  final String? notes;
 
   FixedItem({
     String? id,
@@ -40,6 +43,7 @@ class FixedItem {
     String category = '其他',
     DateTime? startDate,
     this.endDate,
+    this.totalPeriods,
     this.renewalCycle = RenewalCycle.monthly,
     DateTime? createdAt,
     this.editedAt,
@@ -51,6 +55,35 @@ class FixedItem {
        startDate = startDate ?? DateTime.now(),
        createdAt = createdAt ?? DateTime.now();
 
+  /// Computed end date from totalPeriods (overrides endDate when set)
+  DateTime? get effectiveEndDate {
+    if (totalPeriods != null) {
+      final s = startDate;
+      return DateTime(s.year, s.month + totalPeriods!, s.day);
+    }
+    return endDate;
+  }
+
+  /// How many periods have elapsed (1-based current period)
+  int currentPeriod(DateTime now) {
+    final diff = (now.year - startDate.year) * 12 + (now.month - startDate.month) + 1;
+    return diff.clamp(0, totalPeriods ?? diff);
+  }
+
+  /// Remaining periods from now
+  int? remainingPeriods(DateTime now) {
+    if (totalPeriods == null) return null;
+    final elapsed = (now.year - startDate.year) * 12 + (now.month - startDate.month);
+    return (totalPeriods! - elapsed).clamp(0, totalPeriods!);
+  }
+
+  /// Whether all periods are done
+  bool get isCompleted {
+    if (totalPeriods == null) return false;
+    final now = DateTime.now();
+    return remainingPeriods(now) == 0;
+  }
+
   /// Whether this item has been edited
   bool get isEdited => editedAt != null;
 
@@ -61,7 +94,8 @@ class FixedItem {
   bool isActiveAt(DateTime date) {
     if (!isActive) return false;
     if (date.isBefore(startDate)) return false;
-    if (endDate != null && date.isAfter(endDate!)) return false;
+    final end = effectiveEndDate;
+    if (end != null && date.isAfter(end)) return false;
     return true;
   }
 
@@ -73,6 +107,7 @@ class FixedItem {
     String? category,
     DateTime? startDate,
     DateTime? endDate,
+    Object? totalPeriods = _sentinel,
     RenewalCycle? renewalCycle,
     DateTime? createdAt,
     DateTime? editedAt,
@@ -87,6 +122,7 @@ class FixedItem {
       category: category ?? this.category,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
+      totalPeriods: totalPeriods == _sentinel ? this.totalPeriods : totalPeriods as int?,
       renewalCycle: renewalCycle ?? this.renewalCycle,
       createdAt: createdAt ?? this.createdAt,
       editedAt: editedAt ?? this.editedAt,
@@ -104,6 +140,7 @@ class FixedItem {
     'category': category,
     'startDate': startDate.toIso8601String(),
     'endDate': endDate?.toIso8601String(),
+    'totalPeriods': totalPeriods,
     'renewalCycle': renewalCycle.value,
     'createdAt': createdAt.toIso8601String(),
     'editedAt': editedAt?.toIso8601String(),
@@ -124,6 +161,7 @@ class FixedItem {
     endDate: json['endDate'] != null
         ? DateTime.parse(json['endDate'] as String)
         : null,
+    totalPeriods: json['totalPeriods'] as int?,
     renewalCycle: RenewalCycle.fromString(
       json['renewalCycle'] as String? ?? 'monthly',
     ),
