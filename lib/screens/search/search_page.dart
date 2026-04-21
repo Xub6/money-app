@@ -160,7 +160,7 @@ class _SearchPageState extends State<SearchPage> {
                     )
                     : null,
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28),
                   borderSide: BorderSide.none,
@@ -184,7 +184,7 @@ class _SearchPageState extends State<SearchPage> {
                         : '日期範圍',
                   ),
                   onSelected: (_) => _selectDateRange(),
-                  backgroundColor: _startDate != null ? AppColors.goldLight : Colors.white,
+                  backgroundColor: _startDate != null ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
                 ),
                 const SizedBox(width: 8),
 
@@ -193,7 +193,7 @@ class _SearchPageState extends State<SearchPage> {
                   FilterChip(
                     label: const Text('分類'),
                     onSelected: (_) => _showCategoryFilter(),
-                    backgroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   )
                 else
                   Wrap(
@@ -204,7 +204,7 @@ class _SearchPageState extends State<SearchPage> {
                         selected: true,
                         onSelected: (_) => _toggleCategory(cat),
                         onDeleted: () => _toggleCategory(cat),
-                        backgroundColor: AppColors.goldLight,
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                       );
                     }).toList(),
                   ),
@@ -260,7 +260,7 @@ class _SearchPageState extends State<SearchPage> {
   Widget _buildExpenseCard(ExpenseItem item, Category cat) {
     return Card(
       elevation: 0,
-      color: AppColors.cardLight,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -295,12 +295,12 @@ class _SearchPageState extends State<SearchPage> {
   Widget _buildFixedCard(FixedItem item) {
     return Card(
       elevation: 0,
-      color: AppColors.cardLight,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: AppColors.goldLight,
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           child: const Icon(Icons.receipt_long, color: AppColors.gold, size: 20),
         ),
         title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -352,7 +352,7 @@ class _SearchPageState extends State<SearchPage> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: selected ? cat.color.withValues(alpha: 0.2) : Colors.grey.shade100,
+                            color: selected ? cat.color.withValues(alpha: 0.2) : Theme.of(context).colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: selected ? cat.color : Colors.transparent,
