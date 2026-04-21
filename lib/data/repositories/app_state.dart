@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../models/expense_item.dart';
 import '../models/fixed_item.dart';
 import '../models/stock_holding.dart';
+import '../models/account.dart';
 import '../../core/utils/logger.dart';
 import '../databases/migration_helper.dart';
 
@@ -14,6 +15,7 @@ class AppState extends ChangeNotifier {
   List<ExpenseItem> expenses = [];
   List<FixedItem> fixedItems = [];
   List<StockHolding> holdings = [];
+  List<Account> accounts = [];
   double usdTwdRate = 32.0;
   int budget = 30000;
   int streak = 0;
@@ -165,6 +167,39 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  // ─── Accounts ───
+
+  void addAccount(Account a) {
+    accounts.add(a);
+    _save();
+    notifyListeners();
+  }
+
+  void updateAccount(String id, Account updated) {
+    final i = accounts.indexWhere((a) => a.id == id);
+    if (i >= 0) {
+      accounts[i] = updated;
+      _save();
+      notifyListeners();
+    }
+  }
+
+  void deleteAccount(String id) {
+    accounts.removeWhere((a) => a.id == id);
+    _save();
+    notifyListeners();
+  }
+
+  double get totalAssets => accounts
+      .where((a) => a.category == AccountCategory.savings && a.countInTotal)
+      .fold(0.0, (s, a) => s + a.balanceTwd(usdTwdRate));
+
+  double get totalLiabilities => accounts
+      .where((a) => a.category == AccountCategory.credit && a.countInTotal)
+      .fold(0.0, (s, a) => s + a.balance.abs());
+
+  double get netAssets => totalAssets - totalLiabilities;
+
   void setUsdTwdRate(double rate) {
     usdTwdRate = rate;
     _save();
@@ -282,6 +317,13 @@ class AppState extends ChangeNotifier {
         AppLogger.info('✓ Loaded ${holdings.length} holdings');
       }
 
+      final accountsRaw = _prefs?.getString('accounts');
+      if (accountsRaw != null) {
+        final list = jsonDecode(accountsRaw) as List;
+        accounts = list.map((j) => Account.fromJson(j)).toList();
+        AppLogger.info('✓ Loaded ${accounts.length} accounts');
+      }
+
       loaded = true;
       AppLogger.info('✓ AppState loaded successfully');
       notifyListeners();
@@ -297,6 +339,7 @@ class AppState extends ChangeNotifier {
       _prefs?.setString('expenses', jsonEncode(expenses.map((e) => e.toJson()).toList()));
       _prefs?.setString('fixed', jsonEncode(fixedItems.map((f) => f.toJson()).toList()));
       _prefs?.setString('holdings', jsonEncode(holdings.map((h) => h.toJson()).toList()));
+      _prefs?.setString('accounts', jsonEncode(accounts.map((a) => a.toJson()).toList()));
       _prefs?.setDouble('usdTwdRate', usdTwdRate);
       _prefs?.setInt('budget', budget);
       AppLogger.debug('Data saved to SharedPreferences');

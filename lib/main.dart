@@ -18,6 +18,7 @@ import 'screens/invest/add_edit_investment_page.dart';
 import 'data/models/stock_holding.dart';
 import 'services/backup_service.dart';
 import 'services/export_service.dart';
+import 'screens/account/account_page.dart';
 
 // ─── 顏色別名（相容現有 widget）───
 const kGold = AppColors.gold;
@@ -820,6 +821,36 @@ class _ManagePageState extends State<ManagePage> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('管理', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 18),
+
+          // 我的賬戶
+          _AppCard(child: GestureDetector(
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => AccountPage(state: widget.state))),
+            behavior: HitTestBehavior.opaque,
+            child: Row(children: [
+              const Icon(Icons.account_balance_wallet_rounded, color: kGold),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('我的賬戶', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                ListenableBuilder(
+                  listenable: widget.state,
+                  builder: (_, __) {
+                    final net = widget.state.netAssets;
+                    final isNeg = net < 0;
+                    return Text(
+                      '淨資產 NT\$ ${NumberFormat('#,##0', 'en_US').format(net.round())}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isNeg ? kRed : kGray,
+                      ),
+                    );
+                  },
+                ),
+              ])),
+              const Icon(Icons.chevron_right, color: kGray, size: 18),
+            ]),
+          )),
+          const SizedBox(height: 16),
 
           // 外觀設定
           _AppCard(child: Row(children: [
