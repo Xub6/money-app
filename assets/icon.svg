@@ -8,7 +8,7 @@
       <stop offset="55%"  stop-color="#9A6E0C"/>
       <stop offset="100%" stop-color="#5E3E06"/>
     </linearGradient>
-    <radialGradient id="glow" cx="36%" cy="30%" r="60%">
+    <radialGradient id="glow" cx="36%" cy="28%" r="58%">
       <stop offset="0%"   stop-color="#F7E07A" stop-opacity="0.5"/>
       <stop offset="100%" stop-color="#C8931A" stop-opacity="0"/>
     </radialGradient>
@@ -22,20 +22,42 @@
     <rect width="1024" height="1024" fill="url(#bg)"/>
     <rect width="1024" height="1024" fill="url(#glow)"/>
 
-    <!-- 錢錢：兩個硬幣圓形 -->
-    <circle cx="320" cy="385" r="188" fill="white"/>
-    <circle cx="704" cy="385" r="188" fill="white"/>
-    <!-- 硬幣內圈細節 -->
-    <circle cx="320" cy="385" r="155" fill="none" stroke="#C8931A" stroke-width="9" opacity="0.4"/>
-    <circle cx="704" cy="385" r="155" fill="none" stroke="#C8931A" stroke-width="9" opacity="0.4"/>
+    <!-- ── 高帽 ── -->
+    <rect x="406" y="62"  width="212" height="198" rx="18" fill="white"/>
+    <rect x="312" y="250" width="400" height="54"  rx="22" fill="white"/>
 
-    <!-- 管家：蝴蝶結 -->
-    <!-- 左翼 -->
-    <polygon points="272,638  492,706  492,724  272,792" fill="white"/>
-    <!-- 右翼 -->
-    <polygon points="752,638  532,706  532,724  752,792" fill="white"/>
-    <!-- 中央結 -->
-    <rect x="484" y="694" width="56" height="36" rx="12" fill="white"/>
+    <!-- ── 頭部 ── -->
+    <circle cx="512" cy="438" r="150" fill="white"/>
+
+    <!-- ── 臉部細節（金色，小於頭部）── -->
+    <!-- 左眼 -->
+    <circle cx="462" cy="412" r="17" fill="#7A5210"/>
+    <!-- 右眼（monocle 單片眼鏡）-->
+    <circle cx="562" cy="412" r="17" fill="#7A5210"/>
+    <circle cx="562" cy="412" r="33" fill="none" stroke="#7A5210" stroke-width="11"/>
+    <!-- Monocle 鏈條 -->
+    <line x1="588" y1="438" x2="598" y2="488" stroke="#7A5210" stroke-width="8" stroke-linecap="round"/>
+    <!-- 鬍子（兩撇上翹鬍）-->
+    <path d="M 450 475 Q 470 455 512 468 Q 554 455 574 475"
+          stroke="#7A5210" stroke-width="15" fill="none" stroke-linecap="round"/>
+    <!-- 微笑 -->
+    <path d="M 472 508 Q 512 535 552 508"
+          stroke="#7A5210" stroke-width="11" fill="none" stroke-linecap="round"/>
+
+    <!-- ── 脖子 ── -->
+    <rect x="490" y="582" width="44" height="44" fill="white"/>
+
+    <!-- ── 蝴蝶結 ── -->
+    <polygon points="318,594 490,620 490,636 318,662" fill="white"/>
+    <polygon points="706,594 534,620 534,636 706,662" fill="white"/>
+    <rect x="482" y="612" width="60" height="32" rx="11" fill="white"/>
+
+    <!-- ── 西裝身體 ── -->
+    <polygon points="222,648 802,648 734,930 290,930" fill="white"/>
+
+    <!-- ── 西裝領子（V 領，金色）── -->
+    <polygon points="512,648 432,648 512,768" fill="#9A6E0C"/>
+    <polygon points="512,648 592,648 512,768" fill="#9A6E0C"/>
 
     <rect width="1024" height="1024" fill="url(#shine)"/>
   </g>
