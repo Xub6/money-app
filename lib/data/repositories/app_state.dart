@@ -17,7 +17,11 @@ class AppState extends ChangeNotifier {
   List<FixedItem> fixedItems = [];
   List<StockHolding> holdings = [];
   List<Account> accounts = [];
-  double usdTwdRate = 32.0;
+  Map<String, double> fxRates = {
+    'USD': 32.0, 'JPY': 0.22, 'EUR': 35.0,
+    'GBP': 41.0, 'CNY': 4.4, 'HKD': 4.1,
+  };
+  double get usdTwdRate => fxRates['USD'] ?? 32.0;
   int budget = 30000;
   int streak = 0;
   String _lastDate = '';
@@ -193,25 +197,25 @@ class AppState extends ChangeNotifier {
 
   double get totalAssets => accounts
       .where((a) => a.category == AccountCategory.savings && a.countInTotal)
-      .fold(0.0, (s, a) => s + a.balanceTwd(usdTwdRate));
+      .fold(0.0, (s, a) => s + a.balanceTwd(fxRates));
 
   double get totalLiabilities => accounts
       .where((a) => a.category == AccountCategory.credit && a.countInTotal)
-      .fold(0.0, (s, a) => s + a.balance.abs());
+      .fold(0.0, (s, a) => s + a.balanceTwd(fxRates).abs());
 
   double get netAssets => totalAssets - totalLiabilities;
 
   void setUsdTwdRate(double rate) {
-    usdTwdRate = rate;
+    fxRates['USD'] = rate;
     _save();
     notifyListeners();
   }
 
   Future<void> refreshUsdTwdRate() async {
-    final rate = await StockService.fetchUsdTwdRate();
-    if (rate != null && rate > 0) {
-      usdTwdRate = rate;
-      _prefs?.setDouble('usdTwdRate', rate);
+    final rates = await StockService.fetchFxRates();
+    if (rates.isNotEmpty) {
+      fxRates.addAll(rates);
+      _save();
       notifyListeners();
     }
   }
@@ -286,7 +290,14 @@ class AppState extends ChangeNotifier {
       budget = _prefs?.getInt('budget') ?? 30000;
       streak = _prefs?.getInt('streak') ?? 0;
       _lastDate = _prefs?.getString('lastDate') ?? '';
-      usdTwdRate = (_prefs?.getDouble('usdTwdRate')) ?? 32.0;
+      // 舊格式相容：若有 usdTwdRate 就先讀入 fxRates['USD']
+      final legacyUsd = _prefs?.getDouble('usdTwdRate');
+      if (legacyUsd != null) fxRates['USD'] = legacyUsd;
+      final fxRaw = _prefs?.getString('fxRates');
+      if (fxRaw != null) {
+        final map = jsonDecode(fxRaw) as Map<String, dynamic>;
+        map.forEach((k, v) => fxRates[k] = (v as num).toDouble());
+      }
 
       final raw = _prefs?.getString('expenses');
       if (raw != null) {
@@ -351,7 +362,8 @@ class AppState extends ChangeNotifier {
       _prefs?.setString('fixed', jsonEncode(fixedItems.map((f) => f.toJson()).toList()));
       _prefs?.setString('holdings', jsonEncode(holdings.map((h) => h.toJson()).toList()));
       _prefs?.setString('accounts', jsonEncode(accounts.map((a) => a.toJson()).toList()));
-      _prefs?.setDouble('usdTwdRate', usdTwdRate);
+      _prefs?.setString('fxRates', jsonEncode(fxRates));
+      _prefs?.setDouble('usdTwdRate', usdTwdRate); // 保留舊 key 相容
       _prefs?.setInt('budget', budget);
       AppLogger.debug('Data saved to SharedPreferences');
     } catch (e) {

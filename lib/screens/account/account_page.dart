@@ -149,7 +149,7 @@ class _AccountPageState extends State<AccountPage> {
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _AccountCard(
                       account: savings[i],
-                      usdTwd: s.usdTwdRate,
+                      fxRates: s.fxRates,
                       onTap: () => _openEdit(savings[i]),
                       onDelete: () => _delete(savings[i]),
                     ),
@@ -182,7 +182,7 @@ class _AccountPageState extends State<AccountPage> {
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _AccountCard(
                       account: credit[i],
-                      usdTwd: s.usdTwdRate,
+                      fxRates: s.fxRates,
                       onTap: () => _openEdit(credit[i]),
                       onDelete: () => _delete(credit[i]),
                       isCredit: true,
@@ -228,14 +228,14 @@ class _AccountPageState extends State<AccountPage> {
 
 class _AccountCard extends StatelessWidget {
   final Account account;
-  final double usdTwd;
+  final Map<String, double> fxRates;
   final VoidCallback onTap;
   final VoidCallback onDelete;
   final bool isCredit;
 
   const _AccountCard({
     required this.account,
-    required this.usdTwd,
+    required this.fxRates,
     required this.onTap,
     required this.onDelete,
     this.isCredit = false,
@@ -245,7 +245,7 @@ class _AccountCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final a = account;
-    final balanceTwd = a.balanceTwd(usdTwd);
+    final balanceTwd = a.balanceTwd(fxRates);
     final isNeg = balanceTwd < 0;
 
     return Dismissible(
@@ -260,6 +260,26 @@ class _AccountCard extends StatelessWidget {
         ),
         child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
       ),
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('確認刪除', style: TextStyle(fontWeight: FontWeight.w800)),
+            content: Text('確定要刪除「${a.displayName}」嗎？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('取消', style: TextStyle(color: cs.onSurfaceVariant)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('刪除', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ) ?? false;
+      },
       onDismissed: (_) => onDelete(),
       child: GestureDetector(
         onTap: onTap,

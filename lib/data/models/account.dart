@@ -63,10 +63,10 @@ class Account {
   String get currencySymbol =>
       kCurrencies.firstWhere((c) => c.$1 == currency, orElse: () => ('TWD', 'NT\$')).$2;
 
-  // 換算成 TWD 顯示（簡單匯率，只對 USD 套用）
-  double balanceTwd(double usdTwd) {
-    if (currency == 'USD') return balance * usdTwd;
-    return balance;
+  double balanceTwd(Map<String, double> fxRates) {
+    if (currency == 'TWD') return balance;
+    final rate = fxRates[currency] ?? 1.0;
+    return balance * rate;
   }
 
   Map<String, dynamic> toJson() => {

@@ -68,18 +68,28 @@ class StockService {
     }
   }
 
-  /// Fetch live USD/TWD exchange rate from Yahoo Finance
-  static Future<double?> fetchUsdTwdRate() async {
+  static const _fxCurrencies = ['USD', 'JPY', 'EUR', 'GBP', 'CNY', 'HKD'];
+
+  /// Fetch live exchange rates for all supported currencies → TWD
+  static Future<Map<String, double>> fetchFxRates() async {
+    final results = <String, double>{};
+    await Future.wait(_fxCurrencies.map((code) async {
+      final rate = await _fetchSingleFx('${code}TWD=X');
+      if (rate != null && rate > 0) results[code] = rate;
+    }));
+    return results;
+  }
+
+  static Future<double?> _fetchSingleFx(String symbol) async {
     final uri = Uri.parse(
-        'https://query1.finance.yahoo.com/v8/finance/chart/USDTWD=X?interval=1d&range=1d');
+        'https://query1.finance.yahoo.com/v8/finance/chart/$symbol?interval=1d&range=1d');
     try {
       final resp = await http.get(uri, headers: _headers).timeout(_timeout);
       if (resp.statusCode != 200) return null;
       final data = jsonDecode(resp.body) as Map<String, dynamic>;
       final result = (data['chart']?['result'] as List?)?.firstOrNull;
       final meta = result?['meta'] as Map<String, dynamic>?;
-      final price = (meta?['regularMarketPrice'] as num?)?.toDouble();
-      return price;
+      return (meta?['regularMarketPrice'] as num?)?.toDouble();
     } catch (_) {
       return null;
     }
