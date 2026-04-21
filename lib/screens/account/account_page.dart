@@ -49,12 +49,6 @@ class _AccountPageState extends State<AccountPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final savings = s.accounts.where((a) => a.category == AccountCategory.savings).toList();
-    final credit = s.accounts.where((a) => a.category == AccountCategory.credit).toList();
-    final net = s.netAssets;
-    final assets = s.totalAssets;
-    final liabilities = s.totalLiabilities;
-    final isNegative = net < 0;
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -76,7 +70,16 @@ class _AccountPageState extends State<AccountPage> {
           ),
         ],
       ),
-      body: CustomScrollView(
+      body: ListenableBuilder(
+        listenable: s,
+        builder: (context, _) {
+          final savings = s.accounts.where((a) => a.category == AccountCategory.savings).toList();
+          final credit = s.accounts.where((a) => a.category == AccountCategory.credit).toList();
+          final net = s.netAssets;
+          final assets = s.totalAssets;
+          final liabilities = s.totalLiabilities;
+          final isNegative = net < 0;
+          return CustomScrollView(
         slivers: [
           // ── 淨資產卡片 ──
           SliverToBoxAdapter(
@@ -216,6 +219,8 @@ class _AccountPageState extends State<AccountPage> {
 
           const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
         ],
+        );
+        },
       ),
     );
   }
