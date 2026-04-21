@@ -48,9 +48,13 @@ class _InvestPageState extends State<InvestPage> {
       isTwd: h.currency == StockCurrency.twd,
     )).toList();
 
-    final quotes = await StockService.fetchBatch(items);
+    final results = await Future.wait([
+      StockService.fetchBatch(items),
+      s.refreshUsdTwdRate(),
+    ]);
     if (!mounted) return;
 
+    final quotes = results[0] as Map<String, StockQuote>;
     for (final entry in quotes.entries) {
       s.updateHoldingPrice(entry.key, entry.value.price, name: entry.value.name);
     }

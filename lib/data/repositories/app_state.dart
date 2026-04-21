@@ -9,6 +9,7 @@ import '../models/stock_holding.dart';
 import '../models/account.dart';
 import '../../core/utils/logger.dart';
 import '../databases/migration_helper.dart';
+import '../../services/stock_service.dart';
 
 /// Enhanced app state with CRUD operations
 class AppState extends ChangeNotifier {
@@ -206,6 +207,15 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refreshUsdTwdRate() async {
+    final rate = await StockService.fetchUsdTwdRate();
+    if (rate != null && rate > 0) {
+      usdTwdRate = rate;
+      _prefs?.setDouble('usdTwdRate', rate);
+      notifyListeners();
+    }
+  }
+
   double get totalPortfolioValue => holdings.fold(0.0, (s, h) => s + h.netCurrentValueTwd(usdTwdRate));
   double get totalPortfolioCost => holdings.fold(0.0, (s, h) => s + h.totalCost);
   double get totalPortfolioProfit => totalPortfolioValue - totalPortfolioCost;
@@ -327,6 +337,7 @@ class AppState extends ChangeNotifier {
       loaded = true;
       AppLogger.info('✓ AppState loaded successfully');
       notifyListeners();
+      refreshUsdTwdRate();
     } catch (e) {
       AppLogger.error('✗ Error during load: $e');
       loaded = true;

@@ -68,6 +68,23 @@ class StockService {
     }
   }
 
+  /// Fetch live USD/TWD exchange rate from Yahoo Finance
+  static Future<double?> fetchUsdTwdRate() async {
+    final uri = Uri.parse(
+        'https://query1.finance.yahoo.com/v8/finance/chart/USDTWD=X?interval=1d&range=1d');
+    try {
+      final resp = await http.get(uri, headers: _headers).timeout(_timeout);
+      if (resp.statusCode != 200) return null;
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final result = (data['chart']?['result'] as List?)?.firstOrNull;
+      final meta = result?['meta'] as Map<String, dynamic>?;
+      final price = (meta?['regularMarketPrice'] as num?)?.toDouble();
+      return price;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 用股票代碼向 TWSE 查中文名稱
   static Future<String?> _fetchTwseNameByCode(String code) async {
     final results = await _searchTwse(code);
