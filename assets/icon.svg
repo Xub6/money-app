@@ -9,11 +9,11 @@
       <stop offset="100%" stop-color="#5E3E06"/>
     </linearGradient>
     <radialGradient id="glow" cx="36%" cy="30%" r="60%">
-      <stop offset="0%"   stop-color="#F7E07A" stop-opacity="0.55"/>
+      <stop offset="0%"   stop-color="#F7E07A" stop-opacity="0.5"/>
       <stop offset="100%" stop-color="#C8931A" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="shine" x1="0%" y1="0%" x2="45%" y2="100%">
-      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.16"/>
       <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
   </defs>
@@ -22,20 +22,20 @@
     <rect width="1024" height="1024" fill="url(#bg)"/>
     <rect width="1024" height="1024" fill="url(#glow)"/>
 
-    <!-- ¥ symbol — white, large, bold -->
-    <!-- Left diagonal of Y -->
-    <line x1="268" y1="190" x2="512" y2="495"
-          stroke="white" stroke-width="96" stroke-linecap="round"/>
-    <!-- Right diagonal of Y -->
-    <line x1="756" y1="190" x2="512" y2="495"
-          stroke="white" stroke-width="96" stroke-linecap="round"/>
-    <!-- Vertical stem -->
-    <line x1="512" y1="495" x2="512" y2="820"
-          stroke="white" stroke-width="96" stroke-linecap="round"/>
-    <!-- Upper horizontal bar -->
-    <rect x="324" y="572" width="376" height="76" rx="38" fill="white"/>
-    <!-- Lower horizontal bar -->
-    <rect x="324" y="682" width="376" height="76" rx="38" fill="white"/>
+    <!-- 錢錢：兩個硬幣圓形 -->
+    <circle cx="320" cy="385" r="188" fill="white"/>
+    <circle cx="704" cy="385" r="188" fill="white"/>
+    <!-- 硬幣內圈細節 -->
+    <circle cx="320" cy="385" r="155" fill="none" stroke="#C8931A" stroke-width="9" opacity="0.4"/>
+    <circle cx="704" cy="385" r="155" fill="none" stroke="#C8931A" stroke-width="9" opacity="0.4"/>
+
+    <!-- 管家：蝴蝶結 -->
+    <!-- 左翼 -->
+    <polygon points="272,638  492,706  492,724  272,792" fill="white"/>
+    <!-- 右翼 -->
+    <polygon points="752,638  532,706  532,724  752,792" fill="white"/>
+    <!-- 中央結 -->
+    <rect x="484" y="694" width="56" height="36" rx="12" fill="white"/>
 
     <rect width="1024" height="1024" fill="url(#shine)"/>
   </g>
