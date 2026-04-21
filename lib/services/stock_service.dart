@@ -49,12 +49,30 @@ class StockService {
       final meta = result['meta'] as Map<String, dynamic>?;
       final price = (meta?['regularMarketPrice'] as num?)?.toDouble();
       if (price == null) return null;
+
+      // 台股優先用 TWSE 取中文名稱
+      String name = (meta?['shortName'] ?? meta?['longName'] ?? code) as String;
+      if (isTwd) {
+        final chineseName = await _fetchTwseNameByCode(code);
+        if (chineseName != null) name = chineseName;
+      }
+
       return StockQuote(
         symbol: symbol,
-        name: (meta?['shortName'] ?? meta?['longName'] ?? code) as String,
+        name: name,
         price: price,
         currency: (meta?['currency'] ?? (isTwd ? 'TWD' : 'USD')) as String,
       );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 用股票代碼向 TWSE 查中文名稱
+  static Future<String?> _fetchTwseNameByCode(String code) async {
+    final results = await _searchTwse(code);
+    try {
+      return results.firstWhere((r) => r.symbol == code).name;
     } catch (_) {
       return null;
     }
