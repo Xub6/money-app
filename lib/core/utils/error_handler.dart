@@ -89,26 +89,78 @@ class ErrorHandler {
     );
   }
 
-  /// Show undo snackbar with X close button and 5-second auto-dismiss
+  /// Show undo snackbar with countdown progress bar, 復原 and X buttons
   static void showUndoSnack(
     BuildContext context,
     String message,
     VoidCallback onUndo,
   ) {
+    const duration = Duration(seconds: 5);
     final messenger = ScaffoldMessenger.of(context);
-    final closeColor = Theme.of(context).colorScheme.onInverseSurface;
     messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
-        duration: const Duration(seconds: 5),
-        content: Row(
+        duration: duration,
+        content: _UndoSnackContent(
+          message: message,
+          duration: duration,
+          onUndo: () {
+            messenger.hideCurrentSnackBar();
+            onUndo();
+          },
+          onClose: () => messenger.hideCurrentSnackBar(),
+        ),
+      ),
+    );
+  }
+}
+
+class _UndoSnackContent extends StatefulWidget {
+  final String message;
+  final Duration duration;
+  final VoidCallback onUndo;
+  final VoidCallback onClose;
+
+  const _UndoSnackContent({
+    required this.message,
+    required this.duration,
+    required this.onUndo,
+    required this.onClose,
+  });
+
+  @override
+  State<_UndoSnackContent> createState() => _UndoSnackContentState();
+}
+
+class _UndoSnackContentState extends State<_UndoSnackContent>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: widget.duration);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final closeColor = Theme.of(context).colorScheme.onInverseSurface;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
-            Expanded(child: Text(message)),
+            Expanded(child: Text(widget.message)),
             TextButton(
-              onPressed: () {
-                messenger.hideCurrentSnackBar();
-                onUndo();
-              },
+              onPressed: widget.onUndo,
               style: TextButton.styleFrom(
                 foregroundColor: Colors.amber,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -119,12 +171,25 @@ class ErrorHandler {
             ),
             const SizedBox(width: 4),
             GestureDetector(
-              onTap: () => messenger.hideCurrentSnackBar(),
+              onTap: widget.onClose,
               child: Icon(Icons.close, color: closeColor, size: 18),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        AnimatedBuilder(
+          animation: _ctrl,
+          builder: (_, __) => ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: 1.0 - _ctrl.value,
+              minHeight: 3,
+              backgroundColor: closeColor.withValues(alpha: 0.2),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.amber),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
