@@ -40,11 +40,15 @@ class StockService {
     return _fetchYahooQuote(code, false);
   }
 
-  /// TWSE MIS API — 即時台股價格（盤中 z=成交價，盤後 y=昨收）
+  /// TWSE MIS API — 即時台股價格（盤中 z=成交價，盤後/未成交 y=昨收）
   static Future<StockQuote?> _fetchTwseQuote(String code) async {
-    final exCh = 'tse_$code.tw|otc_$code.tw';
-    final uri = Uri.parse(
-        'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=${Uri.encodeComponent(exCh)}&json=1&delay=0');
+    // 注意：不可用 Uri.encodeComponent，TWSE 需要原始的 | 分隔符
+    final uri = Uri(
+      scheme: 'https',
+      host: 'mis.twse.com.tw',
+      path: '/stock/api/getStockInfo.jsp',
+      query: 'ex_ch=tse_$code.tw|otc_$code.tw&json=1&delay=0',
+    );
     try {
       final resp = await http.get(uri, headers: _headers).timeout(_timeout);
       if (resp.statusCode != 200) return null;
@@ -52,14 +56,21 @@ class StockService {
       final arr = (data['msgArray'] as List?)?.cast<Map<String, dynamic>>();
       if (arr == null || arr.isEmpty) return null;
       final item = arr.first;
-      final priceStr = (item['z'] as String?) ?? (item['y'] as String?);
-      final price = double.tryParse(priceStr ?? '');
+      final price = _parseTwsePrice(item);
       if (price == null || price <= 0) return null;
       final name = (item['n'] as String?)?.trim() ?? code;
       return StockQuote(symbol: code, name: name, price: price, currency: 'TWD');
     } catch (_) {
       return null;
     }
+  }
+
+  /// z=成交價（盤中），若為 "-" 表示尚無成交，改用 y=昨收
+  static double? _parseTwsePrice(Map<String, dynamic> item) {
+    final z = item['z'] as String?;
+    if (z != null && z != '-' && z != '--') return double.tryParse(z);
+    final y = item['y'] as String?;
+    return double.tryParse(y ?? '');
   }
 
   static Future<StockQuote?> _fetchYahooQuote(String code, bool isTwd) async {
@@ -215,12 +226,18 @@ class StockService {
     return results;
   }
 
-  /// TWSE MIS 批量 API — 一次抓多檔台股（上市+上櫃各試）
+  /// TWSE MIS 批量 API — 一次抓多檔台股（上市+上櫃）
   static Future<Map<String, StockQuote>> _fetchTwseBatch(List<String> codes) async {
     if (codes.isEmpty) return {};
+    // 每個代碼同時查上市(tse)和上櫃(otc)，TWSE 會自動回傳存在的那個
     final exCh = codes.map((c) => 'tse_$c.tw|otc_$c.tw').join('|');
-    final uri = Uri.parse(
-        'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=${Uri.encodeComponent(exCh)}&json=1&delay=0');
+    // 不可用 encodeComponent，TWSE 需要原始的 | 字元
+    final uri = Uri(
+      scheme: 'https',
+      host: 'mis.twse.com.tw',
+      path: '/stock/api/getStockInfo.jsp',
+      query: 'ex_ch=$exCh&json=1&delay=0',
+    );
     try {
       final resp = await http.get(uri, headers: _headers).timeout(_timeout);
       if (resp.statusCode != 200) return {};
@@ -231,8 +248,7 @@ class StockService {
       for (final item in arr) {
         final code = (item['c'] as String?)?.trim();
         if (code == null) continue;
-        final priceStr = (item['z'] as String?) ?? (item['y'] as String?);
-        final price = double.tryParse(priceStr ?? '');
+        final price = _parseTwsePrice(item);
         if (price == null || price <= 0) continue;
         final name = (item['n'] as String?)?.trim() ?? code;
         result[code] = StockQuote(symbol: code, name: name, price: price, currency: 'TWD');
