@@ -49,22 +49,23 @@ class _InvestPageState extends State<InvestPage> {
     )).toList();
 
     final results = await Future.wait([
-      StockService.fetchBatch(items),
+      StockService.fetchBatchPrices(items),
       s.refreshUsdTwdRate(),
     ]);
     if (!mounted) return;
 
-    final quotes = results[0] as Map<String, StockQuote>;
-    for (final entry in quotes.entries) {
-      s.updateHoldingPrice(entry.key, entry.value.price, name: entry.value.name);
+    final prices = results[0] as Map<String, double>;
+    for (final entry in prices.entries) {
+      // 只更新價格，name 傳 null 以保留原有中文名稱
+      s.updateHoldingPrice(entry.key, entry.value);
     }
 
     setState(() => _refreshing = false);
     if (mounted) {
       final total = s.holdings.length;
-      final updated = quotes.length;
+      final updated = prices.length;
       final msg = updated == 0
-          ? '⚠️ 無法取得股價，請確認網路或稍後再試'
+          ? '無法取得股價，請確認網路或稍後再試'
           : updated < total
               ? '已更新 $updated/$total 檔現價'
               : '已更新 $updated 檔現價';
