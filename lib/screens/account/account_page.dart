@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/utils/error_handler.dart';
 import '../../data/repositories/app_state.dart';
 import '../../data/models/account.dart';
 import '../../core/constants/app_colors.dart';
@@ -36,14 +37,7 @@ class _AccountPageState extends State<AccountPage> {
 
   void _delete(Account a) {
     s.deleteAccount(a.id);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('已刪除「${a.displayName}」'),
-      action: SnackBarAction(
-        label: '復原',
-        textColor: Colors.amber,
-        onPressed: () => s.addAccount(a),
-      ),
-    ));
+    ErrorHandler.showUndoSnack(context, '已刪除「${a.displayName}」', () => s.addAccount(a));
   }
 
   @override

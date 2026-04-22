@@ -88,4 +88,33 @@ class ErrorHandler {
       ),
     );
   }
+
+  /// Show undo snackbar with X close button and 5-second auto-dismiss
+  static void showUndoSnack(
+    BuildContext context,
+    String message,
+    VoidCallback onUndo,
+  ) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 5),
+        content: Row(
+          children: [
+            Expanded(child: Text(message)),
+            GestureDetector(
+              onTap: () => messenger.hideCurrentSnackBar(),
+              child: const Icon(Icons.close, color: Colors.white70, size: 18),
+            ),
+          ],
+        ),
+        action: SnackBarAction(
+          label: '復原',
+          textColor: Colors.amber,
+          onPressed: onUndo,
+        ),
+      ),
+    );
+  }
 }

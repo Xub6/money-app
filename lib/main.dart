@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'core/constants/app_colors.dart';
 import 'core/constants/categories.dart';
+import 'core/utils/error_handler.dart';
 import 'core/utils/logger.dart';
 import 'data/repositories/app_state.dart';
 import 'data/models/expense_item.dart';
@@ -598,17 +599,10 @@ class _DetailPageState extends State<DetailPage> {
 
   void _deleteWithUndo(ExpenseItem item) {
     final originalIndex = widget.state.deleteExpense(item.id);
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('已刪除「${item.title}」'),
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: '復原',
-          textColor: Colors.amber,
-          onPressed: () => widget.state.insertExpenseAt(originalIndex, item),
-        ),
-      ),
+    ErrorHandler.showUndoSnack(
+      context,
+      '已刪除「${item.title}」',
+      () => widget.state.insertExpenseAt(originalIndex, item),
     );
   }
 

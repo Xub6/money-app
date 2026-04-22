@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/utils/error_handler.dart';
 import '../../data/repositories/app_state.dart';
 import '../../data/models/stock_holding.dart';
 import '../../core/constants/app_colors.dart';
@@ -139,16 +140,7 @@ class _InvestPageState extends State<InvestPage> {
         onDelete: () {
           Navigator.pop(context);
           s.deleteHolding(h.id);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('已刪除 ${h.code}'),
-              action: SnackBarAction(
-                label: '復原',
-                textColor: Colors.amber,
-                onPressed: () => s.addHolding(h),
-              ),
-            ),
-          );
+          ErrorHandler.showUndoSnack(context, '已刪除 ${h.code}', () => s.addHolding(h));
         },
       ),
     );
