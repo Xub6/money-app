@@ -36,12 +36,39 @@ class StockService {
 
   /// Fetch real-time quote from Yahoo Finance
   static Future<StockQuote?> fetchQuote(String code, bool isTwd) async {
-    final symbol = toYahooSymbol(code, isTwd);
+    if (isTwd) return _fetchTwseQuote(code);
+    return _fetchYahooQuote(code, false);
+  }
+
+  /// TWSE MIS API — 即時台股價格（盤中 z=成交價，盤後 y=昨收）
+  static Future<StockQuote?> _fetchTwseQuote(String code) async {
+    final exCh = 'tse_$code.tw|otc_$code.tw';
     final uri = Uri.parse(
-        'https://query1.finance.yahoo.com/v8/finance/chart/$symbol?interval=1d&range=1d');
+        'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=${Uri.encodeComponent(exCh)}&json=1&delay=0');
     try {
-      final resp =
-          await http.get(uri, headers: _headers).timeout(_timeout);
+      final resp = await http.get(uri, headers: _headers).timeout(_timeout);
+      if (resp.statusCode != 200) return null;
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final arr = (data['msgArray'] as List?)?.cast<Map<String, dynamic>>();
+      if (arr == null || arr.isEmpty) return null;
+      final item = arr.first;
+      final priceStr = (item['z'] as String?) ?? (item['y'] as String?);
+      final price = double.tryParse(priceStr ?? '');
+      if (price == null || price <= 0) return null;
+      final name = (item['n'] as String?)?.trim() ?? code;
+      return StockQuote(symbol: code, name: name, price: price, currency: 'TWD');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<StockQuote?> _fetchYahooQuote(String code, bool isTwd) async {
+    final symbol = toYahooSymbol(code, isTwd);
+    final t = DateTime.now().millisecondsSinceEpoch;
+    final uri = Uri.parse(
+        'https://query2.finance.yahoo.com/v8/finance/chart/$symbol?interval=1d&range=1d&t=$t');
+    try {
+      final resp = await http.get(uri, headers: _headers).timeout(_timeout);
       if (resp.statusCode != 200) return null;
       final data = jsonDecode(resp.body) as Map<String, dynamic>;
       final result = (data['chart']?['result'] as List?)?.firstOrNull;
@@ -49,19 +76,12 @@ class StockService {
       final meta = result['meta'] as Map<String, dynamic>?;
       final price = (meta?['regularMarketPrice'] as num?)?.toDouble();
       if (price == null) return null;
-
-      // 台股優先用 TWSE 取中文名稱
-      String name = (meta?['shortName'] ?? meta?['longName'] ?? code) as String;
-      if (isTwd) {
-        final chineseName = await _fetchTwseNameByCode(code);
-        if (chineseName != null) name = chineseName;
-      }
-
+      final name = (meta?['shortName'] ?? meta?['longName'] ?? code) as String;
       return StockQuote(
         symbol: symbol,
         name: name,
         price: price,
-        currency: (meta?['currency'] ?? (isTwd ? 'TWD' : 'USD')) as String,
+        currency: (meta?['currency'] ?? 'USD') as String,
       );
     } catch (_) {
       return null;
@@ -174,10 +194,52 @@ class StockService {
   static Future<Map<String, StockQuote>> fetchBatch(
       List<({String id, String code, bool isTwd})> items) async {
     final results = <String, StockQuote>{};
-    await Future.wait(items.map((item) async {
-      final q = await fetchQuote(item.code, item.isTwd);
+    final twItems = items.where((i) => i.isTwd).toList();
+    final usItems = items.where((i) => !i.isTwd).toList();
+
+    // 台股用 TWSE MIS 批量一次抓完（更即時）
+    if (twItems.isNotEmpty) {
+      final quotes = await _fetchTwseBatch(twItems.map((i) => i.code).toList());
+      for (final item in twItems) {
+        final q = quotes[item.code];
+        if (q != null) results[item.id] = q;
+      }
+    }
+
+    // 美股並行抓
+    await Future.wait(usItems.map((item) async {
+      final q = await _fetchYahooQuote(item.code, false);
       if (q != null) results[item.id] = q;
     }));
+
     return results;
+  }
+
+  /// TWSE MIS 批量 API — 一次抓多檔台股（上市+上櫃各試）
+  static Future<Map<String, StockQuote>> _fetchTwseBatch(List<String> codes) async {
+    if (codes.isEmpty) return {};
+    final exCh = codes.map((c) => 'tse_$c.tw|otc_$c.tw').join('|');
+    final uri = Uri.parse(
+        'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=${Uri.encodeComponent(exCh)}&json=1&delay=0');
+    try {
+      final resp = await http.get(uri, headers: _headers).timeout(_timeout);
+      if (resp.statusCode != 200) return {};
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final arr = (data['msgArray'] as List?)?.cast<Map<String, dynamic>>();
+      if (arr == null) return {};
+      final result = <String, StockQuote>{};
+      for (final item in arr) {
+        final code = (item['c'] as String?)?.trim();
+        if (code == null) continue;
+        final priceStr = (item['z'] as String?) ?? (item['y'] as String?);
+        final price = double.tryParse(priceStr ?? '');
+        if (price == null || price <= 0) continue;
+        final name = (item['n'] as String?)?.trim() ?? code;
+        result[code] = StockQuote(symbol: code, name: name, price: price, currency: 'TWD');
+      }
+      return result;
+    } catch (_) {
+      return {};
+    }
   }
 }

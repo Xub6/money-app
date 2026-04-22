@@ -61,10 +61,17 @@ class _InvestPageState extends State<InvestPage> {
 
     setState(() => _refreshing = false);
     if (mounted) {
+      final total = s.holdings.length;
+      final updated = quotes.length;
+      final msg = updated == 0
+          ? '⚠️ 無法取得股價，請確認網路或稍後再試'
+          : updated < total
+              ? '已更新 $updated/$total 檔現價'
+              : '已更新 $updated 檔現價';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('已更新 ${quotes.length} 檔現價'),
-        backgroundColor: _kGreen,
-        duration: const Duration(seconds: 2),
+        content: Text(msg),
+        backgroundColor: updated == 0 ? _kRed : _kGreen,
+        duration: const Duration(seconds: 3),
       ));
     }
   }
