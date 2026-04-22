@@ -119,7 +119,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
       _fetchedName = null;
       _suggestions = [];
     });
-    final quote = await StockService.fetchQuote(code, _isTwd);
+    final quote = await StockService.fetchQuoteWithChineseName(code, _isTwd);
     if (!mounted) return;
     if (quote == null) {
       setState(() {

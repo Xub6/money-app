@@ -96,6 +96,7 @@ class ErrorHandler {
     VoidCallback onUndo,
   ) {
     final messenger = ScaffoldMessenger.of(context);
+    final closeColor = Theme.of(context).colorScheme.onInverseSurface;
     messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
@@ -103,16 +104,25 @@ class ErrorHandler {
         content: Row(
           children: [
             Expanded(child: Text(message)),
+            TextButton(
+              onPressed: () {
+                messenger.hideCurrentSnackBar();
+                onUndo();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.amber,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('復原', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+            const SizedBox(width: 4),
             GestureDetector(
               onTap: () => messenger.hideCurrentSnackBar(),
-              child: const Icon(Icons.close, color: Colors.white70, size: 18),
+              child: Icon(Icons.close, color: closeColor, size: 18),
             ),
           ],
-        ),
-        action: SnackBarAction(
-          label: '復原',
-          textColor: Colors.amber,
-          onPressed: onUndo,
         ),
       ),
     );
