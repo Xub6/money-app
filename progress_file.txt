@@ -6,20 +6,33 @@
 
 ---
 
-## 目前狀態：Phase 1 完成 ✅
-最後完成任務：ManagePage 恢復備份功能（2026-04-28）✅
+## 目前狀態：Phase 2 進行中 🔶
+最後完成任務：SQLite 切換為主要儲存（2026-04-28）✅
 
-### Phase 1 狀態：100% 完成
+### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
 - [x] DetailPage 長按選單（編輯 / 複製 / 刪除）
 - [x] ManagePage 備份按鈕
 - [x] ManagePage 恢復備份按鈕（備份清單選擇 + 確認對話框）
 
-### 下一步：Phase 2
-- SharedPreferences → SQLite 遷移工具
-- i18n 國際化
-- AES 資料加密服務
-- Excel 導出
+### Phase 2 狀態：30% 進行中
+
+**已完成：**
+- [x] SQLite 切換為 expenses / fixedItems 主要儲存（2026-04-28）
+  - app_database.dart: schema 升至 v2，新增 total_periods 欄位
+  - fixed_item.dart: toDatabaseJson / fromDatabase 加入 total_periods
+  - app_state.dart: _load() 從 SQLite 讀取，CRUD 直接寫入 SQLite，SharedPreferences fallback
+  - app_state.dart: _save() 只存 meta（budget/holdings/accounts/fxRates），不再存 expenses/fixedItems
+
+**待完成：**
+- [ ] AES 資料加密（EncryptionService 已建，需串接 AppState）
+- [ ] Excel 導出（ExportService 已有 CSV，需新增 Excel）
+- [ ] i18n 國際化
+
+### 下一步（優先順序）
+1. AES 加密 — EncryptionService 已完成，只需在 AppState 的 _save/_load 包裝即可（~2h）
+2. Excel 導出 — 新增 exportExcel() 方法到 ExportService（~2h）
+3. i18n 國際化 — 最耗時（~4h），可最後做
 
 ### 完成紀錄
 - [x] 深色模式修復
@@ -41,6 +54,7 @@
 - [x] 深色模式配色改版：iOS/Material 標準色階（#111111 底、#1C1C1E 卡片、#E5E5E7 文字）
 - [x] 賬戶管理功能：淨資產總覽、儲蓄/信用分類、多貨幣支援、左滑刪除 undo、ManagePage 入口卡片
 - [x] 復原提示框加 X 關閉鈕，5 秒後自動消失（明細/投資/賬戶三處統一）
+- [x] SQLite 切換為主要儲存（v2 schema + total_periods + fallback 機制）
 
 ### APK 安裝方式
 用手機 SSH app（Server Auditor）連接電腦，直接下載：

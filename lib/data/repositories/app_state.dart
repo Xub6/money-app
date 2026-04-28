@@ -9,6 +9,7 @@ import '../models/stock_holding.dart';
 import '../models/account.dart';
 import '../../core/utils/logger.dart';
 import '../databases/migration_helper.dart';
+import '../databases/app_database.dart';
 import '../../services/stock_service.dart';
 
 /// Enhanced app state with CRUD operations
@@ -27,6 +28,8 @@ class AppState extends ChangeNotifier {
   String _lastDate = '';
   SharedPreferences? _prefs;
   bool loaded = false;
+
+  final _db = AppDatabase();
 
   AppState() {
     _load();
@@ -82,6 +85,9 @@ class AppState extends ChangeNotifier {
   void addExpense(ExpenseItem item) {
     expenses.insert(0, item);
     _updateStreak();
+    _db.insertExpense(item).catchError((e) {
+      AppLogger.error('DB insertExpense failed', error: e);
+    });
     _save();
     notifyListeners();
     AppLogger.info('Expense added: ${item.title}');
@@ -91,7 +97,11 @@ class AppState extends ChangeNotifier {
   void updateExpense(String id, ExpenseItem newItem) {
     final index = expenses.indexWhere((e) => e.id == id);
     if (index >= 0) {
-      expenses[index] = newItem.copyWith(editedAt: DateTime.now());
+      final updated = newItem.copyWith(editedAt: DateTime.now());
+      expenses[index] = updated;
+      _db.updateExpense(updated).catchError((e) {
+        AppLogger.error('DB updateExpense failed', error: e);
+      });
       _save();
       notifyListeners();
       AppLogger.info('Expense updated: ${newItem.title}');
@@ -104,6 +114,9 @@ class AppState extends ChangeNotifier {
   int deleteExpense(String id) {
     final index = expenses.indexWhere((e) => e.id == id);
     if (index >= 0) expenses.removeAt(index);
+    _db.deleteExpense(id).catchError((e) {
+      AppLogger.error('DB deleteExpense failed', error: e);
+    });
     _save();
     notifyListeners();
     AppLogger.info('Expense deleted: $id');
@@ -114,6 +127,9 @@ class AppState extends ChangeNotifier {
   void insertExpenseAt(int index, ExpenseItem item) {
     final safeIndex = index.clamp(0, expenses.length);
     expenses.insert(safeIndex, item);
+    _db.insertExpense(item).catchError((e) {
+      AppLogger.error('DB insertExpense (undo) failed', error: e);
+    });
     _save();
     notifyListeners();
   }
@@ -121,6 +137,9 @@ class AppState extends ChangeNotifier {
   /// Add fixed item
   void addFixed(FixedItem item) {
     fixedItems.add(item);
+    _db.insertFixedItem(item).catchError((e) {
+      AppLogger.error('DB insertFixedItem failed', error: e);
+    });
     _save();
     notifyListeners();
     AppLogger.info('Fixed item added: ${item.title}');
@@ -130,7 +149,11 @@ class AppState extends ChangeNotifier {
   void updateFixed(String id, FixedItem newItem) {
     final index = fixedItems.indexWhere((f) => f.id == id);
     if (index >= 0) {
-      fixedItems[index] = newItem.copyWith(editedAt: DateTime.now());
+      final updated = newItem.copyWith(editedAt: DateTime.now());
+      fixedItems[index] = updated;
+      _db.updateFixedItem(updated).catchError((e) {
+        AppLogger.error('DB updateFixedItem failed', error: e);
+      });
       _save();
       notifyListeners();
       AppLogger.info('Fixed item updated: ${newItem.title}');
@@ -140,6 +163,9 @@ class AppState extends ChangeNotifier {
   /// Delete fixed item
   void deleteFixed(String id) {
     fixedItems.removeWhere((f) => f.id == id);
+    _db.deleteFixedItem(id).catchError((e) {
+      AppLogger.error('DB deleteFixedItem failed', error: e);
+    });
     _save();
     notifyListeners();
     AppLogger.info('Fixed item deleted: $id');
@@ -277,6 +303,7 @@ class AppState extends ChangeNotifier {
       _prefs = null;
     }
 
+    // Run one-time migration from SharedPreferences → SQLite
     try {
       if (!await MigrationHelper.hasMigrated()) {
         AppLogger.info('Starting SharedPreferences → SQLite migration...');
@@ -291,49 +318,17 @@ class AppState extends ChangeNotifier {
       AppLogger.warning('⚠ Migration skipped: $e');
     }
 
+    // Load meta fields from SharedPreferences
     try {
       budget = _prefs?.getInt('budget') ?? 30000;
       streak = _prefs?.getInt('streak') ?? 0;
       _lastDate = _prefs?.getString('lastDate') ?? '';
-      // 舊格式相容：若有 usdTwdRate 就先讀入 fxRates['USD']
       final legacyUsd = _prefs?.getDouble('usdTwdRate');
       if (legacyUsd != null) fxRates['USD'] = legacyUsd;
       final fxRaw = _prefs?.getString('fxRates');
       if (fxRaw != null) {
         final map = jsonDecode(fxRaw) as Map<String, dynamic>;
         map.forEach((k, v) => fxRates[k] = (v as num).toDouble());
-      }
-
-      final raw = _prefs?.getString('expenses');
-      if (raw != null) {
-        final list = jsonDecode(raw) as List;
-        expenses = list.map((j) => ExpenseItem.fromJson(j)).toList();
-        AppLogger.info('✓ Loaded ${expenses.length} expenses');
-      } else {
-        final now = DateTime.now();
-        expenses = [
-          ExpenseItem(title: '午餐便當', category: '餐飲', amount: 120, date: now, note: '【範例】可左滑刪除'),
-          ExpenseItem(title: '咖啡', category: '餐飲', amount: 65, date: now, note: '【範例】可左滑刪除'),
-          ExpenseItem(title: '線上課程', category: '教育', amount: 1800, date: now, note: '【範例】可左滑刪除'),
-          ExpenseItem(title: '電影', category: '娛樂', amount: 420, date: now, note: '【範例】可左滑刪除'),
-          ExpenseItem(title: '文具', category: '教育', amount: 430, date: now, note: '【範例】可左滑刪除'),
-        ];
-        AppLogger.info('✓ Using default expenses');
-      }
-
-      final fixedRaw = _prefs?.getString('fixed');
-      if (fixedRaw != null) {
-        final list = jsonDecode(fixedRaw) as List;
-        fixedItems = list.map((j) => FixedItem.fromJson(j)).toList();
-        AppLogger.info('✓ Loaded ${fixedItems.length} fixed items');
-      } else {
-        fixedItems = [
-          FixedItem(title: 'YouTube Premium', amount: 100),
-          FixedItem(title: 'ChatGPT', amount: 620),
-          FixedItem(title: 'Claude', amount: 600),
-          FixedItem(title: '魚油', amount: 200),
-        ];
-        AppLogger.info('✓ Using default fixed items');
       }
 
       final holdingsRaw = _prefs?.getString('holdings');
@@ -349,28 +344,90 @@ class AppState extends ChangeNotifier {
         accounts = list.map((j) => Account.fromJson(j)).toList();
         AppLogger.info('✓ Loaded ${accounts.length} accounts');
       }
-
-      loaded = true;
-      AppLogger.info('✓ AppState loaded successfully');
-      notifyListeners();
-      refreshUsdTwdRate();
     } catch (e) {
-      AppLogger.error('✗ Error during load: $e');
-      loaded = true;
-      notifyListeners();
+      AppLogger.error('✗ Error loading meta from SharedPreferences: $e');
     }
+
+    // Load expenses from SQLite (primary), fall back to SharedPreferences if empty
+    try {
+      expenses = await _db.getAllExpenses();
+      AppLogger.info('✓ Loaded ${expenses.length} expenses from SQLite');
+
+      if (expenses.isEmpty) {
+        final raw = _prefs?.getString('expenses');
+        if (raw != null) {
+          final list = jsonDecode(raw) as List;
+          expenses = list.map((j) => ExpenseItem.fromJson(j)).toList();
+          AppLogger.info('✓ Fallback: loaded ${expenses.length} expenses from SharedPreferences, syncing to SQLite');
+          for (final e in expenses) {
+            _db.insertExpense(e).catchError((_) {});
+          }
+        } else {
+          final now = DateTime.now();
+          expenses = [
+            ExpenseItem(title: '午餐便當', category: '餐飲', amount: 120, date: now, note: '【範例】可左滑刪除'),
+            ExpenseItem(title: '咖啡', category: '餐飲', amount: 65, date: now, note: '【範例】可左滑刪除'),
+            ExpenseItem(title: '線上課程', category: '教育', amount: 1800, date: now, note: '【範例】可左滑刪除'),
+            ExpenseItem(title: '電影', category: '娛樂', amount: 420, date: now, note: '【範例】可左滑刪除'),
+            ExpenseItem(title: '文具', category: '教育', amount: 430, date: now, note: '【範例】可左滑刪除'),
+          ];
+          for (final e in expenses) {
+            _db.insertExpense(e).catchError((_) {});
+          }
+          AppLogger.info('✓ Using default expenses');
+        }
+      }
+    } catch (e) {
+      AppLogger.error('✗ Error loading expenses: $e');
+    }
+
+    // Load fixed items from SQLite (primary), fall back to SharedPreferences if empty
+    try {
+      fixedItems = await _db.getAllFixedItems();
+      AppLogger.info('✓ Loaded ${fixedItems.length} fixed items from SQLite');
+
+      if (fixedItems.isEmpty) {
+        final fixedRaw = _prefs?.getString('fixed');
+        if (fixedRaw != null) {
+          final list = jsonDecode(fixedRaw) as List;
+          fixedItems = list.map((j) => FixedItem.fromJson(j)).toList();
+          AppLogger.info('✓ Fallback: loaded ${fixedItems.length} fixed items from SharedPreferences, syncing to SQLite');
+          for (final f in fixedItems) {
+            _db.insertFixedItem(f).catchError((_) {});
+          }
+        } else {
+          fixedItems = [
+            FixedItem(title: 'YouTube Premium', amount: 100),
+            FixedItem(title: 'ChatGPT', amount: 620),
+            FixedItem(title: 'Claude', amount: 600),
+            FixedItem(title: '魚油', amount: 200),
+          ];
+          for (final f in fixedItems) {
+            _db.insertFixedItem(f).catchError((_) {});
+          }
+          AppLogger.info('✓ Using default fixed items');
+        }
+      }
+    } catch (e) {
+      AppLogger.error('✗ Error loading fixed items: $e');
+    }
+
+    loaded = true;
+    AppLogger.info('✓ AppState loaded successfully');
+    notifyListeners();
+    refreshUsdTwdRate();
   }
 
+  /// Save meta fields (budget, streak, holdings, accounts, fxRates) to SharedPreferences.
+  /// expenses and fixedItems are persisted directly to SQLite in each CRUD operation.
   Future<void> _save() async {
     try {
-      _prefs?.setString('expenses', jsonEncode(expenses.map((e) => e.toJson()).toList()));
-      _prefs?.setString('fixed', jsonEncode(fixedItems.map((f) => f.toJson()).toList()));
       _prefs?.setString('holdings', jsonEncode(holdings.map((h) => h.toJson()).toList()));
       _prefs?.setString('accounts', jsonEncode(accounts.map((a) => a.toJson()).toList()));
       _prefs?.setString('fxRates', jsonEncode(fxRates));
-      _prefs?.setDouble('usdTwdRate', usdTwdRate); // 保留舊 key 相容
+      _prefs?.setDouble('usdTwdRate', usdTwdRate);
       _prefs?.setInt('budget', budget);
-      AppLogger.debug('Data saved to SharedPreferences');
+      AppLogger.debug('Meta saved to SharedPreferences');
     } catch (e) {
       AppLogger.error('Save failed', error: e);
     }
@@ -380,7 +437,11 @@ class AppState extends ChangeNotifier {
     expenses = [];
     streak = 0;
     _lastDate = '';
+    _db.clear().catchError((e) {
+      AppLogger.error('DB clear failed', error: e);
+    });
     _prefs?.remove('expenses');
+    _prefs?.remove('fixed');
     _prefs?.setInt('streak', 0);
     _prefs?.setString('lastDate', '');
     notifyListeners();
@@ -395,6 +456,16 @@ class AppState extends ChangeNotifier {
     expenses = newExpenses;
     fixedItems = newFixedItems;
     if (newBudget != null) budget = newBudget;
+    _db.clear().then((_) {
+      for (final e in newExpenses) {
+        _db.insertExpense(e).catchError((_) {});
+      }
+      for (final f in newFixedItems) {
+        _db.insertFixedItem(f).catchError((_) {});
+      }
+    }).catchError((e) {
+      AppLogger.error('DB restore failed', error: e);
+    });
     _save();
     notifyListeners();
     AppLogger.info('Restored from backup: ${newExpenses.length} expenses, ${newFixedItems.length} fixed items');

@@ -8,7 +8,7 @@ import '../../core/utils/logger.dart';
 /// SQLite database initialization and schema
 class AppDatabase {
   static const String _databaseName = 'money_app.db';
-  static const int _version = 1;
+  static const int _version = 2;
 
   static const String _expensesTable = 'expenses';
   static const String _fixedItemsTable = 'fixed_items';
@@ -81,6 +81,7 @@ class AppDatabase {
           category TEXT DEFAULT '其他',
           start_date TEXT NOT NULL,
           end_date TEXT,
+          total_periods INTEGER,
           renewal_cycle TEXT DEFAULT 'monthly',
           created_at TEXT NOT NULL,
           edited_at TEXT,
@@ -113,7 +114,12 @@ class AppDatabase {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     try {
       AppLogger.info('Upgrading database from v$oldVersion to v$newVersion');
-      // Handle future schema migrations here
+      if (oldVersion < 2) {
+        await db.execute(
+          'ALTER TABLE $_fixedItemsTable ADD COLUMN total_periods INTEGER',
+        );
+        AppLogger.info('v2: Added total_periods column to fixed_items');
+      }
     } catch (e) {
       AppLogger.error('Database upgrade failed', error: e);
       rethrow;

@@ -184,6 +184,7 @@ class FixedItem {
     'category': category,
     'start_date': startDate.toIso8601String(),
     'end_date': endDate?.toIso8601String(),
+    'total_periods': totalPeriods,
     'renewal_cycle': renewalCycle.value,
     'created_at': createdAt.toIso8601String(),
     'edited_at': editedAt?.toIso8601String(),
@@ -202,6 +203,7 @@ class FixedItem {
     endDate: map['end_date'] != null
         ? DateTime.parse(map['end_date'] as String)
         : null,
+    totalPeriods: map['total_periods'] as int?,
     renewalCycle: RenewalCycle.fromString(map['renewal_cycle'] as String? ?? 'monthly'),
     createdAt: DateTime.parse(map['created_at'] as String),
     editedAt: map['edited_at'] != null
