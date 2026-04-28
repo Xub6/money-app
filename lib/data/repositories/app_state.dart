@@ -10,6 +10,7 @@ import '../models/account.dart';
 import '../../core/utils/logger.dart';
 import '../databases/migration_helper.dart';
 import '../databases/app_database.dart';
+import '../../services/encryption_service.dart';
 import '../../services/stock_service.dart';
 
 /// Enhanced app state with CRUD operations
@@ -30,6 +31,7 @@ class AppState extends ChangeNotifier {
   bool loaded = false;
 
   final _db = AppDatabase();
+  final _enc = EncryptionService();
 
   AppState() {
     _load();
@@ -303,6 +305,12 @@ class AppState extends ChangeNotifier {
       _prefs = null;
     }
 
+    try {
+      await _enc.init();
+    } catch (e) {
+      AppLogger.warning('⚠ EncryptionService init failed: $e');
+    }
+
     // Run one-time migration from SharedPreferences → SQLite
     try {
       if (!await MigrationHelper.hasMigrated()) {
@@ -318,31 +326,64 @@ class AppState extends ChangeNotifier {
       AppLogger.warning('⚠ Migration skipped: $e');
     }
 
-    // Load meta fields from SharedPreferences
+    // Load meta fields from SharedPreferences (encrypted keys preferred, plain fallback)
     try {
-      budget = _prefs?.getInt('budget') ?? 30000;
       streak = _prefs?.getInt('streak') ?? 0;
       _lastDate = _prefs?.getString('lastDate') ?? '';
-      final legacyUsd = _prefs?.getDouble('usdTwdRate');
-      if (legacyUsd != null) fxRates['USD'] = legacyUsd;
-      final fxRaw = _prefs?.getString('fxRates');
-      if (fxRaw != null) {
-        final map = jsonDecode(fxRaw) as Map<String, dynamic>;
-        map.forEach((k, v) => fxRates[k] = (v as num).toDouble());
+
+      // budget — encrypted preferred
+      final budgetEnc = _prefs?.getString('budget_enc');
+      if (budgetEnc != null) {
+        budget = int.tryParse(_enc.decrypt(budgetEnc)) ?? 30000;
+      } else {
+        budget = _prefs?.getInt('budget') ?? 30000;
       }
 
-      final holdingsRaw = _prefs?.getString('holdings');
-      if (holdingsRaw != null) {
-        final list = jsonDecode(holdingsRaw) as List;
-        holdings = list.map((j) => StockHolding.fromJson(j)).toList();
-        AppLogger.info('✓ Loaded ${holdings.length} holdings');
+      // fxRates — encrypted preferred
+      final fxEnc = _prefs?.getString('fxRates_enc');
+      if (fxEnc != null) {
+        final map = _enc.decryptMap(fxEnc);
+        map?.forEach((k, v) => fxRates[k] = (v as num).toDouble());
+      } else {
+        final legacyUsd = _prefs?.getDouble('usdTwdRate');
+        if (legacyUsd != null) fxRates['USD'] = legacyUsd;
+        final fxRaw = _prefs?.getString('fxRates');
+        if (fxRaw != null) {
+          final map = jsonDecode(fxRaw) as Map<String, dynamic>;
+          map.forEach((k, v) => fxRates[k] = (v as num).toDouble());
+        }
       }
 
-      final accountsRaw = _prefs?.getString('accounts');
-      if (accountsRaw != null) {
-        final list = jsonDecode(accountsRaw) as List;
-        accounts = list.map((j) => Account.fromJson(j)).toList();
-        AppLogger.info('✓ Loaded ${accounts.length} accounts');
+      // holdings — encrypted preferred
+      final holdingsEnc = _prefs?.getString('holdings_enc');
+      if (holdingsEnc != null) {
+        final map = _enc.decryptMap(holdingsEnc);
+        final list = map?['data'] as List? ?? [];
+        holdings = list.map((j) => StockHolding.fromJson(j as Map<String, dynamic>)).toList();
+        AppLogger.info('✓ Loaded ${holdings.length} holdings (encrypted)');
+      } else {
+        final holdingsRaw = _prefs?.getString('holdings');
+        if (holdingsRaw != null) {
+          final list = jsonDecode(holdingsRaw) as List;
+          holdings = list.map((j) => StockHolding.fromJson(j)).toList();
+          AppLogger.info('✓ Loaded ${holdings.length} holdings (plain)');
+        }
+      }
+
+      // accounts — encrypted preferred
+      final accountsEnc = _prefs?.getString('accounts_enc');
+      if (accountsEnc != null) {
+        final map = _enc.decryptMap(accountsEnc);
+        final list = map?['data'] as List? ?? [];
+        accounts = list.map((j) => Account.fromJson(j as Map<String, dynamic>)).toList();
+        AppLogger.info('✓ Loaded ${accounts.length} accounts (encrypted)');
+      } else {
+        final accountsRaw = _prefs?.getString('accounts');
+        if (accountsRaw != null) {
+          final list = jsonDecode(accountsRaw) as List;
+          accounts = list.map((j) => Account.fromJson(j)).toList();
+          AppLogger.info('✓ Loaded ${accounts.length} accounts (plain)');
+        }
       }
     } catch (e) {
       AppLogger.error('✗ Error loading meta from SharedPreferences: $e');
@@ -418,16 +459,35 @@ class AppState extends ChangeNotifier {
     refreshUsdTwdRate();
   }
 
-  /// Save meta fields (budget, streak, holdings, accounts, fxRates) to SharedPreferences.
+  /// Save meta fields to SharedPreferences with AES encryption.
   /// expenses and fixedItems are persisted directly to SQLite in each CRUD operation.
   Future<void> _save() async {
     try {
-      _prefs?.setString('holdings', jsonEncode(holdings.map((h) => h.toJson()).toList()));
-      _prefs?.setString('accounts', jsonEncode(accounts.map((a) => a.toJson()).toList()));
-      _prefs?.setString('fxRates', jsonEncode(fxRates));
-      _prefs?.setDouble('usdTwdRate', usdTwdRate);
-      _prefs?.setInt('budget', budget);
-      AppLogger.debug('Meta saved to SharedPreferences');
+      _prefs?.setInt('streak', streak);
+      _prefs?.setString('lastDate', _lastDate);
+
+      _prefs?.setString('budget_enc', _enc.encrypt(budget.toString()));
+      _prefs?.setString(
+        'fxRates_enc',
+        _enc.encryptMap(fxRates.map((k, v) => MapEntry(k, v))),
+      );
+      _prefs?.setString(
+        'holdings_enc',
+        _enc.encryptMap({'data': holdings.map((h) => h.toJson()).toList()}),
+      );
+      _prefs?.setString(
+        'accounts_enc',
+        _enc.encryptMap({'data': accounts.map((a) => a.toJson()).toList()}),
+      );
+
+      // Remove legacy unencrypted keys after first successful encrypted save
+      _prefs?.remove('budget');
+      _prefs?.remove('fxRates');
+      _prefs?.remove('usdTwdRate');
+      _prefs?.remove('holdings');
+      _prefs?.remove('accounts');
+
+      AppLogger.debug('Meta saved (encrypted)');
     } catch (e) {
       AppLogger.error('Save failed', error: e);
     }
@@ -442,6 +502,10 @@ class AppState extends ChangeNotifier {
     });
     _prefs?.remove('expenses');
     _prefs?.remove('fixed');
+    _prefs?.remove('budget_enc');
+    _prefs?.remove('holdings_enc');
+    _prefs?.remove('accounts_enc');
+    _prefs?.remove('fxRates_enc');
     _prefs?.setInt('streak', 0);
     _prefs?.setString('lastDate', '');
     notifyListeners();

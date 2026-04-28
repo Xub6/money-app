@@ -23,16 +23,18 @@
   - fixed_item.dart: toDatabaseJson / fromDatabase 加入 total_periods
   - app_state.dart: _load() 從 SQLite 讀取，CRUD 直接寫入 SQLite，SharedPreferences fallback
   - app_state.dart: _save() 只存 meta（budget/holdings/accounts/fxRates），不再存 expenses/fixedItems
+- [x] AES 加密（2026-04-28）
+  - encryption_service.dart: 修 lazy init bug，加 init() 方法，graceful degradation
+  - app_state.dart: _load() 先 await EncryptionService().init()；_save() 全部 SP meta 加密；backward-compat fallback 機制
+- [x] Excel 導出（2026-04-28）
+  - export_service.dart: exportFullReportAsExcel()，3 個 sheet（月度統計/支出明細/固定開銷）
+  - main.dart: _doExportExcel() + ManagePage「匯出 Excel」按鈕
 
 **待完成：**
-- [ ] AES 資料加密（EncryptionService 已建，需串接 AppState）
-- [ ] Excel 導出（ExportService 已有 CSV，需新增 Excel）
 - [ ] i18n 國際化
 
 ### 下一步（優先順序）
-1. AES 加密 — EncryptionService 已完成，只需在 AppState 的 _save/_load 包裝即可（~2h）
-2. Excel 導出 — 新增 exportExcel() 方法到 ExportService（~2h）
-3. i18n 國際化 — 最耗時（~4h），可最後做
+1. i18n 國際化 — 約 4h，最耗時，可最後做
 
 ### 完成紀錄
 - [x] 深色模式修復

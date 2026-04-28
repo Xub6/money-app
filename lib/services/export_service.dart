@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
 import 'package:intl/intl.dart';
 import '../data/models/expense_item.dart';
 import '../data/models/fixed_item.dart';
@@ -216,6 +217,115 @@ class ExportService {
         message: '導出報告失敗',
         originalException: e,
       );
+    }
+  }
+
+  /// Export a comprehensive monthly report to Excel (.xlsx)
+  Future<String> exportFullReportAsExcel({
+    required List<ExpenseItem> expenses,
+    required List<FixedItem> fixedItems,
+    required int budget,
+    required DateTime month,
+  }) async {
+    try {
+      AppLogger.info('Exporting full report to Excel...');
+
+      final workbook = Excel.createExcel();
+      workbook.delete('Sheet1'); // remove default sheet
+
+      final monthLabel = DateFormat('yyyy年MM月').format(month);
+      final monthExpenses = expenses
+          .where((e) => e.date.year == month.year && e.date.month == month.month)
+          .toList();
+      final totalExp = monthExpenses.fold<int>(0, (s, e) => s + e.amount);
+      final totalFixed = fixedItems.fold<int>(0, (s, i) => s + i.amount);
+      final total = totalExp + totalFixed;
+      final remaining = budget - total;
+
+      final headerStyle = CellStyle(bold: true);
+
+      // ── 月度統計 ──
+      final summary = workbook['月度統計'];
+      void addSummaryRow(String label, String value) =>
+          summary.appendRow([label, value]);
+      summary.cell(CellIndex.indexByString('A1')).value = '錢錢管家 — $monthLabel 月度統計';
+      summary.cell(CellIndex.indexByString('A1')).cellStyle = CellStyle(bold: true);
+      summary.appendRow([]);
+      addSummaryRow('日常支出', formatCurrency(totalExp));
+      addSummaryRow('固定開銷', formatCurrency(totalFixed));
+      addSummaryRow('合計支出', formatCurrency(total));
+      addSummaryRow('月預算', formatCurrency(budget));
+      addSummaryRow('剩餘預算', formatCurrency(remaining));
+      addSummaryRow('預算使用率', budget == 0 ? '—' : '${(total / budget * 100).toStringAsFixed(1)}%');
+      summary.appendRow([]);
+      summary.appendRow(['分類統計']);
+      final catMap = <String, int>{};
+      for (final e in monthExpenses) {
+        catMap[e.category] = (catMap[e.category] ?? 0) + e.amount;
+      }
+      for (final entry in (catMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value)))) {
+        summary.appendRow([entry.key, formatCurrency(entry.value)]);
+      }
+
+      // ── 支出明細 ──
+      final expSheet = workbook['支出明細'];
+      final expHeaders = ['項目名稱', '分類', '金額', '日期', '備註'];
+      for (var i = 0; i < expHeaders.length; i++) {
+        final cell = expSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+        cell.value = expHeaders[i];
+        cell.cellStyle = headerStyle;
+      }
+      for (final e in monthExpenses) {
+        expSheet.appendRow([
+          e.title,
+          e.category,
+          e.amount / 100.0,
+          formatDate(e.date),
+          e.note ?? '',
+        ]);
+      }
+      expSheet.appendRow([]);
+      expSheet.appendRow(['總計', '', totalExp / 100.0]);
+
+      // ── 固定開銷 ──
+      final fixedSheet = workbook['固定開銷'];
+      final fixedHeaders = ['項目名稱', '分類', '金額', '周期', '開始日期', '狀態'];
+      for (var i = 0; i < fixedHeaders.length; i++) {
+        final cell = fixedSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+        cell.value = fixedHeaders[i];
+        cell.cellStyle = headerStyle;
+      }
+      for (final f in fixedItems) {
+        fixedSheet.appendRow([
+          f.title,
+          f.category,
+          f.amount / 100.0,
+          f.renewalCycle.label,
+          formatDate(f.startDate),
+          f.isActive ? '啟用' : '已停用',
+        ]);
+      }
+      fixedSheet.appendRow([]);
+      fixedSheet.appendRow(['月計', '', totalFixed / 100.0]);
+
+      workbook.setDefaultSheet('月度統計');
+
+      final fileBytes = workbook.save();
+      if (fileBytes == null) {
+        throw FileException(message: '無法生成 Excel 文件');
+      }
+
+      final exportDir = await _getExportDirectory();
+      final timestamp = DateTime.now().toString().replaceAll(':', '').substring(0, 15);
+      final filename = 'report_${DateFormat('yyyyMM').format(month)}_$timestamp.xlsx';
+      final file = File('${exportDir.path}/$filename');
+      await file.writeAsBytes(fileBytes);
+
+      AppLogger.info('Excel report exported: $filename');
+      return filename;
+    } catch (e) {
+      AppLogger.error('Excel export failed', error: e);
+      throw FileException(message: '導出 Excel 失敗', originalException: e);
     }
   }
 

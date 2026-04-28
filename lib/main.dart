@@ -803,6 +803,25 @@ class _ManagePageState extends State<ManagePage> {
     }
   }
 
+  Future<void> _doExportExcel() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final filename = await _exportService.exportFullReportAsExcel(
+        expenses: widget.state.expenses,
+        fixedItems: widget.state.fixedItems,
+        budget: widget.state.budget,
+        month: DateTime.now(),
+      );
+      messenger.showSnackBar(
+        SnackBar(content: Text('✓ Excel 已匯出：$filename'), backgroundColor: kGreen),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('匯出失敗：$e'), backgroundColor: kRed),
+      );
+    }
+  }
+
   Future<void> _doRestore() async {
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -1097,6 +1116,21 @@ class _ManagePageState extends State<ManagePage> {
                 onPressed: _doExportCsv,
                 icon: const Icon(Icons.download_rounded),
                 label: const Text('匯出 CSV'),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: kGold),
+                  foregroundColor: kGold,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _doExportExcel,
+                icon: const Icon(Icons.table_chart_rounded),
+                label: const Text('匯出 Excel'),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: kGold),
                   foregroundColor: kGold,

@@ -1,192 +1,129 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'package:encrypt/encrypt.dart' as encrypt_pkg;
+import 'package:encrypt/encrypt.dart' as enc;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/utils/logger.dart';
 import '../core/utils/app_exceptions.dart';
 
-/// Service for encrypting and decrypting sensitive data
+/// AES-256 encryption service backed by Android Keystore via FlutterSecureStorage.
+///
+/// Call [init] once before any [encrypt]/[decrypt] usage (e.g. during AppState._load).
 class EncryptionService {
   static final EncryptionService _instance = EncryptionService._internal();
-  late final encrypt_pkg.Key _key;
-  late final encrypt_pkg.IV _iv;
-  final _secureStorage = const FlutterSecureStorage();
+
+  enc.Key? _key;
+  enc.IV? _iv;
+  bool _initialized = false;
+  final _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   factory EncryptionService() => _instance;
+  EncryptionService._internal();
 
-  EncryptionService._internal() {
-    _initializeKeys();
-  }
+  bool get isInitialized => _initialized;
 
-  /// Initialize encryption keys from secure storage
-  Future<void> _initializeKeys() async {
+  /// Must be awaited once before using [encrypt] / [decrypt].
+  Future<void> init() async {
+    if (_initialized) return;
     try {
-      // Try to load existing key
-      String? keyString = await _secureStorage.read(key: 'encryption_key');
-      String? ivString = await _secureStorage.read(key: 'encryption_iv');
+      String? keyB64 = await _storage.read(key: 'enc_key_v1');
+      String? ivB64 = await _storage.read(key: 'enc_iv_v1');
 
-      if (keyString == null || ivString == null) {
-        // Generate new keys
-        _key = encrypt_pkg.Key.fromSecureRandom(32); // 256-bit key
-        _iv = encrypt_pkg.IV.fromSecureRandom(16);   // 128-bit IV
-
-        // Store keys securely
-        await _secureStorage.write(
-          key: 'encryption_key',
-          value: _key.base64,
-        );
-        await _secureStorage.write(
-          key: 'encryption_iv',
-          value: _iv.base64,
-        );
-
-        AppLogger.info('Encryption keys generated and stored');
+      if (keyB64 == null || ivB64 == null) {
+        _key = enc.Key.fromSecureRandom(32);
+        _iv = enc.IV.fromSecureRandom(16);
+        await _storage.write(key: 'enc_key_v1', value: _key!.base64);
+        await _storage.write(key: 'enc_iv_v1', value: _iv!.base64);
+        AppLogger.info('✓ Encryption keys generated');
       } else {
-        // Load existing keys
-        _key = encrypt_pkg.Key.fromBase64(keyString);
-        _iv = encrypt_pkg.IV.fromBase64(ivString);
-        AppLogger.info('Encryption keys loaded from secure storage');
+        _key = enc.Key.fromBase64(keyB64);
+        _iv = enc.IV.fromBase64(ivB64);
+        AppLogger.info('✓ Encryption keys loaded');
       }
+      _initialized = true;
     } catch (e) {
-      AppLogger.error('Failed to initialize encryption keys', error: e);
-      rethrow;
+      AppLogger.error('✗ EncryptionService init failed', error: e);
+      // Service degrades gracefully: encrypt/decrypt return passthrough
     }
   }
 
-  /// Encrypt a string
+  /// Encrypt [plaintext] with AES-CBC. Returns base64 ciphertext.
+  /// If not initialized, returns [plaintext] unchanged (graceful degradation).
   String encrypt(String plaintext) {
+    if (!_initialized || plaintext.isEmpty) return plaintext;
     try {
-      if (plaintext.isEmpty) return '';
-
-      final encrypter = encrypt_pkg.Encrypter(encrypt_pkg.AES(_key));
-      final encrypted = encrypter.encrypt(plaintext, iv: _iv);
-
-      AppLogger.debug('Data encrypted successfully');
-      return encrypted.base64;
+      final encrypter = enc.Encrypter(enc.AES(_key!));
+      return encrypter.encrypt(plaintext, iv: _iv!).base64;
     } catch (e) {
       AppLogger.error('Encryption failed', error: e);
-      throw DataException(
-        message: '數據加密失敗',
-        originalException: e,
-      );
+      throw DataException(message: '數據加密失敗', originalException: e);
     }
   }
 
-  /// Decrypt a string
-  String decrypt(String encryptedBase64) {
+  /// Decrypt base64 [ciphertext]. Returns plaintext.
+  /// If not initialized or decryption fails, returns [ciphertext] unchanged.
+  String decrypt(String ciphertext) {
+    if (!_initialized || ciphertext.isEmpty) return ciphertext;
     try {
-      if (encryptedBase64.isEmpty) return '';
-
-      final encrypter = encrypt_pkg.Encrypter(encrypt_pkg.AES(_key));
-      final encrypted = encrypt_pkg.Encrypted.fromBase64(encryptedBase64);
-      final decrypted = encrypter.decrypt(encrypted, iv: _iv);
-
-      AppLogger.debug('Data decrypted successfully');
-      return decrypted;
+      final encrypter = enc.Encrypter(enc.AES(_key!));
+      return encrypter.decrypt(enc.Encrypted.fromBase64(ciphertext), iv: _iv!);
     } catch (e) {
       AppLogger.error('Decryption failed', error: e);
-      throw DataException(
-        message: '數據解密失敗',
-        originalException: e,
-      );
+      return ciphertext;
     }
   }
 
-  /// Encrypt an integer (useful for amounts)
-  String encryptInt(int value) {
-    return encrypt(value.toString());
-  }
+  /// Encrypt a JSON-serialisable [map] to a base64 string.
+  String encryptMap(Map<String, dynamic> map) => encrypt(jsonEncode(map));
 
-  /// Decrypt an integer
-  int decryptInt(String encryptedBase64) {
+  /// Decrypt a base64 string back to a map. Returns null on failure.
+  Map<String, dynamic>? decryptMap(String ciphertext) {
     try {
-      final decrypted = decrypt(encryptedBase64);
-      return int.parse(decrypted);
+      return jsonDecode(decrypt(ciphertext)) as Map<String, dynamic>;
     } catch (e) {
-      AppLogger.error('Failed to decrypt integer', error: e);
-      return 0;
-    }
-  }
-
-  /// Encrypt a map to JSON string
-  String encryptMap(Map<String, dynamic> data) {
-    try {
-      final json = jsonEncode(data);
-      return encrypt(json);
-    } catch (e) {
-      AppLogger.error('Failed to encrypt map', error: e);
-      rethrow;
-    }
-  }
-
-  /// Decrypt JSON string to map
-  Map<String, dynamic>? decryptMap(String encryptedBase64) {
-    try {
-      final decrypted = decrypt(encryptedBase64);
-      return jsonDecode(decrypted) as Map<String, dynamic>;
-    } catch (e) {
-      AppLogger.error('Failed to decrypt map', error: e);
+      AppLogger.error('decryptMap failed', error: e);
       return null;
     }
   }
 
-  /// Store encrypted value in secure storage
+  /// Encrypt [value] and write to Keystore-backed secure storage.
   Future<void> storeSecure(String key, String value) async {
     try {
-      final encrypted = encrypt(value);
-      await _secureStorage.write(key: key, value: encrypted);
-      AppLogger.debug('Secure storage write: $key');
+      await _storage.write(key: key, value: encrypt(value));
     } catch (e) {
-      AppLogger.error('Failed to store secure value', error: e);
-      throw DataException(
-        message: '無法存儲敏感數據',
-        originalException: e,
-      );
+      AppLogger.error('storeSecure failed', error: e);
+      throw DataException(message: '無法存儲敏感數據', originalException: e);
     }
   }
 
-  /// Retrieve encrypted value from secure storage
+  /// Read and decrypt from secure storage. Returns null if key missing.
   Future<String?> retrieveSecure(String key) async {
     try {
-      final encrypted = await _secureStorage.read(key: key);
-      if (encrypted == null) return null;
-
-      final decrypted = decrypt(encrypted);
-      AppLogger.debug('Secure storage read: $key');
-      return decrypted;
+      final val = await _storage.read(key: key);
+      return val == null ? null : decrypt(val);
     } catch (e) {
-      AppLogger.error('Failed to retrieve secure value', error: e);
+      AppLogger.error('retrieveSecure failed', error: e);
       return null;
     }
   }
 
-  /// Delete secure value
-  Future<void> deleteSecure(String key) async {
-    try {
-      await _secureStorage.delete(key: key);
-      AppLogger.debug('Secure storage delete: $key');
-    } catch (e) {
-      AppLogger.error('Failed to delete secure value', error: e);
-    }
-  }
+  /// Delete a key from secure storage.
+  Future<void> deleteSecure(String key) =>
+      _storage.delete(key: key).catchError((e) {
+        AppLogger.error('deleteSecure failed', error: e);
+      });
 
-  /// Clear all secure storage
-  Future<void> clearSecure() async {
-    try {
-      await _secureStorage.deleteAll();
-      AppLogger.info('Secure storage cleared');
-    } catch (e) {
-      AppLogger.error('Failed to clear secure storage', error: e);
-    }
-  }
+  /// Clear all secure storage (use with caution — also removes enc keys).
+  Future<void> clearSecure() =>
+      _storage.deleteAll().catchError((e) {
+        AppLogger.error('clearSecure failed', error: e);
+      });
 
-  /// Hash a string (one-way, for verification)
-  static String hash(String data) {
-    return sha256.convert(utf8.encode(data)).toString();
-  }
+  /// One-way SHA-256 hash.
+  static String hash(String data) =>
+      sha256.convert(utf8.encode(data)).toString();
 
-  /// Verify a hash
-  static bool verifyHash(String data, String hash) {
-    return EncryptionService.hash(data) == hash;
-  }
+  static bool verifyHash(String data, String expectedHash) =>
+      hash(data) == expectedHash;
 }
