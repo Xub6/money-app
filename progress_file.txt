@@ -6,8 +6,20 @@
 
 ---
 
-## 目前狀態：待機中
-最後完成任務：復原提示框 X 關閉鈕 + 5 秒自動消失（2026-04-22）✅
+## 目前狀態：Phase 1 完成 ✅
+最後完成任務：ManagePage 恢復備份功能（2026-04-28）✅
+
+### Phase 1 狀態：100% 完成
+- [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
+- [x] DetailPage 長按選單（編輯 / 複製 / 刪除）
+- [x] ManagePage 備份按鈕
+- [x] ManagePage 恢復備份按鈕（備份清單選擇 + 確認對話框）
+
+### 下一步：Phase 2
+- SharedPreferences → SQLite 遷移工具
+- i18n 國際化
+- AES 資料加密服務
+- Excel 導出
 
 ### 完成紀錄
 - [x] 深色模式修復
