@@ -20,6 +20,7 @@ import 'screens/manage/add_edit_fixed_page.dart';
 import 'data/models/stock_holding.dart';
 import 'services/backup_service.dart';
 import 'services/export_service.dart';
+import 'data/models/backup_metadata.dart';
 import 'screens/account/account_page.dart';
 
 // ─── 顏色別名（相容現有 widget）───
@@ -802,6 +803,61 @@ class _ManagePageState extends State<ManagePage> {
     }
   }
 
+  Future<void> _doRestore() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final backups = await _backupService.getBackupList();
+      if (backups.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('尚無備份檔案'), backgroundColor: kGray),
+        );
+        return;
+      }
+      if (!mounted) return;
+      final selectedFilename = await showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (_) => _BackupPickerSheet(backups: backups),
+      );
+      if (selectedFilename == null || !mounted) return;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('確定還原？'),
+          content: const Text('現有的支出記錄和固定開銷將被備份內容取代，此操作無法還原。'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('還原', style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+      final backupData = await _backupService.importBackup(selectedFilename);
+      widget.state.restoreFromBackup(
+        newExpenses: backupData.expenses,
+        newFixedItems: backupData.fixedItems,
+        newBudget: backupData.settings?['budget'] as int?,
+      );
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('✓ 已還原 ${backupData.expenses.length} 筆記錄'),
+          backgroundColor: kGreen,
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('還原失敗：$e'), backgroundColor: kRed),
+      );
+    }
+  }
+
   void _openFixedDialog({FixedItem? existing}) =>
       _showFixedItemDialog(context, widget.state, existing: existing);
 
@@ -1049,6 +1105,21 @@ class _ManagePageState extends State<ManagePage> {
                 ),
               ),
             ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _doRestore,
+                icon: const Icon(Icons.restore_rounded),
+                label: const Text('恢復備份'),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: kGold),
+                  foregroundColor: kGold,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
           ])),
           const SizedBox(height: 16),
 
@@ -1242,6 +1313,40 @@ class _KeepAlivePageState extends State<_KeepAlivePage>
   Widget build(BuildContext context) {
     super.build(context);
     return widget.child;
+  }
+}
+
+class _BackupPickerSheet extends StatelessWidget {
+  final List<BackupMetadata> backups;
+  const _BackupPickerSheet({required this.backups});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Text('選擇備份', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            const Spacer(),
+            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+          ]),
+          const SizedBox(height: 8),
+          ...backups.map((b) => ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.restore_rounded, color: kGold),
+            title: Text(
+              DateFormat('yyyy/MM/dd HH:mm').format(b.timestamp),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            subtitle: Text('${b.expenseCount} 筆支出・${b.fixedCount} 項固定開銷'),
+            onTap: () => Navigator.pop(context, b.filename),
+          )),
+        ],
+      ),
+    );
   }
 }
 

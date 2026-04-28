@@ -387,6 +387,19 @@ class AppState extends ChangeNotifier {
     AppLogger.info('All data cleared');
   }
 
+  void restoreFromBackup({
+    required List<ExpenseItem> newExpenses,
+    required List<FixedItem> newFixedItems,
+    int? newBudget,
+  }) {
+    expenses = newExpenses;
+    fixedItems = newFixedItems;
+    if (newBudget != null) budget = newBudget;
+    _save();
+    notifyListeners();
+    AppLogger.info('Restored from backup: ${newExpenses.length} expenses, ${newFixedItems.length} fixed items');
+  }
+
   /// Export data to JSON
   String exportToJson() {
     return jsonEncode({
