@@ -13,10 +13,16 @@ class OnboardingPage extends StatefulWidget {
   final AppState state;
   final VoidCallback onAddExpense;
 
+  /// When true, pressing "跳過" (slides 1–5) will set skipRedirectPending so
+  /// MainShell can guide the user to the help section in ManagePage.
+  /// Set false when re-watching from ManagePage.
+  final bool skipSetsRedirect;
+
   const OnboardingPage({
     super.key,
     required this.state,
     required this.onAddExpense,
+    this.skipSetsRedirect = false,
   });
 
   @override
@@ -34,11 +40,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
     super.dispose();
   }
 
-  void _skipOnboarding() {
-    OnboardingService.markOnboardingSeen().then((_) {
-      if (mounted) Navigator.pop(context);
-    });
+  /// Called by the "跳過" button on slides 1–5.
+  /// Optionally sets skipRedirectPending so MainShell can guide the user.
+  Future<void> _doSkip({required bool setRedirect}) async {
+    await OnboardingService.markOnboardingSeen();
+    if (setRedirect) await OnboardingService.setSkipRedirectPending();
+    if (mounted) Navigator.pop(context);
   }
+
+  void _skipOnboarding() => _doSkip(setRedirect: widget.skipSetsRedirect);
+
+  /// Called by slide 6 "直接進入 App" — completes onboarding silently,
+  /// never triggers the skip redirect.
+  void _handleSlide6Skip() => _doSkip(setRedirect: false);
 
   void _handleSlide6AddExpense() {
     OnboardingService.markOnboardingSeen().then((_) {
@@ -69,7 +83,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       Slide6Cta(
         hasExpenses: widget.state.expenses.isNotEmpty,
         onAddExpense: _handleSlide6AddExpense,
-        onSkip: _skipOnboarding,
+        onSkip: _handleSlide6Skip,
       ),
     ];
 

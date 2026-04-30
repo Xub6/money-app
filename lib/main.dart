@@ -115,6 +115,8 @@ class _MainShellState extends State<MainShell> {
   late final PageController _pageController = PageController();
   AppState get s => widget.state;
 
+  final _manageScrollCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -124,17 +126,44 @@ class _MainShellState extends State<MainShell> {
   Future<void> _checkOnboarding() async {
     final seen = await OnboardingService.isOnboardingSeen();
     if (!seen && mounted) {
-      Navigator.push<void>(
+      await Navigator.push<void>(
         context,
         MaterialPageRoute(
           builder: (_) => OnboardingPage(
             state: s,
             onAddExpense: _onAddExpenseFromOnboarding,
+            skipSetsRedirect: true,
           ),
           fullscreenDialog: true,
         ),
       );
     }
+    if (mounted) await _handleSkipRedirect();
+  }
+
+  Future<void> _handleSkipRedirect() async {
+    final pending = await OnboardingService.isSkipRedirectPending();
+    if (!pending || !mounted) return;
+    await OnboardingService.clearSkipRedirectPending();
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    _goToTab(3);
+    await Future.delayed(const Duration(milliseconds: 420));
+    if (_manageScrollCtrl.hasClients) {
+      await _manageScrollCtrl.animateTo(
+        _manageScrollCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+      await Future.delayed(const Duration(milliseconds: 120));
+    }
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text("之後想再看教學，可以在這裡點『重新觀看新手導覽』。"),
+        duration: Duration(seconds: 5),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _onAddExpenseFromOnboarding() {
@@ -143,9 +172,25 @@ class _MainShellState extends State<MainShell> {
     _openAdd();
   }
 
+  void _onRewatchOnboarding() {
+    if (!mounted) return;
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OnboardingPage(
+          state: s,
+          onAddExpense: _onAddExpenseFromOnboarding,
+          skipSetsRedirect: false,
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
+    _manageScrollCtrl.dispose();
     super.dispose();
   }
 
@@ -258,7 +303,11 @@ class _MainShellState extends State<MainShell> {
       ),
       DetailPage(state: s, displayMonth: _displayMonth, onEdit: _editExpense),
       InvestPage(state: s),
-      ManagePage(state: s),
+      ManagePage(
+        state: s,
+        scrollController: _manageScrollCtrl,
+        onRewatchOnboarding: _onRewatchOnboarding,
+      ),
     ];
 
     return Scaffold(
@@ -944,7 +993,14 @@ class _DetailPageState extends State<DetailPage> {
 // ─── 管理頁 ───
 class ManagePage extends StatefulWidget {
   final AppState state;
-  const ManagePage({super.key, required this.state});
+  final ScrollController? scrollController;
+  final VoidCallback? onRewatchOnboarding;
+  const ManagePage({
+    super.key,
+    required this.state,
+    this.scrollController,
+    this.onRewatchOnboarding,
+  });
   @override
   State<ManagePage> createState() => _ManagePageState();
 }
@@ -1090,6 +1146,7 @@ class _ManagePageState extends State<ManagePage> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     return SafeArea(
       child: SingleChildScrollView(
+        controller: widget.scrollController,
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('管理',
@@ -1499,6 +1556,32 @@ class _ManagePageState extends State<ManagePage> {
                   ),
                 ),
               ])),
+          const SizedBox(height: 16),
+
+          // 說明與支援
+          _AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('說明與支援',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.help_outline_rounded, color: kGold),
+                  title: const Text('重新觀看新手導覽',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  subtitle: const Text('再次查看錢錢管家的主要功能與使用方式',
+                      style: TextStyle(fontSize: 12)),
+                  trailing:
+                      const Icon(Icons.chevron_right, color: kGray, size: 18),
+                  onTap: widget.onRewatchOnboarding,
+                ),
+              ],
+            ),
+          ),
         ]),
       ),
     );

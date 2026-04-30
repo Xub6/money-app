@@ -7,7 +7,7 @@
 ---
 
 ## 目前狀態：待機中 ✅
-最後完成任務：Onboarding 導覽功能（2026-04-30）✅
+最後完成任務：Onboarding 跳過防呆機制（2026-04-30）✅
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
@@ -44,6 +44,11 @@
 - [x] lib/screens/onboarding/slides/slide_6_cta.dart（Checklist T1 + 新增第一筆支出 CTA）
 - [x] main.dart：_checkOnboarding + _onAddExpenseFromOnboarding（復用既有 _openAdd）
 - [x] invest_page.dart：底部法務聲明 + 移除未使用的 _openAdd
+
+### Onboarding 跳過防呆機制完成（2026-04-30）✅
+- [x] onboarding_service.dart：新增 setSkipRedirectPending / isSkipRedirectPending / clearSkipRedirectPending
+- [x] onboarding_page.dart：skipSetsRedirect 參數；_doSkip 區分 slides 1–5 vs slide 6 vs rewatch
+- [x] main.dart：_manageScrollCtrl（ScrollController）取代 GlobalKey；_handleSkipRedirect 改用 scrollCtrl.animateTo(max) + 先擷取 messenger 避免 BuildContext lint；ManagePage 加 scrollController / onRewatchOnboarding 參數；ManagePage 底部新增「說明與支援」區塊 + 重新觀看新手導覽 ListTile
 
 ### 下一步（優先順序）
 1. i18n 國際化 — 約 4h，最耗時，可最後做
