@@ -23,8 +23,10 @@ import 'services/export_service.dart';
 import 'data/models/backup_metadata.dart';
 import 'screens/account/account_page.dart';
 import 'screens/feedback/feedback_page.dart';
-import 'screens/onboarding/onboarding_page.dart';
 import 'screens/onboarding/onboarding_service.dart';
+import 'core/tour/tour_controller.dart';
+import 'core/tour/tour_keys.dart';
+import 'core/tour/tour_overlay.dart';
 
 // ─── 顏色別名（相容現有 widget）───
 const kGold = AppColors.gold;
@@ -59,11 +61,13 @@ class MoneyApp extends StatefulWidget {
 class _MoneyAppState extends State<MoneyApp> {
   final _appState = AppState();
   final _themeProvider = ThemeProvider();
+  final _tourController = TourController();
 
   @override
   void dispose() {
     _appState.dispose();
     _themeProvider.dispose();
+    _tourController.dispose();
     super.dispose();
   }
 
@@ -73,6 +77,7 @@ class _MoneyAppState extends State<MoneyApp> {
       providers: [
         ListenableProvider.value(value: _appState),
         ListenableProvider.value(value: _themeProvider),
+        ListenableProvider.value(value: _tourController),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
@@ -117,79 +122,57 @@ class _MainShellState extends State<MainShell> {
   AppState get s => widget.state;
 
   final _manageScrollCtrl = ScrollController();
+  OverlayEntry? _tourEntry;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkOnboarding());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initTour();
+      _checkOnboarding();
+    });
+  }
+
+  void _initTour() {
+    final ctrl = context.read<TourController>();
+    ctrl.init(
+      goToTab: _goToTab,
+      scrollToFeedback: _scrollManageToFeedback,
+    );
+    _tourEntry = OverlayEntry(
+      builder: (_) => Consumer<TourController>(
+        builder: (_, c, __) =>
+            c.isActive ? const TourOverlay() : const SizedBox.shrink(),
+      ),
+    );
+    Overlay.of(context).insert(_tourEntry!);
   }
 
   Future<void> _checkOnboarding() async {
     final seen = await OnboardingService.isOnboardingSeen();
     if (!seen && mounted) {
-      await Navigator.push<void>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OnboardingPage(
-            state: s,
-            onAddExpense: _onAddExpenseFromOnboarding,
-            skipSetsRedirect: true,
-          ),
-          fullscreenDialog: true,
-        ),
-      );
+      context.read<TourController>().start();
     }
-    if (mounted) await _handleSkipRedirect();
-  }
-
-  Future<void> _handleSkipRedirect() async {
-    final pending = await OnboardingService.isSkipRedirectPending();
-    if (!pending || !mounted) return;
-    await OnboardingService.clearSkipRedirectPending();
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    _goToTab(3);
-    await Future.delayed(const Duration(milliseconds: 420));
-    if (_manageScrollCtrl.hasClients) {
-      await _manageScrollCtrl.animateTo(
-        _manageScrollCtrl.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 450),
-        curve: Curves.easeInOut,
-      );
-      await Future.delayed(const Duration(milliseconds: 120));
-    }
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text("之後想再看教學，可以在這裡點『重新觀看新手導覽』。"),
-        duration: Duration(seconds: 5),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _onAddExpenseFromOnboarding() {
-    if (!mounted) return;
-    if (Navigator.canPop(context)) Navigator.pop(context);
-    _openAdd();
   }
 
   void _onRewatchOnboarding() {
     if (!mounted) return;
-    Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OnboardingPage(
-          state: s,
-          onAddExpense: _onAddExpenseFromOnboarding,
-          skipSetsRedirect: false,
-        ),
-        fullscreenDialog: true,
-      ),
+    context.read<TourController>().start();
+  }
+
+  Future<void> _scrollManageToFeedback() async {
+    if (!mounted || !_manageScrollCtrl.hasClients) return;
+    await _manageScrollCtrl.animateTo(
+      _manageScrollCtrl.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeInOut,
     );
   }
 
   @override
   void dispose() {
+    _tourEntry?.remove();
+    _tourEntry = null;
     _pageController.dispose();
     _manageScrollCtrl.dispose();
     super.dispose();
@@ -259,13 +242,23 @@ class _MainShellState extends State<MainShell> {
   void _openAddFixed() => _showFixedItemDialog(context, s);
 
   void _fabTap() {
+    final ctrl = context.read<TourController>();
+    final isInteractiveFab =
+        ctrl.isActive && ctrl.isWaitingForInteraction && ctrl.stepIndex == 4;
+
     switch (_tab) {
       case 2:
         _openAddInvestment();
       case 3:
         _openAddFixed();
       default:
-        _openAdd();
+        if (isInteractiveFab) {
+          _openAdd().then((_) {
+            if (mounted) ctrl.onInteractionComplete();
+          });
+        } else {
+          _openAdd();
+        }
     }
   }
 
@@ -313,8 +306,9 @@ class _MainShellState extends State<MainShell> {
 
     return Scaffold(
       appBar: AppBar(
-        title:
-            const Text('錢錢管家', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text('錢錢管家',
+            key: TourKeys.appBarTitle,
+            style: const TextStyle(fontWeight: FontWeight.w800)),
         elevation: 0,
         actions: [
           IconButton(
@@ -329,6 +323,7 @@ class _MainShellState extends State<MainShell> {
         children: pages.map((p) => _KeepAlivePage(child: p)).toList(),
       ),
       floatingActionButton: FloatingActionButton(
+        key: TourKeys.fab,
         onPressed: _fabTap,
         backgroundColor: kGold,
         foregroundColor: Colors.white,
@@ -366,6 +361,7 @@ class _MainShellState extends State<MainShell> {
               selected: _tab == 2,
               onTap: () => _goToTab(2)),
           _NavItem(
+              key: TourKeys.navManage,
               icon: Icons.settings_rounded,
               label: '管理',
               selected: _tab == 3,
@@ -533,6 +529,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
           // 月份切換
           _AppCard(
+              key: TourKeys.monthCard,
               child: Column(children: [
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               Tooltip(
@@ -595,6 +592,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
           // 預算進度
           _AppCard(
+              key: TourKeys.budgetCard,
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -721,6 +719,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
           // 圓餅圖
           _AppCard(
+              key: TourKeys.categoryCard,
               child: Column(children: [
             Row(children: [
               const Text('本月明細',
@@ -883,7 +882,9 @@ class _DetailPageState extends State<DetailPage> {
         ),
         const SizedBox(height: 10),
         Expanded(
-          child: items.isEmpty
+          child: Container(
+            key: TourKeys.detailList,
+            child: items.isEmpty
               ? const Center(
                   child: Text('沒有記錄', style: TextStyle(color: Colors.grey)))
               : ListView.separated(
@@ -947,6 +948,7 @@ class _DetailPageState extends State<DetailPage> {
                     );
                   },
                 ),
+            ),  // Container(key: TourKeys.detailList)
         ),
       ]),
     );
@@ -1156,6 +1158,7 @@ class _ManagePageState extends State<ManagePage> {
 
           // 我的賬戶
           _AppCard(
+              key: TourKeys.accountCard,
               child: GestureDetector(
             onTap: () => Navigator.push(
                 context,
@@ -1277,6 +1280,7 @@ class _ManagePageState extends State<ManagePage> {
 
           // 固定開銷
           _AppCard(
+              key: TourKeys.fixedCard,
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1429,6 +1433,7 @@ class _ManagePageState extends State<ManagePage> {
 
           // 備份與匯出
           _AppCard(
+              key: TourKeys.backupCard,
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1569,6 +1574,7 @@ class _ManagePageState extends State<ManagePage> {
                         TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 ListTile(
+                  key: TourKeys.rewatchTile,
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.help_outline_rounded, color: kGold),
                   title: const Text('重新觀看新手導覽',
@@ -1582,6 +1588,7 @@ class _ManagePageState extends State<ManagePage> {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  key: TourKeys.feedbackTile,
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.feedback_outlined, color: kGold),
                   title: const Text('回報問題與建議',
@@ -1591,10 +1598,22 @@ class _ManagePageState extends State<ManagePage> {
                       style: TextStyle(fontSize: 12)),
                   trailing:
                       const Icon(Icons.chevron_right, color: kGray, size: 18),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const FeedbackPage()),
-                  ),
+                  onTap: () {
+                    final ctrl = context.read<TourController>();
+                    final isFeedbackStep = ctrl.isActive &&
+                        ctrl.isWaitingForInteraction &&
+                        ctrl.stepIndex == 13;
+                    final future = Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const FeedbackPage()),
+                    );
+                    if (isFeedbackStep) {
+                      future.then((_) {
+                        if (context.mounted) ctrl.onInteractionComplete();
+                      });
+                    }
+                  },
                 ),
               ],
             ),
@@ -1608,7 +1627,7 @@ class _ManagePageState extends State<ManagePage> {
 // ─── 小元件 ───
 class _AppCard extends StatelessWidget {
   final Widget child;
-  const _AppCard({required this.child});
+  const _AppCard({super.key, required this.child});
   @override
   Widget build(BuildContext context) => Card(
         elevation: 0,
@@ -1681,7 +1700,8 @@ class _NavItem extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   const _NavItem(
-      {required this.icon,
+      {super.key,
+      required this.icon,
       required this.label,
       required this.selected,
       required this.onTap});

@@ -6,6 +6,7 @@ import '../../data/models/stock_holding.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/stock_service.dart';
 import 'add_edit_investment_page.dart';
+import '../../core/tour/tour_keys.dart';
 
 const _kGold = AppColors.gold;
 const _kGreen = AppColors.success;
@@ -160,13 +161,14 @@ class _InvestPageState extends State<InvestPage> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 16, 14, 0),
-              child: Row(children: [
+              child: Row(key: TourKeys.investHeader, children: [
                 const Text('投資',
                     style:
                         TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
                 const Spacer(),
                 if (s.holdings.isNotEmpty)
                   GestureDetector(
+                    key: TourKeys.investRefresh,
                     onTap: _refreshAllPrices,
                     child: Container(
                       width: 36,
