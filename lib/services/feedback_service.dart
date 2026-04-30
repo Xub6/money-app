@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/feedback_config.dart';
 import '../data/models/feedback_request.dart';
@@ -5,23 +6,17 @@ import '../data/models/feedback_request.dart';
 class FeedbackService {
   Future<void> submit(FeedbackRequest request) async {
     final uri = Uri.parse(kFeedbackEndpoint);
-    final multipart = http.MultipartRequest('POST', uri);
+    final response = await http
+        .post(
+          uri,
+          headers: {'Content-Type': 'application/json; charset=utf-8'},
+          body: jsonEncode(request.toTextFields()),
+        )
+        .timeout(const Duration(seconds: 30));
 
-    request.toTextFields().forEach((key, value) {
-      multipart.fields[key] = value;
-    });
-
-    for (final file in request.images) {
-      multipart.files
-          .add(await http.MultipartFile.fromPath('images', file.path));
-    }
-
-    final streamed =
-        await multipart.send().timeout(const Duration(seconds: 30));
-
-    if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
       throw FeedbackSubmitException(
-        'Webhook returned ${streamed.statusCode}',
+        'Webhook returned ${response.statusCode}',
       );
     }
   }
