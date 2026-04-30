@@ -28,7 +28,7 @@ class TourOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<TourController>(
       builder: (context, ctrl, _) {
-        if (!ctrl.isActive) return const SizedBox.shrink();
+        if (!ctrl.isActive || ctrl.isHidden) return const SizedBox.shrink();
         final step = ctrl.currentStep;
         if (step == null) return const SizedBox.shrink();
 

@@ -5,17 +5,19 @@ import 'tour_step.dart';
 class TourController extends ChangeNotifier {
   List<TourStep> _steps = [];
   bool _active = false;
+  bool _hidden = false;
   int _stepIndex = 0;
   bool _waitingForInteraction = false;
   bool _finishing = false;
 
-  // Injected by MainShell after first frame
   void Function(int tab)? _goToTab;
   Future<void> Function()? _scrollToFeedback;
+  Future<void> Function()? _scrollToCategoryCard;
 
   // ── Public state ─────────────────────────────────────────────
 
   bool get isActive => _active;
+  bool get isHidden => _hidden;
   int get stepIndex => _stepIndex;
   int get totalSteps => _steps.length;
   bool get isWaitingForInteraction => _waitingForInteraction;
@@ -31,9 +33,11 @@ class TourController extends ChangeNotifier {
   void init({
     required void Function(int tab) goToTab,
     required Future<void> Function() scrollToFeedback,
+    required Future<void> Function() scrollToCategoryCard,
   }) {
     _goToTab = goToTab;
     _scrollToFeedback = scrollToFeedback;
+    _scrollToCategoryCard = scrollToCategoryCard;
   }
 
   // ── Tour lifecycle ───────────────────────────────────────────
@@ -42,6 +46,7 @@ class TourController extends ChangeNotifier {
     _steps = buildTourSteps();
     _stepIndex = 0;
     _active = true;
+    _hidden = false;
     _finishing = false;
     await _prepareStep();
     notifyListeners();
@@ -73,13 +78,27 @@ class TourController extends ChangeNotifier {
     if (_finishing) return;
     _finishing = true;
     _active = false;
+    _hidden = false;
     _waitingForInteraction = false;
     notifyListeners();
     await OnboardingService.markOnboardingSeen();
   }
 
-  // Called by interactive target widgets (FAB, feedback tile) after
-  // the user has completed the interaction.
+  /// Temporarily hide the overlay (e.g. while a modal route is open).
+  void hide() {
+    if (_hidden) return;
+    _hidden = true;
+    notifyListeners();
+  }
+
+  /// Restore the overlay after hiding.
+  void unhide() {
+    if (!_hidden) return;
+    _hidden = false;
+    notifyListeners();
+  }
+
+  // Called by interactive target widgets after the user completes the action.
   void onInteractionComplete() {
     if (!_waitingForInteraction) return;
     _waitingForInteraction = false;
@@ -93,13 +112,16 @@ class TourController extends ChangeNotifier {
     if (_steps.isEmpty || _stepIndex >= _steps.length) return;
     final step = _steps[_stepIndex];
 
-    // Navigate to the correct tab
     _goToTab?.call(step.tab);
-
-    // Wait for tab animation + widget layout
     await Future.delayed(const Duration(milliseconds: 420));
 
-    // For manage-page steps near the bottom, scroll down
+    // Dashboard: scroll so categoryCard (step 3) is visible
+    if (_stepIndex == 3) {
+      await _scrollToCategoryCard?.call();
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+
+    // Manage page: scroll to bottom for steps 12+
     if (step.tab == 3 && _stepIndex >= 12) {
       await _scrollToFeedback?.call();
       await Future.delayed(const Duration(milliseconds: 200));

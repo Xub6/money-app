@@ -138,6 +138,7 @@ class _MainShellState extends State<MainShell> {
     ctrl.init(
       goToTab: _goToTab,
       scrollToFeedback: _scrollManageToFeedback,
+      scrollToCategoryCard: _scrollDashToCategory,
     );
     _tourEntry = OverlayEntry(
       builder: (_) => Consumer<TourController>(
@@ -166,6 +167,17 @@ class _MainShellState extends State<MainShell> {
       _manageScrollCtrl.position.maxScrollExtent,
       duration: const Duration(milliseconds: 450),
       curve: Curves.easeInOut,
+    );
+  }
+
+  Future<void> _scrollDashToCategory() async {
+    final ctx = TourKeys.categoryCard.currentContext;
+    if (ctx == null || !mounted) return;
+    await Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+      alignment: 0.1,
     );
   }
 
@@ -253,8 +265,12 @@ class _MainShellState extends State<MainShell> {
         _openAddFixed();
       default:
         if (isInteractiveFab) {
+          ctrl.hide();
           _openAdd().then((_) {
-            if (mounted) ctrl.onInteractionComplete();
+            if (mounted) {
+              ctrl.unhide();
+              ctrl.onInteractionComplete();
+            }
           });
         } else {
           _openAdd();
@@ -1603,6 +1619,7 @@ class _ManagePageState extends State<ManagePage> {
                     final isFeedbackStep = ctrl.isActive &&
                         ctrl.isWaitingForInteraction &&
                         ctrl.stepIndex == 13;
+                    if (isFeedbackStep) ctrl.hide();
                     final future = Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -1610,7 +1627,10 @@ class _ManagePageState extends State<ManagePage> {
                     );
                     if (isFeedbackStep) {
                       future.then((_) {
-                        if (context.mounted) ctrl.onInteractionComplete();
+                        if (context.mounted) {
+                          ctrl.unhide();
+                          ctrl.onInteractionComplete();
+                        }
                       });
                     }
                   },
