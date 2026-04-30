@@ -7,7 +7,7 @@
 ---
 
 ## 目前狀態：待機中 ✅
-最後完成任務：Feedback 功能端對端驗收通過（n8n webhook + 信件收到）（2026-04-30）✅
+最後完成任務：互動式 15 步新手導覽（coach-marks tour）上線（2026-04-30）✅
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
@@ -66,8 +66,17 @@
 - [x] search_service.dart：移除 unused field _debounceDelay
 - 結果：0 error / 0 warning / 28 info（flutter analyze --no-fatal-infos exit code 0）
 
+### 互動式導覽（Coach-marks Tour）完成（2026-04-30）✅
+- [x] lib/core/tour/tour_keys.dart：所有 GlobalKey 中央登記
+- [x] lib/core/tour/tour_step.dart：15 步定義（含 FAB/feedbackTile 兩個互動步驟）
+- [x] lib/core/tour/tour_controller.dart：ChangeNotifier，tab 切換 / 420ms delay / 自動捲動 / 互動等待
+- [x] lib/core/tour/tour_overlay.dart：OverlayEntry + SpotlightPainter（BlendMode.clear）+ _TourTooltip
+- [x] lib/main.dart：MultiProvider 加 TourController，OverlayEntry 插入，_checkOnboarding 改用 tour，FAB/feedbackTile 互動回呼
+- [x] lib/screens/invest/invest_page.dart：加 TourKeys.investHeader / investRefresh
+- APK 已建置並推送 GitHub（commit ee144c0）
+
 ### 下一步（優先順序）
-1. Feedback 實機驗收（手機測 A–E 場景 + 確認 n8n webhook Active）
+1. 實機驗收 15 步導覽（首次啟動 + 重新觀看 + 互動步驟 FAB/feedbackTile）
 2. i18n 國際化 — 約 4h，最耗時，可最後做
 
 ### 完成紀錄
