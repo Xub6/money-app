@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -5,12 +6,34 @@ import '../../core/constants/app_colors.dart';
 import 'tour_controller.dart';
 import 'tour_step.dart';
 
-/// Full-screen guided-tour overlay.  Inserted once into the Navigator's
-/// Overlay so it sits above every route (FAB, BottomAppBar included).
-class TourOverlay extends StatelessWidget {
+class TourOverlay extends StatefulWidget {
   const TourOverlay({super.key});
 
-  // Find the on-screen Rect of a GlobalKey's render object.
+  @override
+  State<TourOverlay> createState() => _TourOverlayState();
+}
+
+class _TourOverlayState extends State<TourOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _glowCtrl;
+  late final Animation<double> _glowAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _glowCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+    _glowAnim = CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _glowCtrl.dispose();
+    super.dispose();
+  }
+
   static Rect? _findRect(GlobalKey key) {
     try {
       final ctx = key.currentContext;
@@ -40,21 +63,22 @@ class TourOverlay extends StatelessWidget {
           type: MaterialType.transparency,
           child: Stack(
             children: [
-              // ── Visual dark overlay with spotlight hole ────────
+              // ── Animated spotlight overlay ─────────────────────
               Positioned.fill(
                 child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: _SpotlightPainter(spotRect),
+                  child: AnimatedBuilder(
+                    animation: _glowAnim,
+                    builder: (_, __) => CustomPaint(
+                      painter: _SpotlightPainter(spotRect, _glowAnim.value),
+                    ),
                   ),
                 ),
               ),
 
               // ── Hit-testing layer ──────────────────────────────
               if (ctrl.isWaitingForInteraction && spotRect != null)
-                // Interactive: block dark areas, leave spotlight open
                 ..._buildInteractiveBlockers(spotRect, screen)
               else
-                // Non-interactive: block entire screen (tooltip card is on top)
                 Positioned.fill(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -81,26 +105,21 @@ class TourOverlay extends StatelessWidget {
     );
   }
 
-  // Build 4 tap-absorbing rectangles around the spotlight so the spotlight
-  // area remains tappable (interactive steps).
   static List<Widget> _buildInteractiveBlockers(Rect spot, Size screen) {
     const minH = 0.0;
     return [
-      // Above
       if (spot.top > 0)
         Positioned(
           top: 0, left: 0, right: 0,
           height: spot.top.clamp(minH, screen.height),
           child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () {}),
         ),
-      // Below
       if (spot.bottom < screen.height)
         Positioned(
           top: spot.bottom.clamp(0, screen.height),
           left: 0, right: 0, bottom: 0,
           child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () {}),
         ),
-      // Left of spotlight
       if (spot.left > 0)
         Positioned(
           top: spot.top.clamp(0, screen.height),
@@ -109,7 +128,6 @@ class TourOverlay extends StatelessWidget {
           height: spot.height,
           child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () {}),
         ),
-      // Right of spotlight
       if (spot.right < screen.width)
         Positioned(
           top: spot.top.clamp(0, screen.height),
@@ -126,32 +144,45 @@ class TourOverlay extends StatelessWidget {
 
 class _SpotlightPainter extends CustomPainter {
   final Rect? spotRect;
-  const _SpotlightPainter(this.spotRect);
+  final double glowValue; // 0.0–1.0 from animation
+
+  const _SpotlightPainter(this.spotRect, this.glowValue);
 
   @override
   void paint(Canvas canvas, Size size) {
     final fullRect = Rect.fromLTWH(0, 0, size.width, size.height);
-    canvas.saveLayer(fullRect, Paint());
 
-    // Dark overlay
+    // Dark overlay with spotlight hole
+    canvas.saveLayer(fullRect, Paint());
     canvas.drawRect(
       fullRect,
-      Paint()..color = Colors.black.withValues(alpha: 0.72),
+      Paint()..color = Colors.black.withValues(alpha: 0.70),
     );
-
-    // Punch out the spotlight
     if (spotRect != null) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(spotRect!, const Radius.circular(16)),
         Paint()..blendMode = BlendMode.clear,
       );
     }
-
     canvas.restore();
+
+    // Animated gold glow ring (drawn after restore so it's visible in hole)
+    if (spotRect != null) {
+      final expand = 2.0 + 5.0 * glowValue;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(spotRect!.inflate(expand), const Radius.circular(20)),
+        Paint()
+          ..color = AppColors.gold.withValues(alpha: 0.20 + 0.40 * glowValue)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5,
+      );
+    }
   }
 
   @override
-  bool shouldRepaint(_SpotlightPainter old) => old.spotRect != spotRect;
+  bool shouldRepaint(_SpotlightPainter old) =>
+      old.spotRect != spotRect || old.glowValue != glowValue;
 }
 
 // ─── Tooltip card ─────────────────────────────────────────────────────────────
@@ -178,24 +209,22 @@ class _TourTooltip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
-    const cardH = 240.0;
     const padding = 20.0;
+    const cardMaxH = 280.0;
 
     double cardTop;
     if (spotRect == null) {
-      cardTop = screen.height / 2 - cardH / 2;
+      cardTop = screen.height / 2 - cardMaxH / 2;
     } else {
-      // Prefer below; fall back to above if not enough room
       final belowTop = spotRect!.bottom + 14;
-      final aboveTop = spotRect!.top - cardH - 14;
+      final aboveTop = spotRect!.top - cardMaxH - 14;
       final showBelow = step.side == TooltipSide.below &&
-          belowTop + cardH + 60 < screen.height;
+          belowTop + cardMaxH + 60 < screen.height;
       cardTop = showBelow ? belowTop : aboveTop;
     }
-    cardTop = cardTop.clamp(padding, screen.height - cardH - padding);
+    cardTop = cardTop.clamp(padding, screen.height - cardMaxH - padding);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subColor = isDark ? Colors.white60 : Colors.black54;
 
@@ -203,138 +232,210 @@ class _TourTooltip extends StatelessWidget {
       top: cardTop,
       left: padding,
       right: padding,
-      child: Card(
-        elevation: 12,
-        shadowColor: Colors.black45,
-        color: cardBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── Header row: step badge + skip button ──────────
-              Row(children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.gold,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Step ${stepIndex + 1} / $totalSteps',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.68)
+                  : Colors.white.withValues(alpha: 0.88),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : Colors.white.withValues(alpha: 0.65),
+                width: 1,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Skip button ────────────────────────────────
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: onSkip,
+                      child: Text(
+                        '跳過導覽',
+                        style: TextStyle(color: subColor, fontSize: 12),
+                      ),
                     ),
                   ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: onSkip,
-                  child: Text(
-                    '跳過導覽',
+
+                  const SizedBox(height: 8),
+
+                  // ── Title ─────────────────────────────────────
+                  Text(
+                    step.title,
                     style: TextStyle(
-                      color: subColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: textColor,
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // ── Body ──────────────────────────────────────
+                  Text(
+                    step.body,
+                    style: TextStyle(
                       fontSize: 13,
+                      color: subColor,
+                      height: 1.55,
                     ),
                   ),
-                ),
-              ]),
 
-              const SizedBox(height: 10),
+                  // ── Interactive hint (left gold stripe) ────────
+                  if (isWaiting && step.hint != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(10),
+                        border: const Border(
+                          left: BorderSide(color: AppColors.gold, width: 3),
+                        ),
+                      ),
+                      child: Text(
+                        step.hint!,
+                        style: const TextStyle(
+                          color: AppColors.gold,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
 
-              // ── Title ─────────────────────────────────────────
-              Text(
-                step.title,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: textColor,
-                ),
+                  const SizedBox(height: 18),
+
+                  // ── Navigation row ────────────────────────────
+                  Row(
+                    children: [
+                      // 上一步
+                      if (stepIndex > 0)
+                        _NavButton(
+                          label: '上一步',
+                          onTap: onPrev,
+                          filled: false,
+                          textColor: subColor,
+                        )
+                      else
+                        const SizedBox(width: 72),
+
+                      const Spacer(),
+
+                      // Dot progress indicator
+                      _DotProgress(
+                          current: stepIndex, total: totalSteps),
+
+                      const Spacer(),
+
+                      // 下一步 / 完成
+                      if (!isWaiting)
+                        _NavButton(
+                          label: isLast ? '完成 ✓' : '下一步',
+                          onTap: onNext,
+                          filled: true,
+                          textColor: Colors.white,
+                        )
+                      else
+                        const SizedBox(width: 72),
+                    ],
+                  ),
+                ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-              const SizedBox(height: 6),
+// ─── Dot progress indicator ───────────────────────────────────────────────────
 
-              // ── Body ──────────────────────────────────────────
-              Text(
-                step.body,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: subColor,
-                  height: 1.55,
+class _DotProgress extends StatelessWidget {
+  final int current, total;
+  const _DotProgress({required this.current, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(total, (i) {
+        final active = i == current;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          width: active ? 14.0 : 5.0,
+          height: 5.0,
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.gold
+                : AppColors.gold.withValues(alpha: 0.28),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+// ─── Navigation button ────────────────────────────────────────────────────────
+
+class _NavButton extends StatelessWidget {
+  final String label;
+  final AsyncCallback onTap;
+  final bool filled;
+  final Color textColor;
+
+  const _NavButton({
+    required this.label,
+    required this.onTap,
+    required this.filled,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color: filled ? AppColors.gold : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: filled
+              ? null
+              : Border.all(
+                  color: textColor.withValues(alpha: 0.4),
+                  width: 1,
                 ),
-              ),
-
-              // ── Interactive hint ───────────────────────────────
-              if (isWaiting && step.hint != null) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.gold.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: AppColors.gold.withValues(alpha: 0.35)),
+          boxShadow: filled
+              ? [
+                  BoxShadow(
+                    color: AppColors.gold.withValues(alpha: 0.45),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                  child: Text(
-                    step.hint!,
-                    style: const TextStyle(
-                      color: AppColors.gold,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 14),
-
-              // ── Navigation buttons ─────────────────────────────
-              Row(children: [
-                if (stepIndex > 0)
-                  OutlinedButton(
-                    onPressed: onPrev,
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: subColor),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      minimumSize: Size.zero,
-                    ),
-                    child: Text(
-                      '上一步',
-                      style: TextStyle(color: subColor, fontSize: 13),
-                    ),
-                  ),
-                const Spacer(),
-                if (!isWaiting)
-                  ElevatedButton(
-                    onPressed: onNext,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.gold,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 22, vertical: 11),
-                      elevation: 0,
-                      minimumSize: Size.zero,
-                    ),
-                    child: Text(
-                      isLast ? '完成 ✓' : '下一步',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 13),
-                    ),
-                  ),
-              ]),
-            ],
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
           ),
         ),
       ),
