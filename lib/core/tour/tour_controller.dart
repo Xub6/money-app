@@ -60,6 +60,7 @@ class TourController extends ChangeNotifier {
     }
     _stepIndex++;
     _waitingForInteraction = false;
+    _hidden = false; // ensure overlay visible on new step
     await _prepareStep();
     notifyListeners();
   }
@@ -68,6 +69,7 @@ class TourController extends ChangeNotifier {
     if (_finishing || !_active || _stepIndex == 0) return;
     _stepIndex--;
     _waitingForInteraction = false;
+    _hidden = false;
     await _prepareStep();
     notifyListeners();
   }

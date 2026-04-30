@@ -267,10 +267,7 @@ class _MainShellState extends State<MainShell> {
         if (isInteractiveFab) {
           ctrl.hide();
           _openAdd().then((_) {
-            if (mounted) {
-              ctrl.unhide();
-              ctrl.onInteractionComplete();
-            }
+            if (mounted) ctrl.onInteractionComplete();
           });
         } else {
           _openAdd();
@@ -1627,10 +1624,7 @@ class _ManagePageState extends State<ManagePage> {
                     );
                     if (isFeedbackStep) {
                       future.then((_) {
-                        if (context.mounted) {
-                          ctrl.unhide();
-                          ctrl.onInteractionComplete();
-                        }
+                        if (context.mounted) ctrl.onInteractionComplete();
                       });
                     }
                   },

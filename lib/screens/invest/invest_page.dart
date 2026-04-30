@@ -166,10 +166,11 @@ class _InvestPageState extends State<InvestPage> {
                     style:
                         TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
                 const Spacer(),
-                if (s.holdings.isNotEmpty)
-                  GestureDetector(
+                Opacity(
+                  opacity: s.holdings.isNotEmpty ? 1.0 : 0.0,
+                  child: GestureDetector(
                     key: TourKeys.investRefresh,
-                    onTap: _refreshAllPrices,
+                    onTap: s.holdings.isNotEmpty ? _refreshAllPrices : null,
                     child: Container(
                       width: 36,
                       height: 36,
@@ -188,6 +189,7 @@ class _InvestPageState extends State<InvestPage> {
                               color: _kGold, size: 20),
                     ),
                   ),
+                ),
               ]),
             ),
           ),
