@@ -7,7 +7,7 @@
 ---
 
 ## 目前狀態：待機中 ✅
-最後完成任務：Feedback 功能 + flutter analyze warning 全清（2026-04-30）✅
+最後完成任務：Feedback 功能端對端驗收通過（n8n webhook + 信件收到）（2026-04-30）✅
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
@@ -91,7 +91,7 @@
 - [x] 賬戶管理功能：淨資產總覽、儲蓄/信用分類、多貨幣支援、左滑刪除 undo、ManagePage 入口卡片
 - [x] 復原提示框加 X 關閉鈕，5 秒後自動消失（明細/投資/賬戶三處統一）
 - [x] SQLite 切換為主要儲存（v2 schema + total_periods + fallback 機制）
-- [x] Feedback 功能（n8n webhook，multipart，類型/描述/email/附圖，ManagePage 入口）
+- [x] Feedback 功能（n8n webhook，JSON POST，類型/描述/email/附圖，ManagePage 入口，端對端驗收通過 2026-04-30）
 - [x] flutter analyze 0 warning（13 個 warning 全清）
 
 ### APK 安裝方式
