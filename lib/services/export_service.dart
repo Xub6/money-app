@@ -53,7 +53,9 @@ class ExportService {
           formatDate(expense.date),
           expense.note,
           formatDate(expense.createdAt, pattern: 'yyyy/MM/dd HH:mm'),
-          expense.editedAt != null ? formatDate(expense.editedAt!, pattern: 'yyyy/MM/dd HH:mm') : '',
+          expense.editedAt != null
+              ? formatDate(expense.editedAt!, pattern: 'yyyy/MM/dd HH:mm')
+              : '',
         ]);
       }
 
@@ -65,7 +67,8 @@ class ExportService {
 
       // Save to file
       final exportDir = await _getExportDirectory();
-      final timestamp = DateTime.now().toString().replaceAll(':', '').substring(0, 15);
+      final timestamp =
+          DateTime.now().toString().replaceAll(':', '').substring(0, 15);
       final filename = 'expenses_$timestamp.csv';
       final file = File('${exportDir.path}/$filename');
       await file.writeAsString(csv, encoding: utf8);
@@ -108,12 +111,14 @@ class ExportService {
       }
 
       rows.add([]);
-      rows.add(['月計', '', fixedItems.fold(0, (sum, i) => sum + i.amount) / 100]);
+      rows.add(
+          ['月計', '', fixedItems.fold(0, (sum, i) => sum + i.amount) / 100]);
 
       final csv = const ListToCsvConverter().convert(rows);
 
       final exportDir = await _getExportDirectory();
-      final timestamp = DateTime.now().toString().replaceAll(':', '').substring(0, 15);
+      final timestamp =
+          DateTime.now().toString().replaceAll(':', '').substring(0, 15);
       final filename = 'fixed_items_$timestamp.csv';
       final file = File('${exportDir.path}/$filename');
       await file.writeAsString(csv, encoding: utf8);
@@ -140,9 +145,11 @@ class ExportService {
       AppLogger.info('Generating full report...');
 
       // Calculate statistics
-      final monthExpenses = expenses.where(
-        (e) => e.date.year == month.year && e.date.month == month.month,
-      ).toList();
+      final monthExpenses = expenses
+          .where(
+            (e) => e.date.year == month.year && e.date.month == month.month,
+          )
+          .toList();
 
       final totalExpenses = monthExpenses.fold<int>(0, (s, e) => s + e.amount);
       final totalFixed = fixedItems.fold<int>(0, (s, i) => s + i.amount);
@@ -199,13 +206,16 @@ class ExportService {
       }
 
       rows.add([]);
-      rows.add(['導出時間', DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now())]);
+      rows.add(
+          ['導出時間', DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now())]);
 
       final csv = const ListToCsvConverter().convert(rows);
 
       final exportDir = await _getExportDirectory();
-      final timestamp = DateTime.now().toString().replaceAll(':', '').substring(0, 15);
-      final filename = 'report_${DateFormat('yyyyMM').format(month)}_$timestamp.csv';
+      final timestamp =
+          DateTime.now().toString().replaceAll(':', '').substring(0, 15);
+      final filename =
+          'report_${DateFormat('yyyyMM').format(month)}_$timestamp.csv';
       final file = File('${exportDir.path}/$filename');
       await file.writeAsString(csv, encoding: utf8);
 
@@ -235,7 +245,8 @@ class ExportService {
 
       final monthLabel = DateFormat('yyyy年MM月').format(month);
       final monthExpenses = expenses
-          .where((e) => e.date.year == month.year && e.date.month == month.month)
+          .where(
+              (e) => e.date.year == month.year && e.date.month == month.month)
           .toList();
       final totalExp = monthExpenses.fold<int>(0, (s, e) => s + e.amount);
       final totalFixed = fixedItems.fold<int>(0, (s, i) => s + i.amount);
@@ -248,22 +259,26 @@ class ExportService {
       final summary = workbook['月度統計'];
       void addSummaryRow(String label, String value) =>
           summary.appendRow([label, value]);
-      summary.cell(CellIndex.indexByString('A1')).value = '錢錢管家 — $monthLabel 月度統計';
-      summary.cell(CellIndex.indexByString('A1')).cellStyle = CellStyle(bold: true);
+      summary.cell(CellIndex.indexByString('A1')).value =
+          '錢錢管家 — $monthLabel 月度統計';
+      summary.cell(CellIndex.indexByString('A1')).cellStyle =
+          CellStyle(bold: true);
       summary.appendRow([]);
       addSummaryRow('日常支出', formatCurrency(totalExp));
       addSummaryRow('固定開銷', formatCurrency(totalFixed));
       addSummaryRow('合計支出', formatCurrency(total));
       addSummaryRow('月預算', formatCurrency(budget));
       addSummaryRow('剩餘預算', formatCurrency(remaining));
-      addSummaryRow('預算使用率', budget == 0 ? '—' : '${(total / budget * 100).toStringAsFixed(1)}%');
+      addSummaryRow('預算使用率',
+          budget == 0 ? '—' : '${(total / budget * 100).toStringAsFixed(1)}%');
       summary.appendRow([]);
       summary.appendRow(['分類統計']);
       final catMap = <String, int>{};
       for (final e in monthExpenses) {
         catMap[e.category] = (catMap[e.category] ?? 0) + e.amount;
       }
-      for (final entry in (catMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value)))) {
+      for (final entry in (catMap.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value)))) {
         summary.appendRow([entry.key, formatCurrency(entry.value)]);
       }
 
@@ -271,7 +286,8 @@ class ExportService {
       final expSheet = workbook['支出明細'];
       final expHeaders = ['項目名稱', '分類', '金額', '日期', '備註'];
       for (var i = 0; i < expHeaders.length; i++) {
-        final cell = expSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+        final cell = expSheet
+            .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
         cell.value = expHeaders[i];
         cell.cellStyle = headerStyle;
       }
@@ -291,7 +307,8 @@ class ExportService {
       final fixedSheet = workbook['固定開銷'];
       final fixedHeaders = ['項目名稱', '分類', '金額', '周期', '開始日期', '狀態'];
       for (var i = 0; i < fixedHeaders.length; i++) {
-        final cell = fixedSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+        final cell = fixedSheet
+            .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
         cell.value = fixedHeaders[i];
         cell.cellStyle = headerStyle;
       }
@@ -316,8 +333,10 @@ class ExportService {
       }
 
       final exportDir = await _getExportDirectory();
-      final timestamp = DateTime.now().toString().replaceAll(':', '').substring(0, 15);
-      final filename = 'report_${DateFormat('yyyyMM').format(month)}_$timestamp.xlsx';
+      final timestamp =
+          DateTime.now().toString().replaceAll(':', '').substring(0, 15);
+      final filename =
+          'report_${DateFormat('yyyyMM').format(month)}_$timestamp.xlsx';
       final file = File('${exportDir.path}/$filename');
       await file.writeAsBytes(fileBytes);
 
@@ -334,7 +353,8 @@ class ExportService {
     try {
       final exportDir = await _getExportDirectory();
       final files = await exportDir.list().toList();
-      files.sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+      files.sort(
+          (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
       return files;
     } catch (e) {
       AppLogger.error('Failed to get exported files', error: e);

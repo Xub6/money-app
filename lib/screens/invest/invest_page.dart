@@ -43,11 +43,13 @@ class _InvestPageState extends State<InvestPage> {
     if (_refreshing || s.holdings.isEmpty) return;
     setState(() => _refreshing = true);
 
-    final items = s.holdings.map((h) => (
-      id: h.id,
-      code: h.code,
-      isTwd: h.currency == StockCurrency.twd,
-    )).toList();
+    final items = s.holdings
+        .map((h) => (
+              id: h.id,
+              code: h.code,
+              isTwd: h.currency == StockCurrency.twd,
+            ))
+        .toList();
 
     final results = await Future.wait([
       StockService.fetchBatchPrices(items),
@@ -78,14 +80,6 @@ class _InvestPageState extends State<InvestPage> {
     }
   }
 
-  Future<void> _openAdd() async {
-    final result = await Navigator.push<StockHolding>(
-      context,
-      MaterialPageRoute(builder: (_) => const AddEditInvestmentPage()),
-    );
-    if (result != null && mounted) s.addHolding(result);
-  }
-
   Future<void> _openEdit(StockHolding h) async {
     final result = await Navigator.push<StockHolding>(
       context,
@@ -99,16 +93,19 @@ class _InvestPageState extends State<InvestPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('設定匯率', style: TextStyle(fontWeight: FontWeight.w800)),
+        title:
+            const Text('設定匯率', style: TextStyle(fontWeight: FontWeight.w800)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: TextField(
           controller: ctrl,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'USD/TWD', hintText: '32.0'),
+          decoration:
+              const InputDecoration(labelText: 'USD/TWD', hintText: '32.0'),
           autofocus: true,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: const Text('取消')),
           TextButton(
             onPressed: () {
               final rate = double.tryParse(ctrl.text.trim());
@@ -117,7 +114,8 @@ class _InvestPageState extends State<InvestPage> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('確認', style: TextStyle(color: _kGold, fontWeight: FontWeight.w700)),
+            child: const Text('確認',
+                style: TextStyle(color: _kGold, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -140,7 +138,8 @@ class _InvestPageState extends State<InvestPage> {
         onDelete: () {
           Navigator.pop(context);
           s.deleteHolding(h.id);
-          ErrorHandler.showUndoSnack(context, '已刪除 ${h.code}', () => s.addHolding(h));
+          ErrorHandler.showUndoSnack(
+              context, '已刪除 ${h.code}', () => s.addHolding(h));
         },
       ),
     );
@@ -162,22 +161,29 @@ class _InvestPageState extends State<InvestPage> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 16, 14, 0),
               child: Row(children: [
-                const Text('投資', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+                const Text('投資',
+                    style:
+                        TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
                 const Spacer(),
                 if (s.holdings.isNotEmpty)
                   GestureDetector(
                     onTap: _refreshAllPrices,
                     child: Container(
-                      width: 36, height: 36,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
                         shape: BoxShape.circle,
                       ),
                       child: _refreshing
                           ? const Padding(
                               padding: EdgeInsets.all(8),
-                              child: CircularProgressIndicator(strokeWidth: 2, color: _kGold))
-                          : const Icon(Icons.refresh_rounded, color: _kGold, size: 20),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: _kGold))
+                          : const Icon(Icons.refresh_rounded,
+                              color: _kGold, size: 20),
                     ),
                   ),
               ]),
@@ -201,7 +207,9 @@ class _InvestPageState extends State<InvestPage> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 20, 18, 12),
               child: Row(children: [
-                const Text('持股明細', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                const Text('持股明細',
+                    style:
+                        TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
                 const Spacer(),
                 Text('${holdings.length} 檔',
                     style: const TextStyle(color: Colors.grey, fontSize: 13)),
@@ -220,9 +228,11 @@ class _InvestPageState extends State<InvestPage> {
                     borderRadius: BorderRadius.circular(22),
                   ),
                   child: Column(children: [
-                    Icon(Icons.show_chart_rounded, size: 48, color: Colors.grey.shade300),
+                    Icon(Icons.show_chart_rounded,
+                        size: 48, color: Colors.grey.shade300),
                     const SizedBox(height: 12),
-                    const Text('還沒有持股', style: TextStyle(color: Colors.grey, fontSize: 15)),
+                    const Text('還沒有持股',
+                        style: TextStyle(color: Colors.grey, fontSize: 15)),
                     const SizedBox(height: 6),
                     const Text('點右上角 + 新增第一筆投資',
                         style: TextStyle(color: Colors.grey, fontSize: 13)),
@@ -232,7 +242,7 @@ class _InvestPageState extends State<InvestPage> {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 100),
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, i) => Padding(
@@ -247,6 +257,19 @@ class _InvestPageState extends State<InvestPage> {
                 ),
               ),
             ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 100),
+              child: Text(
+                '投資功能僅供個人紀錄與資訊整理使用，不構成投資建議。投資有風險，請自行判斷。',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -283,7 +306,10 @@ class _PortfolioSummaryCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text('投資總覽',
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600)),
           const Spacer(),
           GestureDetector(
             onTap: onEditRate,
@@ -298,7 +324,9 @@ class _PortfolioSummaryCard extends StatelessWidget {
                     style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                 Text(usdTwdRate.toStringAsFixed(2),
                     style: TextStyle(
-                        color: cs.onSurface, fontWeight: FontWeight.w700, fontSize: 12)),
+                        color: cs.onSurface,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12)),
                 const SizedBox(width: 4),
                 Icon(Icons.edit_outlined, color: cs.onSurfaceVariant, size: 12),
               ]),
@@ -306,42 +334,49 @@ class _PortfolioSummaryCard extends StatelessWidget {
           ),
         ]),
         const SizedBox(height: 14),
-
         Text('總現值', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
         const SizedBox(height: 4),
         Text('NT\$ ${_fmt(totalValue)}',
             style: TextStyle(
-                color: cs.onSurface, fontSize: 28, fontWeight: FontWeight.w800)),
+                color: cs.onSurface,
+                fontSize: 28,
+                fontWeight: FontWeight.w800)),
         const SizedBox(height: 16),
-
         Divider(color: cs.outlineVariant, height: 1),
         const SizedBox(height: 16),
-
         Row(children: [
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('總成本',
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               const SizedBox(height: 4),
               Text('NT\$ ${_fmt(totalCost)}',
                   style: TextStyle(
-                      color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.w700)),
+                      color: cs.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700)),
             ]),
           ),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Text('總損益',
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               const SizedBox(height: 4),
               Text(
                 '${isGain ? '+' : ''}NT\$ ${_fmt(totalProfit)}',
                 style: TextStyle(
-                    color: profitColor, fontSize: 16, fontWeight: FontWeight.w700),
+                    color: profitColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700),
               ),
               Text(
                 '${isGain ? '+' : ''}${profitPct.toStringAsFixed(2)}%',
                 style: TextStyle(
-                    color: profitColor, fontSize: 13, fontWeight: FontWeight.w600),
+                    color: profitColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600),
               ),
             ]),
           ),
@@ -357,7 +392,8 @@ class _HoldingCard extends StatelessWidget {
   final double usdTwd;
   final VoidCallback onTap;
 
-  const _HoldingCard({required this.holding, required this.usdTwd, required this.onTap});
+  const _HoldingCard(
+      {required this.holding, required this.usdTwd, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -380,17 +416,20 @@ class _HoldingCard extends StatelessWidget {
         child: Row(children: [
           // 左：名稱 + 代碼 + 現價
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Flexible(
                   child: Text(h.name.isNotEmpty ? h.name : h.code,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w800),
                       overflow: TextOverflow.ellipsis),
                 ),
                 if (isUsd) ...[
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1565C0).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
@@ -407,18 +446,22 @@ class _HoldingCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 1, bottom: 2),
                   child: Text(h.code,
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                      style:
+                          TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                 ),
               const SizedBox(height: 2),
               if (h.currentPrice > 0) ...[
                 if (isUsd) ...[
                   Text('\$ ${_fmtPrice(h.currentPrice)} USD',
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                      style:
+                          TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                   Text('NT\$ ${_fmt(h.currentPrice * usdTwd)}',
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                      style:
+                          TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                 ] else
                   Text('NT\$ ${_fmtPrice(h.currentPrice)}',
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                      style:
+                          TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               ] else
                 Text('尚無現價',
                     style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
@@ -430,13 +473,17 @@ class _HoldingCard extends StatelessWidget {
             Text(
               '${isGain ? '+' : ''}NT\$ ${_fmt(profit)}',
               style: TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w700, color: profitColor),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: profitColor),
             ),
             const SizedBox(height: 2),
             Text(
               '(${isGain ? '+' : ''}${pct.toStringAsFixed(1)}%)',
               style: TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600, color: profitColor),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: profitColor),
             ),
           ]),
         ]),
@@ -477,33 +524,39 @@ class _HoldingDetailSheet extends StatelessWidget {
           children: [
             Row(children: [
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Flexible(
-                      child: Text(h.name.isNotEmpty ? h.name : h.code,
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-                          overflow: TextOverflow.ellipsis),
-                    ),
-                    if (isUsd) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1565C0).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Flexible(
+                          child: Text(h.name.isNotEmpty ? h.name : h.code,
+                              style: const TextStyle(
+                                  fontSize: 22, fontWeight: FontWeight.w800),
+                              overflow: TextOverflow.ellipsis),
                         ),
-                        child: const Text('USD',
+                        if (isUsd) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1565C0)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text('USD',
+                                style: TextStyle(
+                                    color: Color(0xFF1565C0),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700)),
+                          ),
+                        ],
+                      ]),
+                      if (h.name.isNotEmpty)
+                        Text(h.code,
                             style: TextStyle(
-                                color: Color(0xFF1565C0),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700)),
-                      ),
-                    ],
-                  ]),
-                  if (h.name.isNotEmpty)
-                    Text(h.code,
-                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-                ]),
+                                color: cs.onSurfaceVariant, fontSize: 13)),
+                    ]),
               ),
               IconButton(
                   icon: const Icon(Icons.edit_outlined, color: _kGold),
@@ -528,10 +581,13 @@ class _HoldingDetailSheet extends StatelessWidget {
               '預估損益',
               '${isGain ? '+' : ''}NT\$ ${_fmt(profit)}  (${isGain ? '+' : ''}${pct.toStringAsFixed(2)}%)',
               valueColor: profitColor,
-              subtitle: isUsd ? null : '已扣手續費 ${(h.feeRate * 100).toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '')}%＋交易稅 0.3%',
+              subtitle: isUsd
+                  ? null
+                  : '已扣手續費 ${(h.feeRate * 100).toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '')}%＋交易稅 0.3%',
               cs: cs,
             ),
-            _DetailRow('買入日期', DateFormat('yyyy/MM/dd').format(h.purchaseDate), cs: cs),
+            _DetailRow('買入日期', DateFormat('yyyy/MM/dd').format(h.purchaseDate),
+                cs: cs),
             if (h.buyReason.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text('買入理由',
@@ -562,7 +618,8 @@ class _DetailRow extends StatelessWidget {
   final String? subtitle;
   final Color? valueColor;
   final ColorScheme cs;
-  const _DetailRow(this.label, this.value, {this.valueColor, this.subtitle, required this.cs});
+  const _DetailRow(this.label, this.value,
+      {this.valueColor, this.subtitle, required this.cs});
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -580,7 +637,8 @@ class _DetailRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(value,
                   style: TextStyle(
                       fontSize: 14,

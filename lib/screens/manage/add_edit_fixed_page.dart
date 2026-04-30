@@ -26,7 +26,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
     super.initState();
     final e = widget.existing;
     _titleCtrl = TextEditingController(text: e?.title ?? '');
-    _amtCtrl = TextEditingController(text: e != null ? e.amount.toString() : '');
+    _amtCtrl =
+        TextEditingController(text: e != null ? e.amount.toString() : '');
     _notesCtrl = TextEditingController(text: e?.notes ?? '');
 
     // Normalise to first of month
@@ -69,7 +70,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
     final now = DateTime.now();
     final yearCtrl = FixedExtentScrollController(
         initialItem: selectedYear - (now.year - 10));
-    final monthCtrl = FixedExtentScrollController(initialItem: selectedMonth - 1);
+    final monthCtrl =
+        FixedExtentScrollController(initialItem: selectedMonth - 1);
 
     await showModalBottomSheet(
       context: context,
@@ -85,7 +87,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Row(children: [
                   const Text('選擇月份',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   const Spacer(),
                   TextButton(
                     onPressed: () {
@@ -96,7 +99,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                     },
                     child: const Text('確定',
                         style: TextStyle(
-                            color: AppColors.gold, fontWeight: FontWeight.w700)),
+                            color: AppColors.gold,
+                            fontWeight: FontWeight.w700)),
                   ),
                 ]),
               ),
@@ -223,15 +227,20 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (topBorder)
-          Divider(height: 1, thickness: 1,
+          Divider(
+              height: 1,
+              thickness: 1,
               color: cs.outlineVariant.withValues(alpha: 0.35),
-              indent: 16, endIndent: 16),
+              indent: 16,
+              endIndent: 16),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           child: Row(children: [
             Text(label,
                 style: TextStyle(
-                    fontSize: 15, color: cs.onSurface, fontWeight: FontWeight.w500)),
+                    fontSize: 15,
+                    color: cs.onSurface,
+                    fontWeight: FontWeight.w500)),
             const SizedBox(width: 12),
             Expanded(child: child),
           ]),
@@ -306,8 +315,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                     hintText: '0',
                     hintStyle: TextStyle(color: cs.onSurfaceVariant),
                     prefixText: 'NT\$ ',
-                    prefixStyle: TextStyle(
-                        color: cs.onSurfaceVariant, fontSize: 15),
+                    prefixStyle:
+                        TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
@@ -416,8 +425,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                     final now = DateTime.now();
                     final remaining =
                         widget.existing!.remainingPeriods(now) ?? 0;
-                    final current =
-                        widget.existing!.currentPeriod(now);
+                    final current = widget.existing!.currentPeriod(now);
                     final total = widget.existing!.totalPeriods!;
                     final done = total - remaining;
                     return _row(
@@ -426,8 +434,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                       child: Text(
                         '第 $current 期・已繳 $done 期・剩 $remaining 期',
                         textAlign: TextAlign.end,
-                        style: TextStyle(
-                            fontSize: 13, color: cs.onSurfaceVariant),
+                        style:
+                            TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
                       ),
                     );
                   }),

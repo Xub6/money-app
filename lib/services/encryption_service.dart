@@ -115,8 +115,7 @@ class EncryptionService {
       });
 
   /// Clear all secure storage (use with caution — also removes enc keys).
-  Future<void> clearSecure() =>
-      _storage.deleteAll().catchError((e) {
+  Future<void> clearSecure() => _storage.deleteAll().catchError((e) {
         AppLogger.error('clearSecure failed', error: e);
       });
 

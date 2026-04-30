@@ -167,7 +167,8 @@ class _UndoSnackContentState extends State<_UndoSnackContent>
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text('復原', style: TextStyle(fontWeight: FontWeight.w700)),
+              child: const Text('復原',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
             ),
             const SizedBox(width: 4),
             GestureDetector(

@@ -8,7 +8,8 @@ class AppLogger {
   static final _buffer = <String>[];
   static const int _maxLogSize = 1000; // Keep last 1000 logs
 
-  static void _addLog(String level, String message, {dynamic error, StackTrace? stackTrace}) {
+  static void _addLog(String level, String message,
+      {dynamic error, StackTrace? stackTrace}) {
     final timestamp = DateTime.now().toString();
     final logMessage = '[$timestamp][$level] $message';
 

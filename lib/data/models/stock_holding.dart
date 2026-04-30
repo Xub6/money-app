@@ -76,7 +76,8 @@ class StockHolding {
         name: j['name'] as String? ?? '',
         shares: (j['shares'] as num).toDouble(),
         totalCost: (j['totalCost'] as num).toDouble(),
-        currency: j['currency'] == 'usd' ? StockCurrency.usd : StockCurrency.twd,
+        currency:
+            j['currency'] == 'usd' ? StockCurrency.usd : StockCurrency.twd,
         purchaseDate: DateTime.parse(j['purchaseDate'] as String),
         currentPrice: (j['currentPrice'] as num?)?.toDouble() ?? 0,
         buyReason: j['buyReason'] as String? ?? '',

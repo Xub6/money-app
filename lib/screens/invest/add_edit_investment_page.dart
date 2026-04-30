@@ -17,10 +17,10 @@ class _BrokerPreset {
 
 // 台股券商（手續費上限 0.1425%，加交易稅 0.3%）
 const _twdBrokers = [
-  _BrokerPreset('元大證券', 0.000855),   // e-Leader 6折
-  _BrokerPreset('富邦證券', 0.0007),     // e點通
+  _BrokerPreset('元大證券', 0.000855), // e-Leader 6折
+  _BrokerPreset('富邦證券', 0.0007), // e點通
   _BrokerPreset('永豐金證券', 0.001425), // iSmartStock 標準
-  _BrokerPreset('凱基證券', 0.0007),     // 行動達人
+  _BrokerPreset('凱基證券', 0.0007), // 行動達人
   _BrokerPreset('國泰證券', 0.0007),
   _BrokerPreset('中信證券', 0.0007),
   _BrokerPreset('群益證券', 0.0007),
@@ -33,20 +33,23 @@ const _twdBrokers = [
 
 // 美股券商（無交易稅）
 const _usdBrokers = [
-  _BrokerPreset('複委託 標準', 0.005),           // 各台灣券商複委託標準
+  _BrokerPreset('複委託 標準', 0.005), // 各台灣券商複委託標準
   _BrokerPreset('元大複委託', 0.005),
   _BrokerPreset('富邦複委託', 0.005),
   _BrokerPreset('永豐複委託', 0.005),
   _BrokerPreset('凱基複委託', 0.005),
-  _BrokerPreset('第一證券 Firstrade', 0.0),       // 零手續費
-  _BrokerPreset('嘉信理財 Schwab', 0.0),          // 零手續費
-  _BrokerPreset('富途牛牛 Futu', 0.0008),         // ~0.08%
-  _BrokerPreset('Interactive Brokers', 0.0008),   // ~0.08%
+  _BrokerPreset('第一證券 Firstrade', 0.0), // 零手續費
+  _BrokerPreset('嘉信理財 Schwab', 0.0), // 零手續費
+  _BrokerPreset('富途牛牛 Futu', 0.0008), // ~0.08%
+  _BrokerPreset('Interactive Brokers', 0.0008), // ~0.08%
 ];
 
 String _fmtRate(double r) {
   if (r == 0) return '0';
-  return (r * 100).toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+  return (r * 100)
+      .toStringAsFixed(4)
+      .replaceAll(RegExp(r'0+$'), '')
+      .replaceAll(RegExp(r'\.$'), '');
 }
 
 class AddEditInvestmentPage extends StatefulWidget {
@@ -81,8 +84,10 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
     super.initState();
     final e = widget.existing;
     _codeCtrl = TextEditingController(text: e?.code ?? '');
-    _sharesCtrl = TextEditingController(text: e != null ? e.shares.toString() : '');
-    _costCtrl = TextEditingController(text: e != null ? e.totalCost.toStringAsFixed(0) : '');
+    _sharesCtrl =
+        TextEditingController(text: e != null ? e.shares.toString() : '');
+    _costCtrl = TextEditingController(
+        text: e != null ? e.totalCost.toStringAsFixed(0) : '');
     _priceCtrl = TextEditingController(
         text: e != null && e.currentPrice > 0 ? e.currentPrice.toString() : '');
     _reasonCtrl = TextEditingController(text: e?.buyReason ?? '');
@@ -229,7 +234,9 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
             onPressed: _save,
             child: Text(isEdit ? '更新' : '儲存',
                 style: const TextStyle(
-                    color: AppColors.gold, fontWeight: FontWeight.w800, fontSize: 16)),
+                    color: AppColors.gold,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16)),
           ),
         ],
       ),
@@ -237,275 +244,348 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
         onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(18, 8, 18, 40),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // ── 幣別 ──
             _SectionHeader('選擇市場'),
-            _GroupCard(cs: cs, child: Row(children: [
-              _CurrencyChip(
-                label: '🇹🇼  台股',
-                selected: _isTwd,
-                onTap: () => setState(() {
-                  _currency = StockCurrency.twd;
-                  _suggestions = [];
-                  _fetchedName = null;
-                  _fetchError = null;
-                }),
+            _GroupCard(
                 cs: cs,
-              ),
-              const SizedBox(width: 10),
-              _CurrencyChip(
-                label: '🇺🇸  美股',
-                selected: !_isTwd,
-                onTap: () => setState(() {
-                  _currency = StockCurrency.usd;
-                  _suggestions = [];
-                  _fetchedName = null;
-                  _fetchError = null;
-                }),
-                cs: cs,
-              ),
-            ])),
+                child: Row(children: [
+                  _CurrencyChip(
+                    label: '🇹🇼  台股',
+                    selected: _isTwd,
+                    onTap: () => setState(() {
+                      _currency = StockCurrency.twd;
+                      _suggestions = [];
+                      _fetchedName = null;
+                      _fetchError = null;
+                    }),
+                    cs: cs,
+                  ),
+                  const SizedBox(width: 10),
+                  _CurrencyChip(
+                    label: '🇺🇸  美股',
+                    selected: !_isTwd,
+                    onTap: () => setState(() {
+                      _currency = StockCurrency.usd;
+                      _suggestions = [];
+                      _fetchedName = null;
+                      _fetchError = null;
+                    }),
+                    cs: cs,
+                  ),
+                ])),
             const SizedBox(height: 20),
 
             // ── 股票代碼 + 搜尋 ──
             _SectionHeader(_isTwd ? '股票代碼（例：2330、0050）' : '股票代碼（例：AAPL、TSLA）'),
             _GroupCard(
               cs: cs,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _codeCtrl,
-                      textCapitalization: _isTwd ? TextCapitalization.none : TextCapitalization.characters,
-                      style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface, fontSize: 18),
-                      onChanged: _searchSuggestions,
-                      onSubmitted: (_) => _fetchPrice(),
-                      decoration: InputDecoration(
-                        hintText: _isTwd ? '輸入代碼或名稱' : 'Enter symbol',
-                        hintStyle: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w400, fontSize: 15),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  _fetching
-                      ? const SizedBox(
-                          width: 36, height: 36,
-                          child: Padding(
-                            padding: EdgeInsets.all(8),
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.gold),
-                          ))
-                      : GestureDetector(
-                          onTap: _fetchPrice,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.gold,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Text('查詢現價',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _codeCtrl,
+                          textCapitalization: _isTwd
+                              ? TextCapitalization.none
+                              : TextCapitalization.characters,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: cs.onSurface,
+                              fontSize: 18),
+                          onChanged: _searchSuggestions,
+                          onSubmitted: (_) => _fetchPrice(),
+                          decoration: InputDecoration(
+                            hintText: _isTwd ? '輸入代碼或名稱' : 'Enter symbol',
+                            hintStyle: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w400,
+                                fontSize: 15),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 14),
                           ),
                         ),
-                ]),
-
-                // 查詢結果
-                if (_fetchedName != null)
-                  Container(
-                    margin: const EdgeInsets.only(top: 6, bottom: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.gold.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(children: [
-                      const Icon(Icons.check_circle_rounded, color: AppColors.gold, size: 16),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(_fetchedName!,
-                            style: const TextStyle(
-                                color: AppColors.gold, fontWeight: FontWeight.w700, fontSize: 13)),
                       ),
-                      if (_priceCtrl.text.isNotEmpty)
-                        Text(
-                          _isTwd
-                              ? 'NT\$ ${_priceCtrl.text}'
-                              : 'US\$ ${_priceCtrl.text}',
-                          style: const TextStyle(
-                              color: AppColors.gold, fontWeight: FontWeight.w800, fontSize: 14),
-                        ),
-                    ]),
-                  ),
-
-                if (_fetchError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6, bottom: 4),
-                    child: Row(children: [
-                      const Icon(Icons.error_outline, color: AppColors.error, size: 15),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(_fetchError!,
-                            style: const TextStyle(color: AppColors.error, fontSize: 12)),
-                      ),
-                    ]),
-                  ),
-
-                // 搜尋建議
-                if (_suggestions.isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: _suggestions.map((r) => InkWell(
-                        onTap: () => _selectSuggestion(r),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          child: Row(children: [
-                            Text(r.symbol,
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                    color: cs.onSurface)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(r.name,
-                                  style: TextStyle(
-                                      fontSize: 12, color: cs.onSurfaceVariant),
-                                  overflow: TextOverflow.ellipsis),
+                      const SizedBox(width: 8),
+                      _fetching
+                          ? const SizedBox(
+                              width: 36,
+                              height: 36,
+                              child: Padding(
+                                padding: EdgeInsets.all(8),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: AppColors.gold),
+                              ))
+                          : GestureDetector(
+                              onTap: _fetchPrice,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.gold,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text('查詢現價',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13)),
+                              ),
                             ),
-                            Text(r.exchange,
-                                style: TextStyle(
-                                    fontSize: 11, color: cs.onSurfaceVariant)),
-                          ]),
+                    ]),
+
+                    // 查詢結果
+                    if (_fetchedName != null)
+                      Container(
+                        margin: const EdgeInsets.only(top: 6, bottom: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                      )).toList(),
-                    ),
-                  ),
-                if (_loadingSuggestions)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Center(
-                        child: SizedBox(
-                            width: 18, height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.gold))),
-                  ),
-              ]),
+                        child: Row(children: [
+                          const Icon(Icons.check_circle_rounded,
+                              color: AppColors.gold, size: 16),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(_fetchedName!,
+                                style: const TextStyle(
+                                    color: AppColors.gold,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13)),
+                          ),
+                          if (_priceCtrl.text.isNotEmpty)
+                            Text(
+                              _isTwd
+                                  ? 'NT\$ ${_priceCtrl.text}'
+                                  : 'US\$ ${_priceCtrl.text}',
+                              style: const TextStyle(
+                                  color: AppColors.gold,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14),
+                            ),
+                        ]),
+                      ),
+
+                    if (_fetchError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6, bottom: 4),
+                        child: Row(children: [
+                          const Icon(Icons.error_outline,
+                              color: AppColors.error, size: 15),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(_fetchError!,
+                                style: const TextStyle(
+                                    color: AppColors.error, fontSize: 12)),
+                          ),
+                        ]),
+                      ),
+
+                    // 搜尋建議
+                    if (_suggestions.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: _suggestions
+                              .map((r) => InkWell(
+                                    onTap: () => _selectSuggestion(r),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 12),
+                                      child: Row(children: [
+                                        Text(r.symbol,
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 15,
+                                                color: cs.onSurface)),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(r.name,
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: cs.onSurfaceVariant),
+                                              overflow: TextOverflow.ellipsis),
+                                        ),
+                                        Text(r.exchange,
+                                            style: TextStyle(
+                                                fontSize: 11,
+                                                color: cs.onSurfaceVariant)),
+                                      ]),
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                    if (_loadingSuggestions)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Center(
+                            child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: AppColors.gold))),
+                      ),
+                  ]),
             ),
             const SizedBox(height: 20),
 
             // ── 券商 & 手續費 ──
             _SectionHeader(_isTwd ? '券商與手續費（台股）' : '券商與手續費（美股）'),
-            _GroupCard(cs: cs, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              SizedBox(
-                height: 52,
-                child: Row(children: [
-                  Text('券商', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: cs.onSurface)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _brokerCtrl,
-                      textAlign: TextAlign.right,
-                      style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface),
-                      decoration: InputDecoration(
-                        hintText: _isTwd ? '輸入券商名稱' : 'Enter broker',
-                        hintStyle: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w400, fontSize: 14),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      onChanged: (q) {
-                        final list = _isTwd ? _twdBrokers : _usdBrokers;
-                        setState(() {
-                          _brokerSuggestions = q.isEmpty
-                              ? list
-                              : list.where((b) => b.name.contains(q)).toList();
-                        });
-                      },
-                      onTap: () {
-                        setState(() {
-                          _brokerSuggestions = _isTwd ? _twdBrokers : _usdBrokers;
-                        });
-                      },
-                    ),
-                  ),
-                ]),
-              ),
-              if (_brokerSuggestions.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: _brokerSuggestions.map((b) => InkWell(
-                      onTap: () {
-                        setState(() {
-                          _brokerCtrl.text = b.name;
-                          _feeRateCtrl.text = _fmtRate(b.feeRate);
-                          _brokerSuggestions = [];
-                        });
-                        FocusScope.of(context).unfocus();
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            _GroupCard(
+                cs: cs,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 52,
                         child: Row(children: [
+                          Text('券商',
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: cs.onSurface)),
+                          const SizedBox(width: 12),
                           Expanded(
-                            child: Text(b.name,
-                                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: cs.onSurface)),
+                            child: TextField(
+                              controller: _brokerCtrl,
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: cs.onSurface),
+                              decoration: InputDecoration(
+                                hintText: _isTwd ? '輸入券商名稱' : 'Enter broker',
+                                hintStyle: TextStyle(
+                                    color: cs.onSurfaceVariant,
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 14),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              onChanged: (q) {
+                                final list = _isTwd ? _twdBrokers : _usdBrokers;
+                                setState(() {
+                                  _brokerSuggestions = q.isEmpty
+                                      ? list
+                                      : list
+                                          .where((b) => b.name.contains(q))
+                                          .toList();
+                                });
+                              },
+                              onTap: () {
+                                setState(() {
+                                  _brokerSuggestions =
+                                      _isTwd ? _twdBrokers : _usdBrokers;
+                                });
+                              },
+                            ),
                           ),
-                          Text('手續費 ${b.feeLabel}',
-                              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                         ]),
                       ),
-                    )).toList(),
-                  ),
-                ),
-              Divider(height: 1, color: cs.outlineVariant),
-              _InlineRow(
-                label: '手續費',
-                cs: cs,
-                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                  SizedBox(
-                    width: 80,
-                    child: TextField(
-                      controller: _feeRateCtrl,
-                      textAlign: TextAlign.right,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface),
-                      decoration: InputDecoration(
-                        hintText: _isTwd ? '0.1425' : '0.5',
-                        hintStyle: TextStyle(color: cs.onSurfaceVariant),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
+                      if (_brokerSuggestions.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 4),
+                          decoration: BoxDecoration(
+                            color: cs.surfaceContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: _brokerSuggestions
+                                .map((b) => InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          _brokerCtrl.text = b.name;
+                                          _feeRateCtrl.text =
+                                              _fmtRate(b.feeRate);
+                                          _brokerSuggestions = [];
+                                        });
+                                        FocusScope.of(context).unfocus();
+                                      },
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14, vertical: 11),
+                                        child: Row(children: [
+                                          Expanded(
+                                            child: Text(b.name,
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 14,
+                                                    color: cs.onSurface)),
+                                          ),
+                                          Text('手續費 ${b.feeLabel}',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: cs.onSurfaceVariant)),
+                                        ]),
+                                      ),
+                                    ))
+                                .toList(),
+                          ),
+                        ),
+                      Divider(height: 1, color: cs.outlineVariant),
+                      _InlineRow(
+                        label: '手續費',
+                        cs: cs,
+                        child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              SizedBox(
+                                width: 80,
+                                child: TextField(
+                                  controller: _feeRateCtrl,
+                                  textAlign: TextAlign.right,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          decimal: true),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: cs.onSurface),
+                                  decoration: InputDecoration(
+                                    hintText: _isTwd ? '0.1425' : '0.5',
+                                    hintStyle:
+                                        TextStyle(color: cs.onSurfaceVariant),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                ),
+                              ),
+                              Text(' %',
+                                  style: TextStyle(
+                                      color: cs.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600)),
+                            ]),
                       ),
-                    ),
-                  ),
-                  Text(' %', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                ]),
-              ),
-              if (_isTwd) ...[
-                Divider(height: 1, color: cs.outlineVariant),
-                _InlineRow(
-                  label: '交易稅',
-                  cs: cs,
-                  child: Text('0.3%（固定）',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
-                ),
-              ],
-            ])),
+                      if (_isTwd) ...[
+                        Divider(height: 1, color: cs.outlineVariant),
+                        _InlineRow(
+                          label: '交易稅',
+                          cs: cs,
+                          child: Text('0.3%（固定）',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                  color: cs.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500)),
+                        ),
+                      ],
+                    ])),
             const SizedBox(height: 20),
 
-                        // ── 股票資訊 ──
+            // ── 股票資訊 ──
             _SectionHeader('交易資訊'),
             _GroupCard(
               cs: cs,
@@ -516,8 +596,10 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                   child: TextField(
                     controller: _sharesCtrl,
                     textAlign: TextAlign.right,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, color: cs.onSurface),
                     decoration: InputDecoration(
                       hintText: '100',
                       hintStyle: TextStyle(color: cs.onSurfaceVariant),
@@ -534,8 +616,10 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                   child: TextField(
                     controller: _costCtrl,
                     textAlign: TextAlign.right,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, color: cs.onSurface),
                     decoration: InputDecoration(
                       hintText: '58000',
                       hintStyle: TextStyle(color: cs.onSurfaceVariant),
@@ -554,8 +638,10 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                   child: TextField(
                     controller: _priceCtrl,
                     textAlign: TextAlign.right,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, color: cs.onSurface),
                     decoration: InputDecoration(
                       hintText: '自動帶入',
                       hintStyle: TextStyle(color: cs.onSurfaceVariant),
@@ -584,7 +670,9 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                   child: Text(
                     DateFormat('MMM d, yyyy', 'en_US').format(_purchaseDate),
                     textAlign: TextAlign.right,
-                    style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurfaceVariant),
                   ),
                 ),
               ),
@@ -654,14 +742,17 @@ class _InlineRow extends StatelessWidget {
   final String label;
   final Widget child;
   final ColorScheme cs;
-  const _InlineRow({required this.label, required this.child, required this.cs});
+  const _InlineRow(
+      {required this.label, required this.child, required this.cs});
   @override
   Widget build(BuildContext context) => SizedBox(
         height: 52,
         child: Row(children: [
           Text(label,
               style: TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w500, color: cs.onSurface)),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface)),
           const SizedBox(width: 12),
           Expanded(child: child),
         ]),
@@ -685,7 +776,9 @@ class _NoteRow extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('$emoji  $label',
               style: TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface)),
           const SizedBox(height: 8),
           TextField(
             controller: controller,

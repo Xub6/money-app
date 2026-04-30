@@ -20,8 +20,12 @@ class AppState extends ChangeNotifier {
   List<StockHolding> holdings = [];
   List<Account> accounts = [];
   Map<String, double> fxRates = {
-    'USD': 32.0, 'JPY': 0.22, 'EUR': 35.0,
-    'GBP': 41.0, 'CNY': 4.4, 'HKD': 4.1,
+    'USD': 32.0,
+    'JPY': 0.22,
+    'EUR': 35.0,
+    'GBP': 41.0,
+    'CNY': 4.4,
+    'HKD': 4.1,
   };
   double get usdTwdRate => fxRates['USD'] ?? 32.0;
   int budget = 30000;
@@ -49,18 +53,22 @@ class AppState extends ChangeNotifier {
     return _lastDate == today;
   }
 
-  List<ExpenseItem> monthExpenses(DateTime m) => expenses.where(
-    (e) => e.date.year == m.year && e.date.month == m.month,
-  ).toList();
+  List<ExpenseItem> monthExpenses(DateTime m) => expenses
+      .where(
+        (e) => e.date.year == m.year && e.date.month == m.month,
+      )
+      .toList();
 
-  int dynamicTotal(DateTime m) => monthExpenses(m).fold(0, (s, e) => s + e.amount);
+  int dynamicTotal(DateTime m) =>
+      monthExpenses(m).fold(0, (s, e) => s + e.amount);
   int usedTotal(DateTime m) => dynamicTotal(m) + fixedTotal;
   int remaining(DateTime m) => budget - usedTotal(m);
   double usedRate(DateTime m) => (usedTotal(m) / budget).clamp(0.0, 1.0);
 
   int dailyAvg(DateTime m) {
     final now = DateTime.now();
-    final days = (now.year == m.year && now.month == m.month) ? max(1, now.day) : 30;
+    final days =
+        (now.year == m.year && now.month == m.month) ? max(1, now.day) : 30;
     return (dynamicTotal(m) / days).round();
   }
 
@@ -253,10 +261,14 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  double get totalPortfolioValue => holdings.fold(0.0, (s, h) => s + h.netCurrentValueTwd(usdTwdRate));
-  double get totalPortfolioCost => holdings.fold(0.0, (s, h) => s + h.totalCost);
+  double get totalPortfolioValue =>
+      holdings.fold(0.0, (s, h) => s + h.netCurrentValueTwd(usdTwdRate));
+  double get totalPortfolioCost =>
+      holdings.fold(0.0, (s, h) => s + h.totalCost);
   double get totalPortfolioProfit => totalPortfolioValue - totalPortfolioCost;
-  double get totalPortfolioProfitPct => totalPortfolioCost == 0 ? 0 : totalPortfolioProfit / totalPortfolioCost * 100;
+  double get totalPortfolioProfitPct => totalPortfolioCost == 0
+      ? 0
+      : totalPortfolioProfit / totalPortfolioCost * 100;
 
   /// Set budget
   void setBudget(int v) {
@@ -289,7 +301,8 @@ class AppState extends ChangeNotifier {
   void _updateStreak() {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     if (_lastDate == today) return;
-    final yesterday = DateFormat('yyyy-MM-dd').format(DateTime.now().subtract(const Duration(days: 1)));
+    final yesterday = DateFormat('yyyy-MM-dd')
+        .format(DateTime.now().subtract(const Duration(days: 1)));
     streak = (_lastDate == yesterday) ? streak + 1 : 1;
     _lastDate = today;
     _prefs?.setInt('streak', streak);
@@ -359,7 +372,9 @@ class AppState extends ChangeNotifier {
       if (holdingsEnc != null) {
         final map = _enc.decryptMap(holdingsEnc);
         final list = map?['data'] as List? ?? [];
-        holdings = list.map((j) => StockHolding.fromJson(j as Map<String, dynamic>)).toList();
+        holdings = list
+            .map((j) => StockHolding.fromJson(j as Map<String, dynamic>))
+            .toList();
         AppLogger.info('✓ Loaded ${holdings.length} holdings (encrypted)');
       } else {
         final holdingsRaw = _prefs?.getString('holdings');
@@ -375,7 +390,9 @@ class AppState extends ChangeNotifier {
       if (accountsEnc != null) {
         final map = _enc.decryptMap(accountsEnc);
         final list = map?['data'] as List? ?? [];
-        accounts = list.map((j) => Account.fromJson(j as Map<String, dynamic>)).toList();
+        accounts = list
+            .map((j) => Account.fromJson(j as Map<String, dynamic>))
+            .toList();
         AppLogger.info('✓ Loaded ${accounts.length} accounts (encrypted)');
       } else {
         final accountsRaw = _prefs?.getString('accounts');
@@ -399,18 +416,44 @@ class AppState extends ChangeNotifier {
         if (raw != null) {
           final list = jsonDecode(raw) as List;
           expenses = list.map((j) => ExpenseItem.fromJson(j)).toList();
-          AppLogger.info('✓ Fallback: loaded ${expenses.length} expenses from SharedPreferences, syncing to SQLite');
+          AppLogger.info(
+              '✓ Fallback: loaded ${expenses.length} expenses from SharedPreferences, syncing to SQLite');
           for (final e in expenses) {
             _db.insertExpense(e).catchError((_) {});
           }
         } else {
           final now = DateTime.now();
           expenses = [
-            ExpenseItem(title: '午餐便當', category: '餐飲', amount: 120, date: now, note: '【範例】可左滑刪除'),
-            ExpenseItem(title: '咖啡', category: '餐飲', amount: 65, date: now, note: '【範例】可左滑刪除'),
-            ExpenseItem(title: '線上課程', category: '教育', amount: 1800, date: now, note: '【範例】可左滑刪除'),
-            ExpenseItem(title: '電影', category: '娛樂', amount: 420, date: now, note: '【範例】可左滑刪除'),
-            ExpenseItem(title: '文具', category: '教育', amount: 430, date: now, note: '【範例】可左滑刪除'),
+            ExpenseItem(
+                title: '午餐便當',
+                category: '餐飲',
+                amount: 120,
+                date: now,
+                note: '【範例】可左滑刪除'),
+            ExpenseItem(
+                title: '咖啡',
+                category: '餐飲',
+                amount: 65,
+                date: now,
+                note: '【範例】可左滑刪除'),
+            ExpenseItem(
+                title: '線上課程',
+                category: '教育',
+                amount: 1800,
+                date: now,
+                note: '【範例】可左滑刪除'),
+            ExpenseItem(
+                title: '電影',
+                category: '娛樂',
+                amount: 420,
+                date: now,
+                note: '【範例】可左滑刪除'),
+            ExpenseItem(
+                title: '文具',
+                category: '教育',
+                amount: 430,
+                date: now,
+                note: '【範例】可左滑刪除'),
           ];
           for (final e in expenses) {
             _db.insertExpense(e).catchError((_) {});
@@ -432,7 +475,8 @@ class AppState extends ChangeNotifier {
         if (fixedRaw != null) {
           final list = jsonDecode(fixedRaw) as List;
           fixedItems = list.map((j) => FixedItem.fromJson(j)).toList();
-          AppLogger.info('✓ Fallback: loaded ${fixedItems.length} fixed items from SharedPreferences, syncing to SQLite');
+          AppLogger.info(
+              '✓ Fallback: loaded ${fixedItems.length} fixed items from SharedPreferences, syncing to SQLite');
           for (final f in fixedItems) {
             _db.insertFixedItem(f).catchError((_) {});
           }
@@ -532,7 +576,8 @@ class AppState extends ChangeNotifier {
     });
     _save();
     notifyListeners();
-    AppLogger.info('Restored from backup: ${newExpenses.length} expenses, ${newFixedItems.length} fixed items');
+    AppLogger.info(
+        'Restored from backup: ${newExpenses.length} expenses, ${newFixedItems.length} fixed items');
   }
 
   /// Export data to JSON

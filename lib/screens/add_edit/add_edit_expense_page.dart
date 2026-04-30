@@ -148,19 +148,22 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             onPressed: _isLoading ? null : _save,
             child: _isLoading
                 ? const SizedBox(
-                    width: 18, height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.gold),
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: AppColors.gold),
                   )
                 : Text(isEdit ? '更新' : '儲存',
                     style: const TextStyle(
-                        color: AppColors.gold, fontWeight: FontWeight.w800, fontSize: 16)),
+                        color: AppColors.gold,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16)),
           ),
         ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
           // ── 日期 ──
           _SectionLabel('日期'),
           const SizedBox(height: 10),
@@ -174,16 +177,22 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             const SizedBox(width: 10),
             _DateBtn(
               label: '昨天',
-              sub: DateFormat('d').format(_today.subtract(const Duration(days: 1))),
-              selected: _isSameDay(_selectedDate, _today.subtract(const Duration(days: 1))),
-              onTap: () => setState(() => _selectedDate = _today.subtract(const Duration(days: 1))),
+              sub: DateFormat('d')
+                  .format(_today.subtract(const Duration(days: 1))),
+              selected: _isSameDay(
+                  _selectedDate, _today.subtract(const Duration(days: 1))),
+              onTap: () => setState(() =>
+                  _selectedDate = _today.subtract(const Duration(days: 1))),
             ),
             const SizedBox(width: 10),
             _DateBtn(
               label: '前天',
-              sub: DateFormat('d').format(_today.subtract(const Duration(days: 2))),
-              selected: _isSameDay(_selectedDate, _today.subtract(const Duration(days: 2))),
-              onTap: () => setState(() => _selectedDate = _today.subtract(const Duration(days: 2))),
+              sub: DateFormat('d')
+                  .format(_today.subtract(const Duration(days: 2))),
+              selected: _isSameDay(
+                  _selectedDate, _today.subtract(const Duration(days: 2))),
+              onTap: () => setState(() =>
+                  _selectedDate = _today.subtract(const Duration(days: 2))),
             ),
           ]),
           const SizedBox(height: 10),
@@ -196,20 +205,24 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: !_isSameDay(_selectedDate, _today) &&
-                          !_isSameDay(_selectedDate, _today.subtract(const Duration(days: 1))) &&
-                          !_isSameDay(_selectedDate, _today.subtract(const Duration(days: 2)))
+                          !_isSameDay(_selectedDate,
+                              _today.subtract(const Duration(days: 1))) &&
+                          !_isSameDay(_selectedDate,
+                              _today.subtract(const Duration(days: 2)))
                       ? AppColors.gold
                       : cs.outlineVariant,
                   width: 1.5,
                 ),
               ),
               child: Row(children: [
-                Text('其他日期', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
+                Text('其他日期',
+                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
                 const Spacer(),
                 Text(
                   DateFormat('MMM d, yyyy').format(_selectedDate),
                   style: TextStyle(
-                    color: _dateLabel(_selectedDate) == DateFormat('M/d').format(_selectedDate)
+                    color: _dateLabel(_selectedDate) ==
+                            DateFormat('M/d').format(_selectedDate)
                         ? AppColors.gold
                         : cs.onSurfaceVariant,
                     fontSize: 14,
@@ -237,21 +250,29 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   decoration: BoxDecoration(
-                    color: sel ? c.color.withValues(alpha: 0.15) : cs.surfaceContainerLow,
+                    color: sel
+                        ? c.color.withValues(alpha: 0.15)
+                        : cs.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: sel ? c.color : cs.outlineVariant,
                       width: sel ? 1.5 : 1,
                     ),
                   ),
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(c.icon, color: sel ? c.color : cs.onSurfaceVariant, size: 26),
-                    const SizedBox(height: 6),
-                    Text(c.name, style: TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w600,
-                      color: sel ? c.color : cs.onSurfaceVariant,
-                    )),
-                  ]),
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(c.icon,
+                            color: sel ? c.color : cs.onSurfaceVariant,
+                            size: 26),
+                        const SizedBox(height: 6),
+                        Text(c.name,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: sel ? c.color : cs.onSurfaceVariant,
+                            )),
+                      ]),
                 ),
               );
             }).toList(),
@@ -265,23 +286,31 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: suggestions.map((item) => GestureDetector(
-                onTap: () => _applySuggestion(item),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: cs.outlineVariant),
-                  ),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text(item.title,
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface)),
-                    Text('NT\$ ${item.amount}',
-                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                  ]),
-                ),
-              )).toList(),
+              children: suggestions
+                  .map((item) => GestureDetector(
+                        onTap: () => _applySuggestion(item),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: cs.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: cs.outlineVariant),
+                          ),
+                          child:
+                              Column(mainAxisSize: MainAxisSize.min, children: [
+                            Text(item.title,
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onSurface)),
+                            Text('NT\$ ${item.amount}',
+                                style: TextStyle(
+                                    fontSize: 11, color: cs.onSurfaceVariant)),
+                          ]),
+                        ),
+                      ))
+                  .toList(),
             ),
             const SizedBox(height: 24),
           ],
@@ -297,13 +326,16 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                 controller: _amtCtrl,
                 hint: '0',
                 label: '金額',
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                suffix: Text('NT\$', style: TextStyle(color: cs.onSurfaceVariant)),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                suffix:
+                    Text('NT\$', style: TextStyle(color: cs.onSurfaceVariant)),
               ),
             ),
           ]),
           const SizedBox(height: 10),
-          _InputField(controller: _noteCtrl, hint: '備註（選填）', label: null, maxLines: 2),
+          _InputField(
+              controller: _noteCtrl, hint: '備註（選填）', label: null, maxLines: 2),
           const SizedBox(height: 32),
 
           // ── 儲存按鈕 ──
@@ -315,12 +347,14 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.gold,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
               child: Text(
                 isEdit ? '更新支出' : '儲存記帳',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
               ),
             ),
           ),
@@ -338,17 +372,23 @@ class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
   @override
   Widget build(BuildContext context) => Text(
-    text,
-    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
-        color: Theme.of(context).colorScheme.onSurfaceVariant),
-  );
+        text,
+        style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurfaceVariant),
+      );
 }
 
 class _DateBtn extends StatelessWidget {
   final String label, sub;
   final bool selected;
   final VoidCallback onTap;
-  const _DateBtn({required this.label, required this.sub, required this.selected, required this.onTap});
+  const _DateBtn(
+      {required this.label,
+      required this.sub,
+      required this.selected,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -362,17 +402,22 @@ class _DateBtn extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? AppColors.gold : cs.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: selected ? AppColors.gold : cs.outlineVariant),
+          border:
+              Border.all(color: selected ? AppColors.gold : cs.outlineVariant),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(label, style: TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w700,
-            color: selected ? Colors.white : cs.onSurfaceVariant,
-          )),
-          Text(sub, style: TextStyle(
-            fontSize: 20, fontWeight: FontWeight.w800,
-            color: selected ? Colors.white : cs.onSurface,
-          )),
+          Text(label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : cs.onSurfaceVariant,
+              )),
+          Text(sub,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: selected ? Colors.white : cs.onSurface,
+              )),
         ]),
       ),
     );
@@ -409,7 +454,11 @@ class _InputField extends StatelessWidget {
         if (label != null) ...[
           Padding(
             padding: const EdgeInsets.only(left: 16),
-            child: Text(label!, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: cs.onSurface)),
+            child: Text(label!,
+                style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: cs.onSurface)),
           ),
           const SizedBox(width: 12),
         ],
@@ -421,7 +470,8 @@ class _InputField extends StatelessWidget {
             style: TextStyle(color: cs.onSurface),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+              hintStyle:
+                  TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: label != null ? 0 : 16,

@@ -10,18 +10,18 @@ class AccountTypeOption {
 }
 
 const kAccountTypes = [
-  AccountTypeOption('現金',     '💵', AccountCategory.savings),
+  AccountTypeOption('現金', '💵', AccountCategory.savings),
   AccountTypeOption('銀行帳戶', '🏦', AccountCategory.savings),
   AccountTypeOption('Line Pay', '💚', AccountCategory.savings),
   AccountTypeOption('街口支付', '🟠', AccountCategory.savings),
-  AccountTypeOption('悠遊卡',   '🔵', AccountCategory.savings),
-  AccountTypeOption('icash',    '🔴', AccountCategory.savings),
-  AccountTypeOption('iPass',    '🟡', AccountCategory.savings),
-  AccountTypeOption('儲蓄卡',   '💳', AccountCategory.savings),
-  AccountTypeOption('其他',     '👜', AccountCategory.savings),
-  AccountTypeOption('信用卡',   '💳', AccountCategory.credit),
-  AccountTypeOption('欠款',     '📋', AccountCategory.credit),
-  AccountTypeOption('其他',     '💰', AccountCategory.credit),
+  AccountTypeOption('悠遊卡', '🔵', AccountCategory.savings),
+  AccountTypeOption('icash', '🔴', AccountCategory.savings),
+  AccountTypeOption('iPass', '🟡', AccountCategory.savings),
+  AccountTypeOption('儲蓄卡', '💳', AccountCategory.savings),
+  AccountTypeOption('其他', '👜', AccountCategory.savings),
+  AccountTypeOption('信用卡', '💳', AccountCategory.credit),
+  AccountTypeOption('欠款', '📋', AccountCategory.credit),
+  AccountTypeOption('其他', '💰', AccountCategory.credit),
 ];
 
 const kCurrencies = [
@@ -60,8 +60,9 @@ class Account {
 
   String get displayName => customName.isNotEmpty ? customName : typeName;
 
-  String get currencySymbol =>
-      kCurrencies.firstWhere((c) => c.$1 == currency, orElse: () => ('TWD', 'NT\$')).$2;
+  String get currencySymbol => kCurrencies
+      .firstWhere((c) => c.$1 == currency, orElse: () => ('TWD', 'NT\$'))
+      .$2;
 
   double balanceTwd(Map<String, double> fxRates) {
     if (currency == 'TWD') return balance;

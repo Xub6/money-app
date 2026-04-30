@@ -24,11 +24,11 @@ class ValidationException extends AppException {
     dynamic originalException,
     StackTrace? stackTrace,
   }) : super(
-    message: message,
-    code: code,
-    originalException: originalException,
-    stackTrace: stackTrace,
-  );
+          message: message,
+          code: code,
+          originalException: originalException,
+          stackTrace: stackTrace,
+        );
 }
 
 /// Data persistence exceptions
@@ -39,11 +39,11 @@ class DataException extends AppException {
     dynamic originalException,
     StackTrace? stackTrace,
   }) : super(
-    message: message,
-    code: code,
-    originalException: originalException,
-    stackTrace: stackTrace,
-  );
+          message: message,
+          code: code,
+          originalException: originalException,
+          stackTrace: stackTrace,
+        );
 }
 
 /// Database exceptions
@@ -54,11 +54,11 @@ class DatabaseException extends AppException {
     dynamic originalException,
     StackTrace? stackTrace,
   }) : super(
-    message: message,
-    code: code,
-    originalException: originalException,
-    stackTrace: stackTrace,
-  );
+          message: message,
+          code: code,
+          originalException: originalException,
+          stackTrace: stackTrace,
+        );
 }
 
 /// Backup/Export exceptions
@@ -69,11 +69,11 @@ class BackupException extends AppException {
     dynamic originalException,
     StackTrace? stackTrace,
   }) : super(
-    message: message,
-    code: code,
-    originalException: originalException,
-    stackTrace: stackTrace,
-  );
+          message: message,
+          code: code,
+          originalException: originalException,
+          stackTrace: stackTrace,
+        );
 }
 
 /// File operation exceptions
@@ -84,11 +84,11 @@ class FileException extends AppException {
     dynamic originalException,
     StackTrace? stackTrace,
   }) : super(
-    message: message,
-    code: code,
-    originalException: originalException,
-    stackTrace: stackTrace,
-  );
+          message: message,
+          code: code,
+          originalException: originalException,
+          stackTrace: stackTrace,
+        );
 }
 
 /// Network/Sync exceptions
@@ -99,9 +99,9 @@ class SyncException extends AppException {
     dynamic originalException,
     StackTrace? stackTrace,
   }) : super(
-    message: message,
-    code: code,
-    originalException: originalException,
-    stackTrace: stackTrace,
-  );
+          message: message,
+          code: code,
+          originalException: originalException,
+          stackTrace: stackTrace,
+        );
 }

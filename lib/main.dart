@@ -22,6 +22,8 @@ import 'services/backup_service.dart';
 import 'services/export_service.dart';
 import 'data/models/backup_metadata.dart';
 import 'screens/account/account_page.dart';
+import 'screens/onboarding/onboarding_page.dart';
+import 'screens/onboarding/onboarding_service.dart';
 
 // ─── 顏色別名（相容現有 widget）───
 const kGold = AppColors.gold;
@@ -37,7 +39,8 @@ void main() async {
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   FlutterError.onError = (FlutterErrorDetails details) {
-    AppLogger.error('Flutter Error', error: details.exception, stackTrace: details.stack);
+    AppLogger.error('Flutter Error',
+        error: details.exception, stackTrace: details.stack);
   };
 
   AppLogger.info('App starting...');
@@ -77,7 +80,8 @@ class _MoneyAppState extends State<MoneyApp> {
             title: '錢錢管家',
             theme: themeProvider.lightTheme,
             darkTheme: themeProvider.darkTheme,
-            themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            themeMode:
+                themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: Consumer<AppState>(
               builder: (context, appState, _) {
                 if (!appState.loaded) {
@@ -110,6 +114,34 @@ class _MainShellState extends State<MainShell> {
   int _monthOffset = 0;
   late final PageController _pageController = PageController();
   AppState get s => widget.state;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkOnboarding());
+  }
+
+  Future<void> _checkOnboarding() async {
+    final seen = await OnboardingService.isOnboardingSeen();
+    if (!seen && mounted) {
+      Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OnboardingPage(
+            state: s,
+            onAddExpense: _onAddExpenseFromOnboarding,
+          ),
+          fullscreenDialog: true,
+        ),
+      );
+    }
+  }
+
+  void _onAddExpenseFromOnboarding() {
+    if (!mounted) return;
+    if (Navigator.canPop(context)) Navigator.pop(context);
+    _openAdd();
+  }
 
   @override
   void dispose() {
@@ -231,7 +263,8 @@ class _MainShellState extends State<MainShell> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('錢錢管家', style: TextStyle(fontWeight: FontWeight.w800)),
+        title:
+            const Text('錢錢管家', style: TextStyle(fontWeight: FontWeight.w800)),
         elevation: 0,
         actions: [
           IconButton(
@@ -266,11 +299,27 @@ class _MainShellState extends State<MainShell> {
         notchMargin: 8,
         elevation: 8,
         child: Row(children: [
-          _NavItem(icon: Icons.pie_chart_rounded, label: '記帳', selected: _tab == 0, onTap: () => _goToTab(0)),
-          _NavItem(icon: Icons.list_alt_rounded, label: '明細', selected: _tab == 1, onTap: () => _goToTab(1)),
+          _NavItem(
+              icon: Icons.pie_chart_rounded,
+              label: '記帳',
+              selected: _tab == 0,
+              onTap: () => _goToTab(0)),
+          _NavItem(
+              icon: Icons.list_alt_rounded,
+              label: '明細',
+              selected: _tab == 1,
+              onTap: () => _goToTab(1)),
           const SizedBox(width: 56),
-          _NavItem(icon: Icons.candlestick_chart_rounded, label: '投資', selected: _tab == 2, onTap: () => _goToTab(2)),
-          _NavItem(icon: Icons.settings_rounded, label: '管理', selected: _tab == 3, onTap: () => _goToTab(3)),
+          _NavItem(
+              icon: Icons.candlestick_chart_rounded,
+              label: '投資',
+              selected: _tab == 2,
+              onTap: () => _goToTab(2)),
+          _NavItem(
+              icon: Icons.settings_rounded,
+              label: '管理',
+              selected: _tab == 3,
+              onTap: () => _goToTab(3)),
         ]),
       ),
     );
@@ -283,9 +332,15 @@ class DashboardPage extends StatefulWidget {
   final DateTime displayMonth;
   final String monthLabel;
   final VoidCallback onPrev, onCur, onNext, onGoDetail;
-  const DashboardPage({super.key, required this.state, required this.displayMonth,
-    required this.monthLabel, required this.onPrev, required this.onCur,
-    required this.onNext, required this.onGoDetail});
+  const DashboardPage(
+      {super.key,
+      required this.state,
+      required this.displayMonth,
+      required this.monthLabel,
+      required this.onPrev,
+      required this.onCur,
+      required this.onNext,
+      required this.onGoDetail});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -312,61 +367,86 @@ class _DashboardPageState extends State<DashboardPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Text('${now.year} 年度總覽',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-          ]),
-          const SizedBox(height: 16),
-          Row(children: [
-            Expanded(child: _AnnualStat(label: '年度支出', value: 'NT\$ ${_fmt(annualTotal)}',
-                color: annualTotal > annualBudget ? kRed : kGreen)),
-            Expanded(child: _AnnualStat(label: '年度預算', value: 'NT\$ ${_fmt(annualBudget)}', color: kGold)),
-          ]),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: (annualTotal / annualBudget).clamp(0.0, 1.0),
-              minHeight: 10,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation(annualTotal > annualBudget ? kRed : kGreen),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text('各月支出', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-          const SizedBox(height: 12),
-          ...List.generate(12, (i) {
-            final v = monthlyTotals[i];
-            if (v == 0) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(children: [
-                SizedBox(width: 36, child: Text('${i + 1}月',
-                    style: const TextStyle(color: kGray, fontWeight: FontWeight.w600))),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(99),
-                    child: LinearProgressIndicator(
-                      value: (v / (state.budget > 0 ? state.budget : 1)).clamp(0.0, 1.0),
-                      minHeight: 8,
-                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      valueColor: AlwaysStoppedAnimation(v > state.budget ? kRed : kGold),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text('NT\$ ${_fmt(v)}',
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Text('${now.year} 年度總覽',
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w800)),
+                const Spacer(),
+                IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context)),
               ]),
-            );
-          }),
-        ]),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(
+                    child: _AnnualStat(
+                        label: '年度支出',
+                        value: 'NT\$ ${_fmt(annualTotal)}',
+                        color: annualTotal > annualBudget ? kRed : kGreen)),
+                Expanded(
+                    child: _AnnualStat(
+                        label: '年度預算',
+                        value: 'NT\$ ${_fmt(annualBudget)}',
+                        color: kGold)),
+              ]),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: (annualTotal / annualBudget).clamp(0.0, 1.0),
+                  minHeight: 10,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  valueColor: AlwaysStoppedAnimation(
+                      annualTotal > annualBudget ? kRed : kGreen),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text('各月支出',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              const SizedBox(height: 12),
+              ...List.generate(12, (i) {
+                final v = monthlyTotals[i];
+                if (v == 0) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(children: [
+                    SizedBox(
+                        width: 36,
+                        child: Text('${i + 1}月',
+                            style: const TextStyle(
+                                color: kGray, fontWeight: FontWeight.w600))),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(99),
+                        child: LinearProgressIndicator(
+                          value: (v / (state.budget > 0 ? state.budget : 1))
+                              .clamp(0.0, 1.0),
+                          minHeight: 8,
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          valueColor: AlwaysStoppedAnimation(
+                              v > state.budget ? kRed : kGold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text('NT\$ ${_fmt(v)}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 12)),
+                  ]),
+                );
+              }),
+            ]),
       ),
     );
   }
@@ -379,11 +459,15 @@ class _DashboardPageState extends State<DashboardPage> {
     final rate = (used / (state.budget > 0 ? state.budget : 1)).clamp(0.0, 1.0);
     final pct = (rate * 100).round();
     final now = DateTime.now();
-    final days = (now.year == displayMonth.year && now.month == displayMonth.month)
-        ? max(1, now.day) : 30;
+    final days =
+        (now.year == displayMonth.year && now.month == displayMonth.month)
+            ? max(1, now.day)
+            : 30;
     final lastDay = DateTime(displayMonth.year, displayMonth.month + 1, 0).day;
-    final daysLeft = (now.year == displayMonth.year && now.month == displayMonth.month)
-        ? max(1, lastDay - now.day + 1) : lastDay;
+    final daysLeft =
+        (now.year == displayMonth.year && now.month == displayMonth.month)
+            ? max(1, lastDay - now.day + 1)
+            : lastDay;
     final daily = (dynamic_ / days).round();
     final rec = (remain / daysLeft).round();
     final catMap = state.categoryTotals(displayMonth);
@@ -393,16 +477,19 @@ class _DashboardPageState extends State<DashboardPage> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('記帳', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+          const Text('記帳',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 18),
 
           // 月份切換
-          _AppCard(child: Column(children: [
+          _AppCard(
+              child: Column(children: [
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               Tooltip(
                 message: '每天記帳可維持連續天數',
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: state.recordedToday
                         ? Theme.of(context).colorScheme.errorContainer
@@ -410,7 +497,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Text(state.recordedToday ? '🔥' : '⚠️', style: const TextStyle(fontSize: 13)),
+                    Text(state.recordedToday ? '🔥' : '⚠️',
+                        style: const TextStyle(fontSize: 13)),
                     const SizedBox(width: 4),
                     Text(
                       state.recordedToday
@@ -430,111 +518,179 @@ class _DashboardPageState extends State<DashboardPage> {
             ]),
             const SizedBox(height: 14),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              _MonthBtn(text: DateFormat('M月').format(DateTime(DateTime.now().year, DateTime.now().month - 1, 1)), selected: monthLabel == DateFormat('M月').format(DateTime(DateTime.now().year, DateTime.now().month - 1, 1)), onTap: onPrev),
+              _MonthBtn(
+                  text: DateFormat('M月').format(DateTime(
+                      DateTime.now().year, DateTime.now().month - 1, 1)),
+                  selected: monthLabel ==
+                      DateFormat('M月').format(DateTime(
+                          DateTime.now().year, DateTime.now().month - 1, 1)),
+                  onTap: onPrev),
               const SizedBox(width: 10),
-              _MonthBtn(text: DateFormat('M月').format(DateTime.now()), selected: monthLabel == DateFormat('M月').format(DateTime.now()), onTap: onCur),
+              _MonthBtn(
+                  text: DateFormat('M月').format(DateTime.now()),
+                  selected:
+                      monthLabel == DateFormat('M月').format(DateTime.now()),
+                  onTap: onCur),
               const SizedBox(width: 10),
-              _MonthBtn(text: DateFormat('M月').format(DateTime(DateTime.now().year, DateTime.now().month + 1, 1)), selected: monthLabel == DateFormat('M月').format(DateTime(DateTime.now().year, DateTime.now().month + 1, 1)), onTap: onNext),
+              _MonthBtn(
+                  text: DateFormat('M月').format(DateTime(
+                      DateTime.now().year, DateTime.now().month + 1, 1)),
+                  selected: monthLabel ==
+                      DateFormat('M月').format(DateTime(
+                          DateTime.now().year, DateTime.now().month + 1, 1)),
+                  onTap: onNext),
             ]),
           ])),
           const SizedBox(height: 16),
 
           // 預算進度
-          _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('預算進度', style: TextStyle(color: kGray, fontSize: 13, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: () => setState(() => _includeFixed = !_includeFixed),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _includeFixed
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(
-                          _includeFixed ? Icons.toggle_on_rounded : Icons.toggle_off_rounded,
-                          size: 16,
-                          color: _includeFixed
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '含固定開銷',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: _includeFixed
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.onSurfaceVariant,
+          _AppCard(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('預算進度',
+                              style: TextStyle(
+                                  color: kGray,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => _includeFixed = !_includeFixed),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: _includeFixed
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _includeFixed
+                                          ? Icons.toggle_on_rounded
+                                          : Icons.toggle_off_rounded,
+                                      size: 16,
+                                      color: _includeFixed
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '含固定開銷',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: _includeFixed
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ]),
+                            ),
                           ),
-                        ),
-                      ]),
+                        ]),
+                  ),
+                  Text('NT\$ ${_fmt(used)}',
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.w800)),
+                  Text(' / ${_fmt(state.budget)}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 16)),
+                ]),
+                const SizedBox(height: 14),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: rate),
+                    duration: const Duration(milliseconds: 700),
+                    curve: Curves.easeOut,
+                    builder: (_, v, __) => LinearProgressIndicator(
+                      value: v,
+                      minHeight: 10,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      valueColor: AlwaysStoppedAnimation(over ? kRed : kGreen),
                     ),
                   ),
-                ]),
-              ),
-              Text('NT\$ ${_fmt(used)}',
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-              Text(' / ${_fmt(state.budget)}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 16)),
-            ]),
-            const SizedBox(height: 14),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: rate),
-                duration: const Duration(milliseconds: 700),
-                curve: Curves.easeOut,
-                builder: (_, v, __) => LinearProgressIndicator(
-                  value: v, minHeight: 10,
-                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  valueColor: AlwaysStoppedAnimation(over ? kRed : kGreen),
                 ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text('$pct%', style: TextStyle(
-                  fontSize: 22, fontWeight: FontWeight.w700, color: over ? kRed : kGreen)),
-            ),
-            const Divider(height: 20),
-            Row(children: [
-              Expanded(child: _BudgetStat(label: '日均支出', value: 'NT\$ ${_fmt(daily)}')),
-              Expanded(child: _BudgetStat(
-                  label: '建議日均',
-                  value: 'NT\$ ${_fmt(rec.clamp(0, 9999999))}',
-                  valueColor: rec < 0 ? kRed : kGreen, alignEnd: true)),
-            ]),
-            const SizedBox(height: 14),
-            const Text('剩餘預算', style: TextStyle(color: kGray, fontSize: 13, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text('NT\$ ${_fmt(remain)}',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: over ? kRed : kGreen)),
-          ])),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('$pct%',
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: over ? kRed : kGreen)),
+                ),
+                const Divider(height: 20),
+                Row(children: [
+                  Expanded(
+                      child: _BudgetStat(
+                          label: '日均支出', value: 'NT\$ ${_fmt(daily)}')),
+                  Expanded(
+                      child: _BudgetStat(
+                          label: '建議日均',
+                          value: 'NT\$ ${_fmt(rec.clamp(0, 9999999))}',
+                          valueColor: rec < 0 ? kRed : kGreen,
+                          alignEnd: true)),
+                ]),
+                const SizedBox(height: 14),
+                const Text('剩餘預算',
+                    style: TextStyle(
+                        color: kGray,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text('NT\$ ${_fmt(remain)}',
+                    style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: over ? kRed : kGreen)),
+              ])),
           const SizedBox(height: 16),
 
           // 圓餅圖
-          _AppCard(child: Column(children: [
+          _AppCard(
+              child: Column(children: [
             Row(children: [
-              const Text('本月明細', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              const Text('本月明細',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(width: 10),
               GestureDetector(
                 onTap: () => _showAnnualSummary(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: kGold, borderRadius: BorderRadius.circular(16)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                      color: kGold, borderRadius: BorderRadius.circular(16)),
                   child: const Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.calendar_month, color: Colors.white, size: 14),
                     SizedBox(width: 4),
-                    Text('年度', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                    Text('年度',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12)),
                   ]),
                 ),
               ),
@@ -549,28 +705,40 @@ class _DashboardPageState extends State<DashboardPage> {
             ]),
             const SizedBox(height: 18),
             catMap.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 30),
-                  child: Text('新增支出後顯示圖表', style: TextStyle(color: Colors.grey, fontSize: 15)),
-                )
-              : Column(children: [
-                  SizedBox(height: 220, child: _DoughnutChart(catMap: catMap)),
-                  const SizedBox(height: 16),
-                  Wrap(spacing: 16, runSpacing: 8,
-                    children: catMap.entries.map((e) {
-                      final cat = categoryOf(e.key);
-                      return Row(mainAxisSize: MainAxisSize.min, children: [
-                        Container(width: 10, height: 10,
-                            decoration: BoxDecoration(color: cat.color, shape: BoxShape.circle)),
-                        const SizedBox(width: 5),
-                        Text(e.key, style: const TextStyle(color: kGray, fontSize: 13, fontWeight: FontWeight.w500)),
-                        const SizedBox(width: 3),
-                        Text('NT\$ ${_fmt(e.value)}',
-                            style: const TextStyle(color: kGray, fontSize: 11)),
-                      ]);
-                    }).toList(),
-                  ),
-                ]),
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 30),
+                    child: Text('新增支出後顯示圖表',
+                        style: TextStyle(color: Colors.grey, fontSize: 15)),
+                  )
+                : Column(children: [
+                    SizedBox(
+                        height: 220, child: _DoughnutChart(catMap: catMap)),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 8,
+                      children: catMap.entries.map((e) {
+                        final cat = categoryOf(e.key);
+                        return Row(mainAxisSize: MainAxisSize.min, children: [
+                          Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                  color: cat.color, shape: BoxShape.circle)),
+                          const SizedBox(width: 5),
+                          Text(e.key,
+                              style: const TextStyle(
+                                  color: kGray,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500)),
+                          const SizedBox(width: 3),
+                          Text('NT\$ ${_fmt(e.value)}',
+                              style:
+                                  const TextStyle(color: kGray, fontSize: 11)),
+                        ]);
+                      }).toList(),
+                    ),
+                  ]),
           ])),
         ]),
       ),
@@ -611,7 +779,8 @@ class _DetailPageState extends State<DetailPage> {
   Widget build(BuildContext context) {
     var items = widget.state.monthExpenses(widget.displayMonth);
     final cats = ['全部', ...items.map((e) => e.category).toSet().toList()];
-    if (_filterCat != '全部') items = items.where((e) => e.category == _filterCat).toList();
+    if (_filterCat != '全部')
+      items = items.where((e) => e.category == _filterCat).toList();
     final totalShown = items.fold(0, (s, e) => s + e.amount);
 
     return SafeArea(
@@ -619,9 +788,13 @@ class _DetailPageState extends State<DetailPage> {
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
           child: Row(children: [
-            const Expanded(child: Text('明細', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800))),
+            const Expanded(
+                child: Text('明細',
+                    style:
+                        TextStyle(fontSize: 28, fontWeight: FontWeight.w800))),
             Text('合計 NT\$ ${_fmt(totalShown)}',
-                style: const TextStyle(color: kGold, fontWeight: FontWeight.w700, fontSize: 13)),
+                style: const TextStyle(
+                    color: kGold, fontWeight: FontWeight.w700, fontSize: 13)),
           ]),
         ),
         const SizedBox(height: 12),
@@ -638,14 +811,21 @@ class _DetailPageState extends State<DetailPage> {
                 onTap: () => setState(() => _filterCat = cats[i]),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: sel ? kGold : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: sel
+                        ? kGold
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(cats[i], style: TextStyle(
-                      color: sel ? Colors.white : Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w700, fontSize: 13)),
+                  child: Text(cats[i],
+                      style: TextStyle(
+                          color: sel
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13)),
                 ),
               );
             },
@@ -654,55 +834,69 @@ class _DetailPageState extends State<DetailPage> {
         const SizedBox(height: 10),
         Expanded(
           child: items.isEmpty
-            ? const Center(child: Text('沒有記錄', style: TextStyle(color: Colors.grey)))
-            : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(18, 4, 18, 100),
-                itemCount: items.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (_, i) {
-                  final item = items[i];
-                  final cat = categoryOf(item.category);
-                  return GestureDetector(
-                    onLongPress: () => _showItemMenu(item),
-                    child: Dismissible(
-                      key: Key(item.id),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20),
-                        decoration: BoxDecoration(color: kRed, borderRadius: BorderRadius.circular(18)),
-                        child: const Icon(Icons.delete_outline, color: Colors.white, size: 26),
-                      ),
-                      onDismissed: (_) => _deleteWithUndo(item),
-                      child: Card(
-                        elevation: 0,
-                        color: Theme.of(context).colorScheme.surfaceContainerLow,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          leading: CircleAvatar(
-                            backgroundColor: cat.color.withOpacity(0.15),
-                            child: Icon(cat.icon, color: cat.color, size: 22),
+              ? const Center(
+                  child: Text('沒有記錄', style: TextStyle(color: Colors.grey)))
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(18, 4, 18, 100),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) {
+                    final item = items[i];
+                    final cat = categoryOf(item.category);
+                    return GestureDetector(
+                      onLongPress: () => _showItemMenu(item),
+                      child: Dismissible(
+                        key: Key(item.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                              color: kRed,
+                              borderRadius: BorderRadius.circular(18)),
+                          child: const Icon(Icons.delete_outline,
+                              color: Colors.white, size: 26),
+                        ),
+                        onDismissed: (_) => _deleteWithUndo(item),
+                        child: Card(
+                          elevation: 0,
+                          color:
+                              Theme.of(context).colorScheme.surfaceContainerLow,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18)),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 4),
+                            leading: CircleAvatar(
+                              backgroundColor: cat.color.withOpacity(0.15),
+                              child: Icon(cat.icon, color: cat.color, size: 22),
+                            ),
+                            title: Text(item.title,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700, fontSize: 15)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                    '${item.category}・${item.note.isEmpty ? "無備註" : item.note}'),
+                                Text(
+                                    DateFormat('yyyy/MM/dd').format(item.date)),
+                                if (item.isEdited)
+                                  const Text('已編輯',
+                                      style: TextStyle(
+                                          fontSize: 11, color: Colors.orange)),
+                              ],
+                            ),
+                            isThreeLine: true,
+                            trailing: Text('NT\$ ${_fmt(item.amount)}',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w800)),
                           ),
-                          title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('${item.category}・${item.note.isEmpty ? "無備註" : item.note}'),
-                              Text(DateFormat('yyyy/MM/dd').format(item.date)),
-                              if (item.isEdited)
-                                const Text('已編輯', style: TextStyle(fontSize: 11, color: Colors.orange)),
-                            ],
-                          ),
-                          isThreeLine: true,
-                          trailing: Text('NT\$ ${_fmt(item.amount)}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
         ),
       ]),
     );
@@ -728,7 +922,8 @@ class _DetailPageState extends State<DetailPage> {
               title: const Text('複製'),
               onTap: () {
                 Navigator.pop(context);
-                widget.state.addExpense(item.copyWith(title: '${item.title}（副本）'));
+                widget.state
+                    .addExpense(item.copyWith(title: '${item.title}（副本）'));
               },
             ),
             ListTile(
@@ -766,7 +961,10 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   @override
-  void dispose() { _budgetCtrl.dispose(); super.dispose(); }
+  void dispose() {
+    _budgetCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _doBackup() async {
     final messenger = ScaffoldMessenger.of(context);
@@ -813,7 +1011,8 @@ class _ManagePageState extends State<ManagePage> {
         month: DateTime.now(),
       );
       messenger.showSnackBar(
-        SnackBar(content: Text('✓ Excel 已匯出：$filename'), backgroundColor: kGreen),
+        SnackBar(
+            content: Text('✓ Excel 已匯出：$filename'), backgroundColor: kGreen),
       );
     } catch (e) {
       messenger.showSnackBar(
@@ -847,12 +1046,16 @@ class _ManagePageState extends State<ManagePage> {
         builder: (_) => AlertDialog(
           title: const Text('確定還原？'),
           content: const Text('現有的支出記錄和固定開銷將被備份內容取代，此操作無法還原。'),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('取消')),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('還原', style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+              child: const Text('還原',
+                  style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -889,47 +1092,63 @@ class _ManagePageState extends State<ManagePage> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('管理', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+          const Text('管理',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 18),
 
           // 我的賬戶
-          _AppCard(child: GestureDetector(
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => AccountPage(state: widget.state))),
+          _AppCard(
+              child: GestureDetector(
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => AccountPage(state: widget.state))),
             behavior: HitTestBehavior.opaque,
             child: Row(children: [
               const Icon(Icons.account_balance_wallet_rounded, color: kGold),
               const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('我的賬戶', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                ListenableBuilder(
-                  listenable: widget.state,
-                  builder: (_, __) {
-                    final net = widget.state.netAssets;
-                    final isNeg = net < 0;
-                    return Text(
-                      '淨資產 NT\$ ${NumberFormat('#,##0', 'en_US').format(net.round())}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isNeg ? kRed : kGray,
-                      ),
-                    );
-                  },
-                ),
-              ])),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    const Text('我的賬戶',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 15)),
+                    ListenableBuilder(
+                      listenable: widget.state,
+                      builder: (_, __) {
+                        final net = widget.state.netAssets;
+                        final isNeg = net < 0;
+                        return Text(
+                          '淨資產 NT\$ ${NumberFormat('#,##0', 'en_US').format(net.round())}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isNeg ? kRed : kGray,
+                          ),
+                        );
+                      },
+                    ),
+                  ])),
               const Icon(Icons.chevron_right, color: kGray, size: 18),
             ]),
           )),
           const SizedBox(height: 16),
 
           // 外觀設定
-          _AppCard(child: Row(children: [
+          _AppCard(
+              child: Row(children: [
             const Icon(Icons.dark_mode_rounded, color: kGold),
             const SizedBox(width: 12),
-            const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('深色模式', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-              Text('切換深色/淺色介面', style: TextStyle(color: kGray, fontSize: 12)),
-            ])),
+            const Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text('深色模式',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  Text('切換深色/淺色介面',
+                      style: TextStyle(color: kGray, fontSize: 12)),
+                ])),
             Switch(
               value: themeProvider.isDarkMode,
               onChanged: (_) => themeProvider.toggleTheme(),
@@ -939,261 +1158,347 @@ class _ManagePageState extends State<ManagePage> {
           const SizedBox(height: 16),
 
           // 月預算
-          _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('月預算', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                child: TextField(
-                  controller: _budgetCtrl,
-                  keyboardType: TextInputType.number,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-                  decoration: InputDecoration(
-                    prefixText: 'NT\$ ',
-                    filled: true, fillColor: Theme.of(context).colorScheme.primaryContainer,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kGold, width: 1.5)),
+          _AppCard(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                const Text('月預算',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _budgetCtrl,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.w800),
+                      decoration: InputDecoration(
+                        prefixText: 'NT\$ ',
+                        filled: true,
+                        fillColor:
+                            Theme.of(context).colorScheme.primaryContainer,
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                const BorderSide(color: kGold, width: 1.5)),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: () {
-                  final val = int.tryParse(_budgetCtrl.text.trim());
-                  if (val != null && val > 0) {
-                    widget.state.setBudget(val);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('✓ 預算已更新'), backgroundColor: kGreen, duration: Duration(seconds: 2)));
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kGold, foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  elevation: 0,
-                ),
-                child: const Text('更新', style: TextStyle(fontWeight: FontWeight.w700)),
-              ),
-            ]),
-          ])),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      final val = int.tryParse(_budgetCtrl.text.trim());
+                      if (val != null && val > 0) {
+                        widget.state.setBudget(val);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('✓ 預算已更新'),
+                                backgroundColor: kGreen,
+                                duration: Duration(seconds: 2)));
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kGold,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      elevation: 0,
+                    ),
+                    child: const Text('更新',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ]),
+              ])),
           const SizedBox(height: 16),
 
           // 固定開銷
-          _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Expanded(child: Text('固定開銷', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
-              Text('每月 NT\$ ${_fmt(widget.state.fixedTotal)}',
-                  style: const TextStyle(color: kGold, fontWeight: FontWeight.w700, fontSize: 12)),
-              const SizedBox(width: 10),
-              GestureDetector(
-                onTap: _addFixed,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.add, color: kGold, size: 18),
-                ),
-              ),
-            ]),
-            const SizedBox(height: 14),
-            if (widget.state.fixedItems.isEmpty)
-              Padding(padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Text('點右上角 + 新增固定開銷',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
-            ...widget.state.fixedItems.map((f) {
-              final now = DateTime.now();
-              final completed = f.isCompleted;
-              final remaining = f.remainingPeriods(now);
-              final cs = Theme.of(context).colorScheme;
-              return Dismissible(
-                key: Key(f.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 16),
-                  decoration: BoxDecoration(color: kRed, borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.delete_outline, color: Colors.white),
-                ),
-                onDismissed: (_) => widget.state.deleteFixed(f.id),
-                child: GestureDetector(
-                  onLongPress: () => _openFixedDialog(existing: f),
-                  child: Opacity(
-                    opacity: completed ? 0.45 : 1.0,
+          _AppCard(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Row(children: [
+                  const Expanded(
+                      child: Text('固定開銷',
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w700))),
+                  Text('每月 NT\$ ${_fmt(widget.state.fixedTotal)}',
+                      style: const TextStyle(
+                          color: kGold,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12)),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: _addFixed,
                     child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                          color: cs.surfaceContainer,
-                          borderRadius: BorderRadius.circular(12)),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Row(children: [
-                          Icon(Icons.receipt_long,
-                              color: completed ? cs.onSurfaceVariant : kGold, size: 18),
-                          const SizedBox(width: 10),
-                          Expanded(child: Text(f.title,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: completed ? cs.onSurfaceVariant : cs.onSurface))),
-                          Text('NT\$ ${_fmt(f.amount)}',
-                              style: const TextStyle(fontWeight: FontWeight.w800)),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () => _openFixedDialog(existing: f),
-                            child: const Icon(Icons.edit_outlined, color: kGold, size: 18),
-                          ),
-                        ]),
-                        if (f.totalPeriods != null) ...[
-                          const SizedBox(height: 6),
-                          Row(children: [
-                            const SizedBox(width: 28),
-                            if (completed)
-                              Text('已完成全部 ${f.totalPeriods} 期',
-                                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant))
-                            else ...[
-                              Text(
-                                '${DateFormat('yyyy/MM').format(f.startDate)} 起・共 ${f.totalPeriods} 期',
-                                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: kGold.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text('剩 $remaining 期',
-                                    style: const TextStyle(
-                                        fontSize: 11,
-                                        color: kGold,
-                                        fontWeight: FontWeight.w700)),
-                              ),
-                            ],
-                          ]),
-                          const SizedBox(height: 6),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(99),
-                            child: LinearProgressIndicator(
-                              value: completed
-                                  ? 1.0
-                                  : (f.totalPeriods! - (remaining ?? 0)) / f.totalPeriods!,
-                              minHeight: 4,
-                              backgroundColor: cs.surfaceContainerHighest,
-                              valueColor: AlwaysStoppedAnimation(
-                                  completed ? cs.onSurfaceVariant : kGold),
-                            ),
-                          ),
-                        ],
-                      ]),
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.add, color: kGold, size: 18),
                     ),
                   ),
-                ),
-              );
-            }),
-          ])),
+                ]),
+                const SizedBox(height: 14),
+                if (widget.state.fixedItems.isEmpty)
+                  Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text('點右上角 + 新增固定開銷',
+                          style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant))),
+                ...widget.state.fixedItems.map((f) {
+                  final now = DateTime.now();
+                  final completed = f.isCompleted;
+                  final remaining = f.remainingPeriods(now);
+                  final cs = Theme.of(context).colorScheme;
+                  return Dismissible(
+                    key: Key(f.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 16),
+                      decoration: BoxDecoration(
+                          color: kRed, borderRadius: BorderRadius.circular(12)),
+                      child:
+                          const Icon(Icons.delete_outline, color: Colors.white),
+                    ),
+                    onDismissed: (_) => widget.state.deleteFixed(f.id),
+                    child: GestureDetector(
+                      onLongPress: () => _openFixedDialog(existing: f),
+                      child: Opacity(
+                        opacity: completed ? 0.45 : 1.0,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                              color: cs.surfaceContainer,
+                              borderRadius: BorderRadius.circular(12)),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(children: [
+                                  Icon(Icons.receipt_long,
+                                      color: completed
+                                          ? cs.onSurfaceVariant
+                                          : kGold,
+                                      size: 18),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                      child: Text(f.title,
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: completed
+                                                  ? cs.onSurfaceVariant
+                                                  : cs.onSurface))),
+                                  Text('NT\$ ${_fmt(f.amount)}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w800)),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () => _openFixedDialog(existing: f),
+                                    child: const Icon(Icons.edit_outlined,
+                                        color: kGold, size: 18),
+                                  ),
+                                ]),
+                                if (f.totalPeriods != null) ...[
+                                  const SizedBox(height: 6),
+                                  Row(children: [
+                                    const SizedBox(width: 28),
+                                    if (completed)
+                                      Text('已完成全部 ${f.totalPeriods} 期',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: cs.onSurfaceVariant))
+                                    else ...[
+                                      Text(
+                                        '${DateFormat('yyyy/MM').format(f.startDate)} 起・共 ${f.totalPeriods} 期',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: cs.onSurfaceVariant),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: kGold.withValues(alpha: 0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Text('剩 $remaining 期',
+                                            style: const TextStyle(
+                                                fontSize: 11,
+                                                color: kGold,
+                                                fontWeight: FontWeight.w700)),
+                                      ),
+                                    ],
+                                  ]),
+                                  const SizedBox(height: 6),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(99),
+                                    child: LinearProgressIndicator(
+                                      value: completed
+                                          ? 1.0
+                                          : (f.totalPeriods! -
+                                                  (remaining ?? 0)) /
+                                              f.totalPeriods!,
+                                      minHeight: 4,
+                                      backgroundColor:
+                                          cs.surfaceContainerHighest,
+                                      valueColor: AlwaysStoppedAnimation(
+                                          completed
+                                              ? cs.onSurfaceVariant
+                                              : kGold),
+                                    ),
+                                  ),
+                                ],
+                              ]),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ])),
           const SizedBox(height: 16),
 
           // 備份與匯出
-          _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('備份與匯出', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _doBackup,
-                icon: const Icon(Icons.backup),
-                label: const Text('備份資料'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kGold, foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  elevation: 0,
+          _AppCard(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                const Text('備份與匯出',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _doBackup,
+                    icon: const Icon(Icons.backup),
+                    label: const Text('備份資料'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kGold,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _doExportCsv,
-                icon: const Icon(Icons.download_rounded),
-                label: const Text('匯出 CSV'),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: kGold),
-                  foregroundColor: kGold,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _doExportCsv,
+                    icon: const Icon(Icons.download_rounded),
+                    label: const Text('匯出 CSV'),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: kGold),
+                      foregroundColor: kGold,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _doExportExcel,
-                icon: const Icon(Icons.table_chart_rounded),
-                label: const Text('匯出 Excel'),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: kGold),
-                  foregroundColor: kGold,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _doExportExcel,
+                    icon: const Icon(Icons.table_chart_rounded),
+                    label: const Text('匯出 Excel'),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: kGold),
+                      foregroundColor: kGold,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _doRestore,
-                icon: const Icon(Icons.restore_rounded),
-                label: const Text('恢復備份'),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: kGold),
-                  foregroundColor: kGold,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _doRestore,
+                    icon: const Icon(Icons.restore_rounded),
+                    label: const Text('恢復備份'),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: kGold),
+                      foregroundColor: kGold,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ])),
+              ])),
           const SizedBox(height: 16),
 
           // 危險區
-          _AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('危險區', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kRed)),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('確定清除？'),
-                      content: const Text('所有支出記錄將被永久刪除，無法還原。'),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-                        TextButton(onPressed: () => Navigator.pop(context, true),
-                            child: const Text('清除', style: TextStyle(color: kRed, fontWeight: FontWeight.w700))),
-                      ],
+          _AppCard(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                const Text('危險區',
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: kRed)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final ok = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('確定清除？'),
+                          content: const Text('所有支出記錄將被永久刪除，無法還原。'),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          actions: [
+                            TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('取消')),
+                            TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('清除',
+                                    style: TextStyle(
+                                        color: kRed,
+                                        fontWeight: FontWeight.w700))),
+                          ],
+                        ),
+                      );
+                      if (ok == true) {
+                        widget.state.clearAll();
+                        messenger.showSnackBar(
+                            const SnackBar(content: Text('所有記錄已清除')));
+                      }
+                    },
+                    icon: const Icon(Icons.delete_forever, color: kRed),
+                    label:
+                        const Text('清除所有支出記錄', style: TextStyle(color: kRed)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: kRed),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                  );
-                  if (ok == true) {
-                    widget.state.clearAll();
-                    messenger.showSnackBar(const SnackBar(content: Text('所有記錄已清除')));
-                  }
-                },
-                icon: const Icon(Icons.delete_forever, color: kRed),
-                label: const Text('清除所有支出記錄', style: TextStyle(color: kRed)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: kRed),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                 ),
-              ),
-            ),
-          ])),
+              ])),
         ]),
       ),
     );
@@ -1206,51 +1511,80 @@ class _AppCard extends StatelessWidget {
   const _AppCard({required this.child});
   @override
   Widget build(BuildContext context) => Card(
-    elevation: 0,
-    color: Theme.of(context).colorScheme.surfaceContainerLow,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-    child: Padding(padding: const EdgeInsets.all(20), child: child),
-  );
+        elevation: 0,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        child: Padding(padding: const EdgeInsets.all(20), child: child),
+      );
 }
 
 class _MonthBtn extends StatelessWidget {
-  final String text; final bool selected; final VoidCallback onTap;
-  const _MonthBtn({required this.text, required this.selected, required this.onTap});
+  final String text;
+  final bool selected;
+  final VoidCallback onTap;
+  const _MonthBtn(
+      {required this.text, required this.selected, required this.onTap});
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-      decoration: BoxDecoration(
-        color: selected ? kGold : Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(text, style: TextStyle(
-          color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface,
-          fontWeight: FontWeight.w700, fontSize: 14)),
-    ),
-  );
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? kGold
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(text,
+              style: TextStyle(
+                  color: selected
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14)),
+        ),
+      );
 }
 
 class _BudgetStat extends StatelessWidget {
-  final String label, value; final Color? valueColor; final bool alignEnd;
-  const _BudgetStat({required this.label, required this.value, this.valueColor, this.alignEnd = false});
+  final String label, value;
+  final Color? valueColor;
+  final bool alignEnd;
+  const _BudgetStat(
+      {required this.label,
+      required this.value,
+      this.valueColor,
+      this.alignEnd = false});
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-    children: [
-      Text(label, style: const TextStyle(color: kGray, fontSize: 13, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 5),
-      Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800,
-          color: valueColor ?? Theme.of(context).colorScheme.onSurface)),
-    ],
-  );
+        crossAxisAlignment:
+            alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  color: kGray, fontSize: 13, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 5),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color:
+                      valueColor ?? Theme.of(context).colorScheme.onSurface)),
+        ],
+      );
 }
 
 class _NavItem extends StatelessWidget {
-  final IconData icon; final String label; final bool selected; final VoidCallback onTap;
-  const _NavItem({required this.icon, required this.label, required this.selected, required this.onTap});
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _NavItem(
+      {required this.icon,
+      required this.label,
+      required this.selected,
+      required this.onTap});
   @override
   Widget build(BuildContext context) {
     final color = selected ? const Color(0xFF4D8ED8) : Colors.grey;
@@ -1260,8 +1594,11 @@ class _NavItem extends StatelessWidget {
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 3),
-          Text(label, style: TextStyle(color: color, fontSize: 11,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+          Text(label,
+              style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
         ]),
       ),
     );
@@ -1274,12 +1611,12 @@ class _DoughnutChart extends StatelessWidget {
   const _DoughnutChart({required this.catMap});
   @override
   Widget build(BuildContext context) => CustomPaint(
-    painter: _DoughnutPainter(
-      catMap: catMap,
-      trackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-    ),
-    child: const Center(),
-  );
+        painter: _DoughnutPainter(
+          catMap: catMap,
+          trackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        ),
+        child: const Center(),
+      );
 }
 
 class _DoughnutPainter extends CustomPainter {
@@ -1293,17 +1630,22 @@ class _DoughnutPainter extends CustomPainter {
     const sw = 40.0;
     final cx = size.width / 2, cy = size.height / 2;
     final r = min(cx, cy) - sw;
-    canvas.drawCircle(Offset(cx, cy), r, Paint()
-      ..color = trackColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = sw);
+    canvas.drawCircle(
+        Offset(cx, cy),
+        r,
+        Paint()
+          ..color = trackColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = sw);
     double start = -pi / 2;
     const gap = 0.07;
     for (final e in catMap.entries) {
       final sweep = (e.value / total) * 2 * pi - gap;
       canvas.drawArc(
         Rect.fromCircle(center: Offset(cx, cy), radius: r),
-        start, sweep, false,
+        start,
+        sweep,
+        false,
         Paint()
           ..color = categoryOf(e.key).color
           ..style = PaintingStyle.stroke
@@ -1313,20 +1655,28 @@ class _DoughnutPainter extends CustomPainter {
       start += sweep + gap;
     }
   }
+
   @override
-  bool shouldRepaint(_DoughnutPainter o) => o.catMap != catMap || o.trackColor != trackColor;
+  bool shouldRepaint(_DoughnutPainter o) =>
+      o.catMap != catMap || o.trackColor != trackColor;
 }
 
-
 class _AnnualStat extends StatelessWidget {
-  final String label, value; final Color color;
-  const _AnnualStat({required this.label, required this.value, required this.color});
+  final String label, value;
+  final Color color;
+  const _AnnualStat(
+      {required this.label, required this.value, required this.color});
   @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Text(label, style: const TextStyle(color: kGray, fontSize: 12, fontWeight: FontWeight.w600)),
-    const SizedBox(height: 4),
-    Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: color)),
-  ]);
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label,
+            style: const TextStyle(
+                color: kGray, fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Text(value,
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w800, color: color)),
+      ]);
 }
 
 // ─── 工具函式 ───
@@ -1363,21 +1713,24 @@ class _BackupPickerSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            const Text('選擇備份', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            const Text('選擇備份',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
             const Spacer(),
-            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+            IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context)),
           ]),
           const SizedBox(height: 8),
           ...backups.map((b) => ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.restore_rounded, color: kGold),
-            title: Text(
-              DateFormat('yyyy/MM/dd HH:mm').format(b.timestamp),
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            subtitle: Text('${b.expenseCount} 筆支出・${b.fixedCount} 項固定開銷'),
-            onTap: () => Navigator.pop(context, b.filename),
-          )),
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.restore_rounded, color: kGold),
+                title: Text(
+                  DateFormat('yyyy/MM/dd HH:mm').format(b.timestamp),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text('${b.expenseCount} 筆支出・${b.fixedCount} 項固定開銷'),
+                onTap: () => Navigator.pop(context, b.filename),
+              )),
         ],
       ),
     );

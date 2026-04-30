@@ -4,10 +4,10 @@ import 'fixed_item.dart';
 /// Search result item
 class SearchResult<T> {
   final String id;
-  final String type;           // 'expense' or 'fixed'
-  final T item;               // ExpenseItem or FixedItem
-  final double relevance;     // 0.0 to 1.0
-  final List<String> matchedFields;  // Which fields matched
+  final String type; // 'expense' or 'fixed'
+  final T item; // ExpenseItem or FixedItem
+  final double relevance; // 0.0 to 1.0
+  final List<String> matchedFields; // Which fields matched
 
   const SearchResult({
     required this.id,
@@ -25,7 +25,7 @@ class SearchResult<T> {
 class BackupMetadata {
   final String id;
   final DateTime timestamp;
-  final String version;           // Backup format version
+  final String version; // Backup format version
   final int expenseCount;
   final int fixedCount;
   final int totalAmount;
@@ -43,44 +43,45 @@ class BackupMetadata {
     String appVersion = '2.0.0',
     this.deviceInfo,
     this.notes,
-  }) : id = id ?? DateTime.now().microsecondsSinceEpoch.toString(),
-       timestamp = timestamp ?? DateTime.now(),
-       version = version,
-       appVersion = appVersion;
+  })  : id = id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+        timestamp = timestamp ?? DateTime.now(),
+        version = version,
+        appVersion = appVersion;
 
   /// Generate backup filename
   String get filename {
-    final iso = timestamp.toIso8601String().replaceAll(':', '').substring(0, 15);
+    final iso =
+        timestamp.toIso8601String().replaceAll(':', '').substring(0, 15);
     return 'backup_$iso.json';
   }
 
   /// Convert to JSON
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'timestamp': timestamp.toIso8601String(),
-    'version': version,
-    'expenseCount': expenseCount,
-    'fixedCount': fixedCount,
-    'totalAmount': totalAmount,
-    'appVersion': appVersion,
-    'deviceInfo': deviceInfo,
-    'notes': notes,
-  };
+        'id': id,
+        'timestamp': timestamp.toIso8601String(),
+        'version': version,
+        'expenseCount': expenseCount,
+        'fixedCount': fixedCount,
+        'totalAmount': totalAmount,
+        'appVersion': appVersion,
+        'deviceInfo': deviceInfo,
+        'notes': notes,
+      };
 
   /// Create from JSON
   factory BackupMetadata.fromJson(Map<String, dynamic> json) => BackupMetadata(
-    id: json['id'] as String?,
-    timestamp: json['timestamp'] != null
-        ? DateTime.parse(json['timestamp'] as String)
-        : null,
-    version: json['version'] as String? ?? '1.0',
-    expenseCount: json['expenseCount'] as int? ?? 0,
-    fixedCount: json['fixedCount'] as int? ?? 0,
-    totalAmount: json['totalAmount'] as int? ?? 0,
-    appVersion: json['appVersion'] as String? ?? '2.0.0',
-    deviceInfo: json['deviceInfo'] as String?,
-    notes: json['notes'] as String?,
-  );
+        id: json['id'] as String?,
+        timestamp: json['timestamp'] != null
+            ? DateTime.parse(json['timestamp'] as String)
+            : null,
+        version: json['version'] as String? ?? '1.0',
+        expenseCount: json['expenseCount'] as int? ?? 0,
+        fixedCount: json['fixedCount'] as int? ?? 0,
+        totalAmount: json['totalAmount'] as int? ?? 0,
+        appVersion: json['appVersion'] as String? ?? '2.0.0',
+        deviceInfo: json['deviceInfo'] as String?,
+        notes: json['notes'] as String?,
+      );
 }
 
 /// Complete backup data
@@ -88,7 +89,7 @@ class BackupData {
   final BackupMetadata metadata;
   final List<ExpenseItem> expenses;
   final List<FixedItem> fixedItems;
-  final Map<String, dynamic>? settings;  // App settings backup
+  final Map<String, dynamic>? settings; // App settings backup
 
   BackupData({
     required this.metadata,
@@ -99,16 +100,17 @@ class BackupData {
 
   /// Convert to JSON for file storage
   Map<String, dynamic> toJson() => {
-    'metadata': metadata.toJson(),
-    'expenses': expenses.map((e) => e.toJson()).toList(),
-    'fixedItems': fixedItems.map((f) => f.toJson()).toList(),
-    'settings': settings,
-  };
+        'metadata': metadata.toJson(),
+        'expenses': expenses.map((e) => e.toJson()).toList(),
+        'fixedItems': fixedItems.map((f) => f.toJson()).toList(),
+        'settings': settings,
+      };
 
   /// Create from JSON
   factory BackupData.fromJson(Map<String, dynamic> json) {
     final metaJson = json['metadata'] as Map<String, dynamic>?;
-    final meta = metaJson != null ? BackupMetadata.fromJson(metaJson) : BackupMetadata();
+    final meta =
+        metaJson != null ? BackupMetadata.fromJson(metaJson) : BackupMetadata();
 
     final expensesJson = json['expenses'] as List? ?? [];
     final expenses = expensesJson

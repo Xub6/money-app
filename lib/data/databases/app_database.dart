@@ -68,9 +68,12 @@ class AppDatabase {
       ''');
 
       // Create indexes for better performance
-      await db.execute('CREATE INDEX idx_expenses_date ON $_expensesTable(date)');
-      await db.execute('CREATE INDEX idx_expenses_category ON $_expensesTable(category)');
-      await db.execute('CREATE INDEX idx_expenses_created_at ON $_expensesTable(created_at)');
+      await db
+          .execute('CREATE INDEX idx_expenses_date ON $_expensesTable(date)');
+      await db.execute(
+          'CREATE INDEX idx_expenses_category ON $_expensesTable(category)');
+      await db.execute(
+          'CREATE INDEX idx_expenses_created_at ON $_expensesTable(created_at)');
 
       // Fixed items table
       await db.execute('''
@@ -92,8 +95,10 @@ class AppDatabase {
       ''');
 
       // Create indexes
-      await db.execute('CREATE INDEX idx_fixed_is_active ON $_fixedItemsTable(is_active)');
-      await db.execute('CREATE INDEX idx_fixed_created_at ON $_fixedItemsTable(created_at)');
+      await db.execute(
+          'CREATE INDEX idx_fixed_is_active ON $_fixedItemsTable(is_active)');
+      await db.execute(
+          'CREATE INDEX idx_fixed_created_at ON $_fixedItemsTable(created_at)');
 
       // Metadata table (for app-level data)
       await db.execute('''
@@ -367,11 +372,13 @@ class AppDatabase {
     try {
       final db = await database;
       final expenseCount = Sqflite.firstIntValue(
-        await db.rawQuery('SELECT COUNT(*) FROM $_expensesTable'),
-      ) ?? 0;
+            await db.rawQuery('SELECT COUNT(*) FROM $_expensesTable'),
+          ) ??
+          0;
       final fixedCount = Sqflite.firstIntValue(
-        await db.rawQuery('SELECT COUNT(*) FROM $_fixedItemsTable'),
-      ) ?? 0;
+            await db.rawQuery('SELECT COUNT(*) FROM $_fixedItemsTable'),
+          ) ??
+          0;
 
       return {
         'expenses': expenseCount,

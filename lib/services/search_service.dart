@@ -81,12 +81,12 @@ class SearchService {
           return b.relevance.compareTo(a.relevance);
         } else if (sortBy == 'date') {
           return (b.item as ExpenseItem).date.compareTo(
-            (a.item as ExpenseItem).date,
-          );
+                (a.item as ExpenseItem).date,
+              );
         } else if (sortBy == 'amount') {
           return (b.item as ExpenseItem).amount.compareTo(
-            (a.item as ExpenseItem).amount,
-          );
+                (a.item as ExpenseItem).amount,
+              );
         }
         return 0;
       });

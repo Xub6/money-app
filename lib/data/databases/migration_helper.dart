@@ -50,7 +50,8 @@ class MigrationHelper {
           final list = jsonDecode(expensesJson) as List;
           for (final json in list) {
             try {
-              final expense = ExpenseItem.fromJson(json as Map<String, dynamic>);
+              final expense =
+                  ExpenseItem.fromJson(json as Map<String, dynamic>);
               await db.insertExpense(expense);
               expensesMigrated++;
             } catch (e) {
@@ -78,7 +79,8 @@ class MigrationHelper {
               await db.insertFixedItem(fixed);
               fixedItemsMigrated++;
             } catch (e) {
-              AppLogger.warning('Failed to migrate fixed item: $json', error: e);
+              AppLogger.warning('Failed to migrate fixed item: $json',
+                  error: e);
             }
           }
         }
@@ -195,7 +197,8 @@ class MigrationHelper {
         backup[key] = value;
       }
 
-      AppLogger.info('SharedPreferences backup created with ${backup.length} entries');
+      AppLogger.info(
+          'SharedPreferences backup created with ${backup.length} entries');
       return jsonEncode(backup);
     } catch (e) {
       AppLogger.error('Failed to backup SharedPreferences', error: e);

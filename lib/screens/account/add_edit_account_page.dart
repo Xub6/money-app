@@ -100,7 +100,9 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
             onPressed: _save,
             child: Text(isEdit ? '更新' : '儲存',
                 style: const TextStyle(
-                    color: AppColors.gold, fontWeight: FontWeight.w800, fontSize: 16)),
+                    color: AppColors.gold,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16)),
           ),
         ],
       ),
@@ -108,123 +110,143 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
         onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(18, 8, 18, 40),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // ── 帳戶設定 ──
             _SectionHeader('帳戶設定'),
-            _GroupCard(cs: cs, child: Column(children: [
-              // 帳戶類型
-              _RowItem(
-                label: '帳戶類型',
+            _GroupCard(
                 cs: cs,
-                child: GestureDetector(
-                  onTap: _pickType,
-                  behavior: HitTestBehavior.opaque,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    if (_selectedType != null) ...[
-                      Text(_selectedType!.icon, style: const TextStyle(fontSize: 16)),
-                      const SizedBox(width: 6),
-                      Text(_selectedType!.name,
-                          style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600)),
-                    ] else
-                      Text('請選擇',
-                          style: TextStyle(color: cs.onSurfaceVariant)),
-                    const SizedBox(width: 4),
-                    Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 18),
-                  ]),
-                ),
-              ),
-              Divider(height: 1, color: cs.outlineVariant),
-              // 自訂名稱
-              _RowItem(
-                label: '自訂名稱',
-                cs: cs,
-                child: TextField(
-                  controller: _nameCtrl,
-                  textAlign: TextAlign.right,
-                  style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600),
-                  decoration: InputDecoration(
-                    hintText: '選填',
-                    hintStyle: TextStyle(color: cs.onSurfaceVariant),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
+                child: Column(children: [
+                  // 帳戶類型
+                  _RowItem(
+                    label: '帳戶類型',
+                    cs: cs,
+                    child: GestureDetector(
+                      onTap: _pickType,
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        if (_selectedType != null) ...[
+                          Text(_selectedType!.icon,
+                              style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 6),
+                          Text(_selectedType!.name,
+                              style: TextStyle(
+                                  color: cs.onSurface,
+                                  fontWeight: FontWeight.w600)),
+                        ] else
+                          Text('請選擇',
+                              style: TextStyle(color: cs.onSurfaceVariant)),
+                        const SizedBox(width: 4),
+                        Icon(Icons.chevron_right,
+                            color: cs.onSurfaceVariant, size: 18),
+                      ]),
+                    ),
                   ),
-                ),
-              ),
-            ])),
+                  Divider(height: 1, color: cs.outlineVariant),
+                  // 自訂名稱
+                  _RowItem(
+                    label: '自訂名稱',
+                    cs: cs,
+                    child: TextField(
+                      controller: _nameCtrl,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                          color: cs.onSurface, fontWeight: FontWeight.w600),
+                      decoration: InputDecoration(
+                        hintText: '選填',
+                        hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ),
+                ])),
             const SizedBox(height: 20),
 
             // ── 餘額 ──
             _SectionHeader('餘額'),
-            _GroupCard(cs: cs, child: Column(children: [
-              _RowItem(
-                label: '當前餘額',
+            _GroupCard(
                 cs: cs,
-                child: TextField(
-                  controller: _balanceCtrl,
-                  textAlign: TextAlign.right,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                  style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w700, fontSize: 16),
-                  decoration: InputDecoration(
-                    hintText: '0',
-                    hintStyle: TextStyle(color: cs.onSurfaceVariant),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
+                child: Column(children: [
+                  _RowItem(
+                    label: '當前餘額',
+                    cs: cs,
+                    child: TextField(
+                      controller: _balanceCtrl,
+                      textAlign: TextAlign.right,
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true, signed: true),
+                      style: TextStyle(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16),
+                      decoration: InputDecoration(
+                        hintText: '0',
+                        hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              Divider(height: 1, color: cs.outlineVariant),
-              // 貨幣
-              _RowItem(
-                label: '貨幣',
-                cs: cs,
-                child: DropdownButton<String>(
-                  value: _currency,
-                  underline: const SizedBox(),
-                  style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600, fontSize: 14),
-                  dropdownColor: cs.surfaceContainerHigh,
-                  items: kCurrencies.map((c) => DropdownMenuItem(
-                    value: c.$1,
-                    child: Text('${c.$1}  ${c.$2}'),
-                  )).toList(),
-                  onChanged: (v) => setState(() => _currency = v!),
-                ),
-              ),
-            ])),
+                  Divider(height: 1, color: cs.outlineVariant),
+                  // 貨幣
+                  _RowItem(
+                    label: '貨幣',
+                    cs: cs,
+                    child: DropdownButton<String>(
+                      value: _currency,
+                      underline: const SizedBox(),
+                      style: TextStyle(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14),
+                      dropdownColor: cs.surfaceContainerHigh,
+                      items: kCurrencies
+                          .map((c) => DropdownMenuItem(
+                                value: c.$1,
+                                child: Text('${c.$1}  ${c.$2}'),
+                              ))
+                          .toList(),
+                      onChanged: (v) => setState(() => _currency = v!),
+                    ),
+                  ),
+                ])),
             const SizedBox(height: 20),
 
             // ── 其他 ──
             _SectionHeader('其他'),
-            _GroupCard(cs: cs, child: Column(children: [
-              _RowItem(
-                label: '備註',
+            _GroupCard(
                 cs: cs,
-                child: TextField(
-                  controller: _noteCtrl,
-                  textAlign: TextAlign.right,
-                  style: TextStyle(color: cs.onSurface),
-                  decoration: InputDecoration(
-                    hintText: '選填',
-                    hintStyle: TextStyle(color: cs.onSurfaceVariant),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
+                child: Column(children: [
+                  _RowItem(
+                    label: '備註',
+                    cs: cs,
+                    child: TextField(
+                      controller: _noteCtrl,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(color: cs.onSurface),
+                      decoration: InputDecoration(
+                        hintText: '選填',
+                        hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              Divider(height: 1, color: cs.outlineVariant),
-              _RowItem(
-                label: '計入總資產',
-                cs: cs,
-                child: Switch(
-                  value: _countInTotal,
-                  onChanged: (v) => setState(() => _countInTotal = v),
-                  activeColor: AppColors.gold,
-                ),
-              ),
-            ])),
+                  Divider(height: 1, color: cs.outlineVariant),
+                  _RowItem(
+                    label: '計入總資產',
+                    cs: cs,
+                    child: Switch(
+                      value: _countInTotal,
+                      onChanged: (v) => setState(() => _countInTotal = v),
+                      activeColor: AppColors.gold,
+                    ),
+                  ),
+                ])),
           ]),
         ),
       ),
@@ -272,9 +294,12 @@ class _RowItem extends StatelessWidget {
         child: Row(children: [
           Text(label,
               style: TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w500, color: cs.onSurface)),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface)),
           const SizedBox(width: 12),
-          Expanded(child: Align(alignment: Alignment.centerRight, child: child)),
+          Expanded(
+              child: Align(alignment: Alignment.centerRight, child: child)),
         ]),
       );
 }

@@ -201,7 +201,8 @@ class AppLocalizations {
 
   static String translate(Locale locale, String key) {
     final localeKey = getLocaleKey(locale);
-    final translations = _localizedStrings[localeKey] ?? _localizedStrings['zh_TW']!;
+    final translations =
+        _localizedStrings[localeKey] ?? _localizedStrings['zh_TW']!;
     return translations[key] ?? key;
   }
 

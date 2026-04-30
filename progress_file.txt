@@ -6,8 +6,8 @@
 
 ---
 
-## 目前狀態：Phase 2 進行中 🔶
-最後完成任務：SQLite 切換為主要儲存（2026-04-28）✅
+## 目前狀態：待機中 ✅
+最後完成任務：Onboarding 導覽功能（2026-04-30）✅
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
@@ -32,6 +32,18 @@
 
 **待完成：**
 - [ ] i18n 國際化
+
+### Onboarding 完成（2026-04-30）✅
+- [x] lib/screens/onboarding/onboarding_service.dart（OnboardingService：isOnboardingSeen / markOnboardingSeen）
+- [x] lib/screens/onboarding/onboarding_page.dart（6 slide PageView + dots + skip + 下一步）
+- [x] lib/screens/onboarding/slides/slide_1_welcome.dart（歡迎畫面）
+- [x] lib/screens/onboarding/slides/slide_2_expense.dart（記帳功能介紹）
+- [x] lib/screens/onboarding/slides/slide_3_budget.dart（預算管理介紹）
+- [x] lib/screens/onboarding/slides/slide_4_invest.dart（投資追蹤 + 法務聲明）
+- [x] lib/screens/onboarding/slides/slide_5_manage.dart（管理功能介紹）
+- [x] lib/screens/onboarding/slides/slide_6_cta.dart（Checklist T1 + 新增第一筆支出 CTA）
+- [x] main.dart：_checkOnboarding + _onAddExpenseFromOnboarding（復用既有 _openAdd）
+- [x] invest_page.dart：底部法務聲明 + 移除未使用的 _openAdd
 
 ### 下一步（優先順序）
 1. i18n 國際化 — 約 4h，最耗時，可最後做

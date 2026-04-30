@@ -80,7 +80,8 @@ class _SearchPageState extends State<SearchPage> {
   Future<void> _selectDateRange() async {
     final start = await showDatePicker(
       context: context,
-      initialDate: _startDate ?? DateTime.now().subtract(const Duration(days: 30)),
+      initialDate:
+          _startDate ?? DateTime.now().subtract(const Duration(days: 30)),
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       helpText: '選擇開始日期',
@@ -152,20 +153,22 @@ class _SearchPageState extends State<SearchPage> {
                 prefixIcon: const Icon(Icons.search, color: AppColors.gold),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        setState(() => _results = []);
-                      },
-                    )
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          setState(() => _results = []);
+                        },
+                      )
                     : null,
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                fillColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
           ),
@@ -184,7 +187,9 @@ class _SearchPageState extends State<SearchPage> {
                         : '日期範圍',
                   ),
                   onSelected: (_) => _selectDateRange(),
-                  backgroundColor: _startDate != null ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
+                  backgroundColor: _startDate != null
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
                 ),
                 const SizedBox(width: 8),
 
@@ -193,7 +198,8 @@ class _SearchPageState extends State<SearchPage> {
                   FilterChip(
                     label: const Text('分類'),
                     onSelected: (_) => _showCategoryFilter(),
-                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                   )
                 else
                   Wrap(
@@ -204,7 +210,8 @@ class _SearchPageState extends State<SearchPage> {
                         selected: true,
                         onSelected: (_) => _toggleCategory(cat),
                         onDeleted: () => _toggleCategory(cat),
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primaryContainer,
                       );
                     }).toList(),
                   ),
@@ -212,7 +219,9 @@ class _SearchPageState extends State<SearchPage> {
                 const SizedBox(width: 8),
 
                 // Clear filters
-                if (_startDate != null || _endDate != null || _selectedCategories.isNotEmpty)
+                if (_startDate != null ||
+                    _endDate != null ||
+                    _selectedCategories.isNotEmpty)
                   FilterChip(
                     label: const Text('清除'),
                     onSelected: (_) => _clearFilters(),
@@ -227,30 +236,36 @@ class _SearchPageState extends State<SearchPage> {
           // Results
           Expanded(
             child: _isSearching
-                ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.gold))
                 : _results.isEmpty
                     ? Center(
-                      child: Text(
-                        _searchCtrl.text.isEmpty ? '輸入搜索詞開始' : '沒有找到結果',
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15),
-                      ),
-                    )
+                        child: Text(
+                          _searchCtrl.text.isEmpty ? '輸入搜索詞開始' : '沒有找到結果',
+                          style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              fontSize: 15),
+                        ),
+                      )
                     : ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      itemCount: _results.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (_, i) {
-                        final result = _results[i];
-                        if (result.type == 'expense') {
-                          final item = result.item as ExpenseItem;
-                          final cat = categoryOf(item.category);
-                          return _buildExpenseCard(item, cat);
-                        } else {
-                          final item = result.item as FixedItem;
-                          return _buildFixedCard(item);
-                        }
-                      },
-                    ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        itemCount: _results.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (_, i) {
+                          final result = _results[i];
+                          if (result.type == 'expense') {
+                            final item = result.item as ExpenseItem;
+                            final cat = categoryOf(item.category);
+                            return _buildExpenseCard(item, cat);
+                          } else {
+                            final item = result.item as FixedItem;
+                            return _buildFixedCard(item);
+                          }
+                        },
+                      ),
           ),
         ],
       ),
@@ -268,7 +283,8 @@ class _SearchPageState extends State<SearchPage> {
           backgroundColor: cat.color.withValues(alpha: 0.15),
           child: Icon(cat.icon, color: cat.color, size: 22),
         ),
-        title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(item.title,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text(
           '${item.category}・${formatDate(item.date)}\n${item.note.isEmpty ? "無備註" : item.note}',
         ),
@@ -301,9 +317,11 @@ class _SearchPageState extends State<SearchPage> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          child: const Icon(Icons.receipt_long, color: AppColors.gold, size: 20),
+          child:
+              const Icon(Icons.receipt_long, color: AppColors.gold, size: 20),
         ),
-        title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(item.title,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text(
           '${item.renewalCycle.label}・${item.category}',
           style: const TextStyle(fontSize: 12),
@@ -350,9 +368,14 @@ class _SearchPageState extends State<SearchPage> {
                           _performSearch();
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: selected ? cat.color.withValues(alpha: 0.2) : Theme.of(context).colorScheme.surfaceContainerHighest,
+                            color: selected
+                                ? cat.color.withValues(alpha: 0.2)
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: selected ? cat.color : Colors.transparent,
@@ -384,7 +407,8 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                       child: const Text(
                         '完成',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),

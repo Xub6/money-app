@@ -37,7 +37,8 @@ class _AccountPageState extends State<AccountPage> {
 
   void _delete(Account a) {
     s.deleteAccount(a.id);
-    ErrorHandler.showUndoSnack(context, '已刪除「${a.displayName}」', () => s.addAccount(a));
+    ErrorHandler.showUndoSnack(
+        context, '已刪除「${a.displayName}」', () => s.addAccount(a));
   }
 
   @override
@@ -67,153 +68,194 @@ class _AccountPageState extends State<AccountPage> {
       body: ListenableBuilder(
         listenable: s,
         builder: (context, _) {
-          final savings = s.accounts.where((a) => a.category == AccountCategory.savings).toList();
-          final credit = s.accounts.where((a) => a.category == AccountCategory.credit).toList();
+          final savings = s.accounts
+              .where((a) => a.category == AccountCategory.savings)
+              .toList();
+          final credit = s.accounts
+              .where((a) => a.category == AccountCategory.credit)
+              .toList();
           final net = s.netAssets;
           final assets = s.totalAssets;
           final liabilities = s.totalLiabilities;
           final isNegative = net < 0;
           return CustomScrollView(
-        slivers: [
-          // ── 淨資產卡片 ──
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                padding: const EdgeInsets.all(22),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('淨資產', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  Text(
-                    'NT\$ ${_fmt(net)}',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: isNegative ? AppColors.error : cs.onSurface,
+            slivers: [
+              // ── 淨資產卡片 ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(24),
                     ),
+                    padding: const EdgeInsets.all(22),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('淨資產',
+                              style: TextStyle(
+                                  color: cs.onSurfaceVariant,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          Text(
+                            'NT\$ ${_fmt(net)}',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              color:
+                                  isNegative ? AppColors.error : cs.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Divider(color: cs.outlineVariant, height: 1),
+                          const SizedBox(height: 16),
+                          Row(children: [
+                            Expanded(
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                  Text('資產',
+                                      style: TextStyle(
+                                          color: cs.onSurfaceVariant,
+                                          fontSize: 12)),
+                                  const SizedBox(height: 4),
+                                  Text('NT\$ ${_fmt(assets)}',
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.success)),
+                                ])),
+                            Expanded(
+                                child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                  Text('負債',
+                                      style: TextStyle(
+                                          color: cs.onSurfaceVariant,
+                                          fontSize: 12)),
+                                  const SizedBox(height: 4),
+                                  Text('NT\$ ${_fmt(liabilities)}',
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: liabilities > 0
+                                              ? AppColors.error
+                                              : cs.onSurfaceVariant)),
+                                ])),
+                          ]),
+                        ]),
                   ),
-                  const SizedBox(height: 16),
-                  Divider(color: cs.outlineVariant, height: 1),
-                  const SizedBox(height: 16),
-                  Row(children: [
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('資產', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
-                      const SizedBox(height: 4),
-                      Text('NT\$ ${_fmt(assets)}',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.success)),
-                    ])),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text('負債', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
-                      const SizedBox(height: 4),
-                      Text('NT\$ ${_fmt(liabilities)}',
+                ),
+              ),
+
+              // ── 儲蓄帳戶 ──
+              if (savings.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 22, 18, 10),
+                    child: Row(children: [
+                      Text('儲蓄帳戶',
                           style: TextStyle(
                               fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: liabilities > 0 ? AppColors.error : cs.onSurfaceVariant)),
-                    ])),
-                  ]),
-                ]),
-              ),
-            ),
-          ),
-
-          // ── 儲蓄帳戶 ──
-          if (savings.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 22, 18, 10),
-                child: Row(children: [
-                  Text('儲蓄帳戶',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: cs.onSurface)),
-                  const Spacer(),
-                  Text('${savings.length} 個',
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-                ]),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _AccountCard(
-                      account: savings[i],
-                      fxRates: s.fxRates,
-                      onTap: () => _openEdit(savings[i]),
-                      onDelete: () => _delete(savings[i]),
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface)),
+                      const Spacer(),
+                      Text('${savings.length} 個',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 13)),
+                    ]),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, i) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _AccountCard(
+                          account: savings[i],
+                          fxRates: s.fxRates,
+                          onTap: () => _openEdit(savings[i]),
+                          onDelete: () => _delete(savings[i]),
+                        ),
+                      ),
+                      childCount: savings.length,
                     ),
                   ),
-                  childCount: savings.length,
                 ),
-              ),
-            ),
-          ],
+              ],
 
-          // ── 信用帳戶 ──
-          if (credit.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 22, 18, 10),
-                child: Row(children: [
-                  Text('信用帳戶',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: cs.onSurface)),
-                  const Spacer(),
-                  Text('${credit.length} 個',
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-                ]),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _AccountCard(
-                      account: credit[i],
-                      fxRates: s.fxRates,
-                      onTap: () => _openEdit(credit[i]),
-                      onDelete: () => _delete(credit[i]),
-                      isCredit: true,
+              // ── 信用帳戶 ──
+              if (credit.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 22, 18, 10),
+                    child: Row(children: [
+                      Text('信用帳戶',
+                          style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onSurface)),
+                      const Spacer(),
+                      Text('${credit.length} 個',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 13)),
+                    ]),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, i) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _AccountCard(
+                          account: credit[i],
+                          fxRates: s.fxRates,
+                          onTap: () => _openEdit(credit[i]),
+                          onDelete: () => _delete(credit[i]),
+                          isCredit: true,
+                        ),
+                      ),
+                      childCount: credit.length,
                     ),
                   ),
-                  childCount: credit.length,
                 ),
-              ),
-            ),
-          ],
+              ],
 
-          // ── 空狀態 ──
-          if (s.accounts.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 40, 18, 0),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 48),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(22),
+              // ── 空狀態 ──
+              if (s.accounts.isEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 40, 18, 0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 48),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: Column(children: [
+                        Icon(Icons.account_balance_wallet_outlined,
+                            size: 48, color: cs.onSurfaceVariant),
+                        const SizedBox(height: 12),
+                        Text('還沒有帳戶',
+                            style: TextStyle(
+                                color: cs.onSurfaceVariant, fontSize: 15)),
+                        const SizedBox(height: 6),
+                        Text('點右上角 + 新增第一個帳戶',
+                            style: TextStyle(
+                                color: cs.onSurfaceVariant, fontSize: 13)),
+                      ]),
+                    ),
                   ),
-                  child: Column(children: [
-                    Icon(Icons.account_balance_wallet_outlined, size: 48, color: cs.onSurfaceVariant),
-                    const SizedBox(height: 12),
-                    Text('還沒有帳戶', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 15)),
-                    const SizedBox(height: 6),
-                    Text('點右上角 + 新增第一個帳戶',
-                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-                  ]),
                 ),
-              ),
-            ),
 
-          const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
-        ],
-        );
+              const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
+            ],
+          );
         },
       ),
     );
@@ -256,23 +298,30 @@ class _AccountCard extends StatelessWidget {
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('確認刪除', style: TextStyle(fontWeight: FontWeight.w800)),
-            content: Text('確定要刪除「${a.displayName}」嗎？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text('取消', style: TextStyle(color: cs.onSurfaceVariant)),
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                title: const Text('確認刪除',
+                    style: TextStyle(fontWeight: FontWeight.w800)),
+                content: Text('確定要刪除「${a.displayName}」嗎？'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text('取消',
+                        style: TextStyle(color: cs.onSurfaceVariant)),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('刪除',
+                        style: TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('刪除', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
-              ),
-            ],
-          ),
-        ) ?? false;
+            ) ??
+            false;
       },
       onDismissed: (_) => onDelete(),
       child: GestureDetector(
@@ -292,18 +341,26 @@ class _AccountCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
-                child: Text(a.icon ?? '💳', style: const TextStyle(fontSize: 20)),
+                child:
+                    Text(a.icon ?? '💳', style: const TextStyle(fontSize: 20)),
               ),
             ),
             const SizedBox(width: 14),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(a.displayName,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: cs.onSurface)),
-              if (a.note.isNotEmpty)
-                Text(a.note,
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-                    overflow: TextOverflow.ellipsis),
-            ])),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(a.displayName,
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface)),
+                  if (a.note.isNotEmpty)
+                    Text(a.note,
+                        style:
+                            TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                        overflow: TextOverflow.ellipsis),
+                ])),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Text(
                 '${a.currencySymbol} ${_fmt(a.balance)}',

@@ -77,7 +77,8 @@ void main() {
 
       expect(item.isActiveAt(startDate), true);
       expect(item.isActiveAt(endDate), true);
-      expect(item.isActiveAt(startDate.subtract(const Duration(days: 1))), false);
+      expect(
+          item.isActiveAt(startDate.subtract(const Duration(days: 1))), false);
       expect(item.isActiveAt(endDate.add(const Duration(days: 1))), false);
     });
   });

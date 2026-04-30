@@ -102,7 +102,8 @@ class StockService {
   /// Search Taiwan stocks via TWSE codeQuery (supports Chinese name search)
   static Future<List<StockSearchResult>> _searchTwse(String query) async {
     final q = Uri.encodeComponent(query);
-    final uri = Uri.parse('https://www.twse.com.tw/rwd/zh/api/codeQuery?query=$q');
+    final uri =
+        Uri.parse('https://www.twse.com.tw/rwd/zh/api/codeQuery?query=$q');
     try {
       final resp = await http.get(uri, headers: _headers).timeout(_timeout);
       if (resp.statusCode != 200) return [];
@@ -147,7 +148,8 @@ class StockService {
           .where((q) => !((q['symbol'] as String?) ?? '').contains('.'))
           .map((q) => StockSearchResult(
                 symbol: (q['symbol'] as String),
-                name: (q['shortname'] ?? q['longname'] ?? q['symbol']) as String,
+                name:
+                    (q['shortname'] ?? q['longname'] ?? q['symbol']) as String,
                 exchange: (q['exchange'] ?? '') as String,
               ))
           .toList();

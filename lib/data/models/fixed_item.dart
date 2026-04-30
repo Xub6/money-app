@@ -24,11 +24,11 @@ enum RenewalCycle {
 class FixedItem {
   final String id;
   final String title;
-  final int amount;                  // Amount in cents
+  final int amount; // Amount in cents
   final String category;
-  final DateTime startDate;          // When subscription started
-  final DateTime? endDate;           // Explicit end (null = ongoing)
-  final int? totalPeriods;           // Number of installments (null = no limit)
+  final DateTime startDate; // When subscription started
+  final DateTime? endDate; // Explicit end (null = ongoing)
+  final int? totalPeriods; // Number of installments (null = no limit)
   final RenewalCycle renewalCycle;
   final DateTime createdAt;
   final DateTime? editedAt;
@@ -50,10 +50,10 @@ class FixedItem {
     this.isActive = true,
     this.syncStatus = SyncStatus.local,
     this.notes,
-  }) : id = id ?? const Uuid().v4(),
-       category = category,
-       startDate = startDate ?? DateTime.now(),
-       createdAt = createdAt ?? DateTime.now();
+  })  : id = id ?? const Uuid().v4(),
+        category = category,
+        startDate = startDate ?? DateTime.now(),
+        createdAt = createdAt ?? DateTime.now();
 
   /// Computed end date from totalPeriods (overrides endDate when set)
   DateTime? get effectiveEndDate {
@@ -66,14 +66,16 @@ class FixedItem {
 
   /// How many periods have elapsed (1-based current period)
   int currentPeriod(DateTime now) {
-    final diff = (now.year - startDate.year) * 12 + (now.month - startDate.month) + 1;
+    final diff =
+        (now.year - startDate.year) * 12 + (now.month - startDate.month) + 1;
     return diff.clamp(0, totalPeriods ?? diff);
   }
 
   /// Remaining periods from now
   int? remainingPeriods(DateTime now) {
     if (totalPeriods == null) return null;
-    final elapsed = (now.year - startDate.year) * 12 + (now.month - startDate.month);
+    final elapsed =
+        (now.year - startDate.year) * 12 + (now.month - startDate.month);
     return (totalPeriods! - elapsed).clamp(0, totalPeriods!);
   }
 
@@ -122,7 +124,8 @@ class FixedItem {
       category: category ?? this.category,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
-      totalPeriods: totalPeriods == _sentinel ? this.totalPeriods : totalPeriods as int?,
+      totalPeriods:
+          totalPeriods == _sentinel ? this.totalPeriods : totalPeriods as int?,
       renewalCycle: renewalCycle ?? this.renewalCycle,
       createdAt: createdAt ?? this.createdAt,
       editedAt: editedAt ?? this.editedAt,
@@ -134,91 +137,93 @@ class FixedItem {
 
   /// Convert to JSON
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'amount': amount,
-    'category': category,
-    'startDate': startDate.toIso8601String(),
-    'endDate': endDate?.toIso8601String(),
-    'totalPeriods': totalPeriods,
-    'renewalCycle': renewalCycle.value,
-    'createdAt': createdAt.toIso8601String(),
-    'editedAt': editedAt?.toIso8601String(),
-    'isActive': isActive,
-    'syncStatus': syncStatus.value,
-    'notes': notes,
-  };
+        'id': id,
+        'title': title,
+        'amount': amount,
+        'category': category,
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate?.toIso8601String(),
+        'totalPeriods': totalPeriods,
+        'renewalCycle': renewalCycle.value,
+        'createdAt': createdAt.toIso8601String(),
+        'editedAt': editedAt?.toIso8601String(),
+        'isActive': isActive,
+        'syncStatus': syncStatus.value,
+        'notes': notes,
+      };
 
   /// Create from JSON
   factory FixedItem.fromJson(Map<String, dynamic> json) => FixedItem(
-    id: json['id'] as String? ?? const Uuid().v4(),
-    title: json['title'] as String? ?? '',
-    amount: json['amount'] as int? ?? 0,
-    category: json['category'] as String? ?? '其他',
-    startDate: json['startDate'] != null
-        ? DateTime.parse(json['startDate'] as String)
-        : DateTime.now(),
-    endDate: json['endDate'] != null
-        ? DateTime.parse(json['endDate'] as String)
-        : null,
-    totalPeriods: json['totalPeriods'] as int?,
-    renewalCycle: RenewalCycle.fromString(
-      json['renewalCycle'] as String? ?? 'monthly',
-    ),
-    createdAt: json['createdAt'] != null
-        ? DateTime.parse(json['createdAt'] as String)
-        : DateTime.now(),
-    editedAt: json['editedAt'] != null
-        ? DateTime.parse(json['editedAt'] as String)
-        : null,
-    isActive: json['isActive'] as bool? ?? true,
-    syncStatus: SyncStatus.fromString(json['syncStatus'] as String? ?? 'local'),
-    notes: json['notes'] as String?,
-  );
+        id: json['id'] as String? ?? const Uuid().v4(),
+        title: json['title'] as String? ?? '',
+        amount: json['amount'] as int? ?? 0,
+        category: json['category'] as String? ?? '其他',
+        startDate: json['startDate'] != null
+            ? DateTime.parse(json['startDate'] as String)
+            : DateTime.now(),
+        endDate: json['endDate'] != null
+            ? DateTime.parse(json['endDate'] as String)
+            : null,
+        totalPeriods: json['totalPeriods'] as int?,
+        renewalCycle: RenewalCycle.fromString(
+          json['renewalCycle'] as String? ?? 'monthly',
+        ),
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'] as String)
+            : DateTime.now(),
+        editedAt: json['editedAt'] != null
+            ? DateTime.parse(json['editedAt'] as String)
+            : null,
+        isActive: json['isActive'] as bool? ?? true,
+        syncStatus:
+            SyncStatus.fromString(json['syncStatus'] as String? ?? 'local'),
+        notes: json['notes'] as String?,
+      );
 
   /// Convert to database JSON
   Map<String, dynamic> toDatabaseJson() => {
-    'id': id,
-    'title': title,
-    'amount': amount,
-    'category': category,
-    'start_date': startDate.toIso8601String(),
-    'end_date': endDate?.toIso8601String(),
-    'total_periods': totalPeriods,
-    'renewal_cycle': renewalCycle.value,
-    'created_at': createdAt.toIso8601String(),
-    'edited_at': editedAt?.toIso8601String(),
-    'is_active': isActive ? 1 : 0,
-    'sync_status': syncStatus.value,
-    'notes': notes,
-  };
+        'id': id,
+        'title': title,
+        'amount': amount,
+        'category': category,
+        'start_date': startDate.toIso8601String(),
+        'end_date': endDate?.toIso8601String(),
+        'total_periods': totalPeriods,
+        'renewal_cycle': renewalCycle.value,
+        'created_at': createdAt.toIso8601String(),
+        'edited_at': editedAt?.toIso8601String(),
+        'is_active': isActive ? 1 : 0,
+        'sync_status': syncStatus.value,
+        'notes': notes,
+      };
 
   /// Create from database
   factory FixedItem.fromDatabase(Map<String, dynamic> map) => FixedItem(
-    id: map['id'] as String,
-    title: map['title'] as String,
-    amount: map['amount'] as int,
-    category: map['category'] as String,
-    startDate: DateTime.parse(map['start_date'] as String),
-    endDate: map['end_date'] != null
-        ? DateTime.parse(map['end_date'] as String)
-        : null,
-    totalPeriods: map['total_periods'] as int?,
-    renewalCycle: RenewalCycle.fromString(map['renewal_cycle'] as String? ?? 'monthly'),
-    createdAt: DateTime.parse(map['created_at'] as String),
-    editedAt: map['edited_at'] != null
-        ? DateTime.parse(map['edited_at'] as String)
-        : null,
-    isActive: (map['is_active'] as int?) == 1,
-    syncStatus: SyncStatus.fromString(map['sync_status'] as String? ?? 'local'),
-    notes: map['notes'] as String?,
-  );
+        id: map['id'] as String,
+        title: map['title'] as String,
+        amount: map['amount'] as int,
+        category: map['category'] as String,
+        startDate: DateTime.parse(map['start_date'] as String),
+        endDate: map['end_date'] != null
+            ? DateTime.parse(map['end_date'] as String)
+            : null,
+        totalPeriods: map['total_periods'] as int?,
+        renewalCycle: RenewalCycle.fromString(
+            map['renewal_cycle'] as String? ?? 'monthly'),
+        createdAt: DateTime.parse(map['created_at'] as String),
+        editedAt: map['edited_at'] != null
+            ? DateTime.parse(map['edited_at'] as String)
+            : null,
+        isActive: (map['is_active'] as int?) == 1,
+        syncStatus:
+            SyncStatus.fromString(map['sync_status'] as String? ?? 'local'),
+        notes: map['notes'] as String?,
+      );
 
   @override
-  bool operator ==(Object other) => identical(this, other) ||
-      other is FixedItem &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FixedItem && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;
