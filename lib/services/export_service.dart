@@ -297,7 +297,7 @@ class ExportService {
           e.category,
           e.amount / 100.0,
           formatDate(e.date),
-          e.note ?? '',
+          e.note,
         ]);
       }
       expSheet.appendRow([]);

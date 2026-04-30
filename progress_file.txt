@@ -7,7 +7,7 @@
 ---
 
 ## 目前狀態：待機中 ✅
-最後完成任務：Onboarding 跳過防呆機制（2026-04-30）✅
+最後完成任務：Feedback 功能 + flutter analyze warning 全清（2026-04-30）✅
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
@@ -50,8 +50,25 @@
 - [x] onboarding_page.dart：skipSetsRedirect 參數；_doSkip 區分 slides 1–5 vs slide 6 vs rewatch
 - [x] main.dart：_manageScrollCtrl（ScrollController）取代 GlobalKey；_handleSkipRedirect 改用 scrollCtrl.animateTo(max) + 先擷取 messenger 避免 BuildContext lint；ManagePage 加 scrollController / onRewatchOnboarding 參數；ManagePage 底部新增「說明與支援」區塊 + 重新觀看新手導覽 ListTile
 
+### Feedback 功能完成（2026-04-30）✅
+- [x] lib/config/feedback_config.dart：kFeedbackEndpoint（qoryva n8n Production URL）
+- [x] lib/data/models/feedback_request.dart：FeedbackRequest model（multipart fields）
+- [x] lib/services/feedback_service.dart：multipart POST，30s timeout，非 2xx 拋例外
+- [x] lib/screens/feedback/feedback_page.dart：類型/描述/email/附圖表單，成功 pop，失敗保留表單
+- [x] lib/widgets/feedback/feedback_image_picker.dart：相簿選取，最多 3 張，縮圖 + 刪除
+- [x] main.dart：ManagePage「說明與支援」區塊加入「回報問題與建議」ListTile 入口
+
+### flutter analyze warning 清除（2026-04-30）✅
+- [x] app_state.dart：9 處 body_might_complete_normally_catch_error（insertExpense/insertFixedItem catchError 加 return ''）
+- [x] categories.dart：移除 unused import app_colors.dart
+- [x] backup_service.dart：移除 unused import intl.dart
+- [x] export_service.dart：移除 dead null-aware（e.note ?? '' → e.note）
+- [x] search_service.dart：移除 unused field _debounceDelay
+- 結果：0 error / 0 warning / 28 info（flutter analyze --no-fatal-infos exit code 0）
+
 ### 下一步（優先順序）
-1. i18n 國際化 — 約 4h，最耗時，可最後做
+1. Feedback 實機驗收（手機測 A–E 場景 + 確認 n8n webhook Active）
+2. i18n 國際化 — 約 4h，最耗時，可最後做
 
 ### 完成紀錄
 - [x] 深色模式修復
@@ -74,6 +91,8 @@
 - [x] 賬戶管理功能：淨資產總覽、儲蓄/信用分類、多貨幣支援、左滑刪除 undo、ManagePage 入口卡片
 - [x] 復原提示框加 X 關閉鈕，5 秒後自動消失（明細/投資/賬戶三處統一）
 - [x] SQLite 切換為主要儲存（v2 schema + total_periods + fallback 機制）
+- [x] Feedback 功能（n8n webhook，multipart，類型/描述/email/附圖，ManagePage 入口）
+- [x] flutter analyze 0 warning（13 個 warning 全清）
 
 ### APK 安裝方式
 用手機 SSH app（Server Auditor）連接電腦，直接下載：

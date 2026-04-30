@@ -22,6 +22,7 @@ import 'services/backup_service.dart';
 import 'services/export_service.dart';
 import 'data/models/backup_metadata.dart';
 import 'screens/account/account_page.dart';
+import 'screens/feedback/feedback_page.dart';
 import 'screens/onboarding/onboarding_page.dart';
 import 'screens/onboarding/onboarding_service.dart';
 
@@ -1578,6 +1579,22 @@ class _ManagePageState extends State<ManagePage> {
                   trailing:
                       const Icon(Icons.chevron_right, color: kGray, size: 18),
                   onTap: widget.onRewatchOnboarding,
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.feedback_outlined, color: kGold),
+                  title: const Text('回報問題與建議',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  subtitle: const Text('問題回報、功能建議或使用感受',
+                      style: TextStyle(fontSize: 12)),
+                  trailing:
+                      const Icon(Icons.chevron_right, color: kGray, size: 18),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FeedbackPage()),
+                  ),
                 ),
               ],
             ),

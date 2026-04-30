@@ -21,8 +21,6 @@ class SearchResult {
 
 /// Service for searching expenses and fixed items
 class SearchService {
-  static const Duration _debounceDelay = Duration(milliseconds: 500);
-
   /// Search expenses with multiple filters
   Future<List<SearchResult>> searchExpenses(
     List<ExpenseItem> expenses, {

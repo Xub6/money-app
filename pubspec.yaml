@@ -25,7 +25,10 @@ dependencies:
   encrypt: ^5.0.3                   # AES encryption (null-safe)
   provider: ^6.0.0                  # State management upgrade
   path: ^1.9.0                      # Path utilities
-  http: ^1.2.0                      # HTTP requests (Yahoo Finance)
+  http: ^1.2.0                      # HTTP requests (Yahoo Finance + feedback)
+  image_picker: ^1.1.2              # 相簿選取圖片（feedback 附圖）
+  device_info_plus: ^11.1.1         # 裝置型號 / OS 版本（feedback 裝置資訊）
+  package_info_plus: ^8.1.2         # App version（feedback 裝置資訊）
   crypto: ^3.0.0                    # SHA256 hashing
 
 dev_dependencies:

@@ -95,8 +95,9 @@ class AppState extends ChangeNotifier {
   void addExpense(ExpenseItem item) {
     expenses.insert(0, item);
     _updateStreak();
-    _db.insertExpense(item).catchError((e) {
+    _db.insertExpense(item).catchError((Object e) {
       AppLogger.error('DB insertExpense failed', error: e);
+      return '';
     });
     _save();
     notifyListeners();
@@ -137,8 +138,9 @@ class AppState extends ChangeNotifier {
   void insertExpenseAt(int index, ExpenseItem item) {
     final safeIndex = index.clamp(0, expenses.length);
     expenses.insert(safeIndex, item);
-    _db.insertExpense(item).catchError((e) {
+    _db.insertExpense(item).catchError((Object e) {
       AppLogger.error('DB insertExpense (undo) failed', error: e);
+      return '';
     });
     _save();
     notifyListeners();
@@ -147,8 +149,9 @@ class AppState extends ChangeNotifier {
   /// Add fixed item
   void addFixed(FixedItem item) {
     fixedItems.add(item);
-    _db.insertFixedItem(item).catchError((e) {
+    _db.insertFixedItem(item).catchError((Object e) {
       AppLogger.error('DB insertFixedItem failed', error: e);
+      return '';
     });
     _save();
     notifyListeners();
@@ -419,7 +422,7 @@ class AppState extends ChangeNotifier {
           AppLogger.info(
               '✓ Fallback: loaded ${expenses.length} expenses from SharedPreferences, syncing to SQLite');
           for (final e in expenses) {
-            _db.insertExpense(e).catchError((_) {});
+            _db.insertExpense(e).catchError((_) => '');
           }
         } else {
           final now = DateTime.now();
@@ -456,7 +459,7 @@ class AppState extends ChangeNotifier {
                 note: '【範例】可左滑刪除'),
           ];
           for (final e in expenses) {
-            _db.insertExpense(e).catchError((_) {});
+            _db.insertExpense(e).catchError((_) => '');
           }
           AppLogger.info('✓ Using default expenses');
         }
@@ -478,7 +481,7 @@ class AppState extends ChangeNotifier {
           AppLogger.info(
               '✓ Fallback: loaded ${fixedItems.length} fixed items from SharedPreferences, syncing to SQLite');
           for (final f in fixedItems) {
-            _db.insertFixedItem(f).catchError((_) {});
+            _db.insertFixedItem(f).catchError((_) => '');
           }
         } else {
           fixedItems = [
@@ -488,7 +491,7 @@ class AppState extends ChangeNotifier {
             FixedItem(title: '魚油', amount: 200),
           ];
           for (final f in fixedItems) {
-            _db.insertFixedItem(f).catchError((_) {});
+            _db.insertFixedItem(f).catchError((_) => '');
           }
           AppLogger.info('✓ Using default fixed items');
         }
@@ -566,10 +569,10 @@ class AppState extends ChangeNotifier {
     if (newBudget != null) budget = newBudget;
     _db.clear().then((_) {
       for (final e in newExpenses) {
-        _db.insertExpense(e).catchError((_) {});
+        _db.insertExpense(e).catchError((_) => '');
       }
       for (final f in newFixedItems) {
-        _db.insertFixedItem(f).catchError((_) {});
+        _db.insertFixedItem(f).catchError((_) => '');
       }
     }).catchError((e) {
       AppLogger.error('DB restore failed', error: e);
