@@ -15,7 +15,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const d = $json.body ?? $json;\n\nconst appName      = d.appName      || '錢錢管家';\nconst appVersion   = d.appVersion   || '?';\nconst category     = d.category     || 'General';\nconst message      = d.message      || '';\nconst contactEmail = d.contactEmail || '';\nconst platform     = d.platform     || '';\nconst osVersion    = d.osVersion    || '';\nconst deviceModel  = d.deviceModel  || '';\nconst sourcePage   = d.sourcePage   || '';\nconst hasImages    = d.hasImages    || 'false';\nconst createdAt    = d.createdAt    || new Date().toISOString();\n\nconst subject = '[' + appName + ' Feedback] ' + category + ' — v' + appVersion;\nconst safeMsg = message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\n\nconst html = '<div style=\"font-family:sans-serif;max-width:600px\">'\n  + '<h2 style=\"color:#C59B63;border-bottom:2px solid #C59B63;padding-bottom:8px\">App Feedback — ' + appName + '</h2>'\n  + '<table cellpadding=\"10\" cellspacing=\"0\" style=\"width:100%;border-collapse:collapse\">'\n  + '<tr style=\"background:#f0f0f0\"><th align=\"left\" style=\"width:130px\">欄位</th><th align=\"left\">內容</th></tr>'\n  + '<tr><td><b>類別</b></td><td>' + category + '</td></tr>'\n  + '<tr style=\"background:#fafafa\"><td><b>訊息</b></td><td style=\"white-space:pre-wrap\">' + safeMsg + '</td></tr>'\n  + '<tr><td><b>聯絡信箱</b></td><td>' + (contactEmail || '未提供') + '</td></tr>'\n  + '<tr style=\"background:#fafafa\"><td><b>App 版本</b></td><td>' + appName + ' v' + appVersion + '</td></tr>'\n  + '<tr><td><b>平台</b></td><td>' + platform + ' ' + osVersion + '</td></tr>'\n  + '<tr style=\"background:#fafafa\"><td><b>裝置</b></td><td>' + deviceModel + '</td></tr>'\n  + '<tr><td><b>來源頁面</b></td><td>' + sourcePage + '</td></tr>'\n  + '<tr style=\"background:#fafafa\"><td><b>附圖</b></td><td>' + (hasImages === 'true' ? 'Yes' : 'No') + '</td></tr>'\n  + '<tr><td><b>提交時間</b></td><td>' + createdAt + '</td></tr>'\n  + '</table></div>';\n\nreturn [{ json: { emailSubject: subject, emailHtml: html } }];"
+        "jsCode": "const d = $json.body ?? $json;\n\nconst appName      = d.appName      || '錢錢管家';\nconst appVersion   = d.appVersion   || '?';\nconst category     = d.category     || 'General';\nconst message      = d.message      || '';\nconst contactEmail = d.contactEmail || '';\nconst platform     = d.platform     || '';\nconst osVersion    = d.osVersion    || '';\nconst deviceModel  = d.deviceModel  || '';\nconst sourcePage   = d.sourcePage   || '';\nconst hasImages    = d.hasImages    || 'false';\nconst createdAt    = d.createdAt    || new Date().toISOString();\n\nconst subject = '[' + appName + ' Feedback] ' + category + ' — v' + appVersion;\n\nconst body = '=== ' + appName + ' User Feedback ===\\n\\n'\n  + '類別:    ' + category + '\\n'\n  + '訊息:\\n' + message + '\\n\\n'\n  + '聯絡信箱: ' + (contactEmail || '未提供') + '\\n'\n  + 'App 版本: ' + appName + ' v' + appVersion + '\\n'\n  + '平台:    ' + platform + ' ' + osVersion + '\\n'\n  + '裝置:    ' + deviceModel + '\\n'\n  + '來源頁面: ' + sourcePage + '\\n'\n  + '附圖:    ' + (hasImages === 'true' ? 'Yes' : 'No') + '\\n'\n  + '時間:    ' + createdAt + '\\n';\n\nreturn [{ json: { emailSubject: subject, emailBody: body } }];"
       },
       "id": "c1a2b3d4-e5f6-7890-a1b2-c3d4e5f60002",
       "name": "Format Email",
@@ -28,8 +28,8 @@
         "fromEmail": "noreply@qoryva.com",
         "toEmail": "admin@qoryva.com",
         "subject": "={{ $json.emailSubject }}",
-        "emailType": "html",
-        "message": "={{ $json.emailHtml }}",
+        "emailType": "text",
+        "message": "={{ $json.emailBody }}",
         "options": {}
       },
       "id": "c1a2b3d4-e5f6-7890-a1b2-c3d4e5f60003",
