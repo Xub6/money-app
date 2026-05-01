@@ -7,7 +7,7 @@
 ---
 
 ## 目前狀態：待機中 ✅
-最後完成任務：互動式 15 步新手導覽（coach-marks tour）上線（2026-04-30）✅
+最後完成任務：Play Store 上架素材準備完成（2026-05-01）✅
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
@@ -75,12 +75,20 @@
 - [x] lib/screens/invest/invest_page.dart：加 TourKeys.investHeader / investRefresh
 - APK 已建置並推送 GitHub（commit ee144c0）
 
-### Phase 3 狀態：進行中 🔶
+### Play Store 上架準備：完成 ✅（2026-05-01）
+- [x] 功能性截圖 5 張（1080×1920，canvas 繪製，docs/screenshot_1~5.png）
+- [x] Feature Graphic（1024×500，docs/feature-graphic.png）
+- [x] Privacy Policy（GitHub Pages，docs/privacy-policy.html，含 Google 登入條款 v2）
+- [x] Store listing 文案（繁體中文，含標題/短描述/詳細描述）
+- [x] Gmail 登入功能（Firebase Auth + Firestore，kFirebaseConfigured=false 預設關閉）
+- [x] FIREBASE_SETUP.md（7 步驟設定指南）
+- [x] 新手導覽 demo 資料（tour_demo_data.dart，tour 期間注入假資料）
+- [x] GitHub Release v0.3.0-beta（APK 下載連結）
 
 ### 下一步（優先順序）
-1. flutter analyze 確認 0 warning
-2. Phase 3 UI 細節優化
-3. Play Store 上架準備（截圖、store listing、Privacy Policy）
+1. Firebase 正式設定（建立專案、填入 firebase_config.dart、設定 Firestore rules）
+2. Play Store Console 建立 app listing，上傳 AAB / 截圖 / feature graphic
+3. 封閉測試 → 開放測試 → 正式上架
 
 ### 完成紀錄
 - [x] 深色模式修復
@@ -105,6 +113,9 @@
 - [x] SQLite 切換為主要儲存（v2 schema + total_periods + fallback 機制）
 - [x] Feedback 功能（n8n webhook，JSON POST，類型/描述/email/附圖，ManagePage 入口，端對端驗收通過 2026-04-30）
 - [x] flutter analyze 0 warning（13 個 warning 全清）
+- [x] 新手導覽 demo 資料（2026-05-01）
+- [x] Gmail 登入功能（Firebase Auth + Firestore，預設關閉）（2026-05-01）
+- [x] Play Store 上架素材（截圖×5、Feature Graphic、Privacy Policy v2）（2026-05-01）
 
 ### APK 安裝方式
 用手機 SSH app（Server Auditor）連接電腦，直接下載：
