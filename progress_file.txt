@@ -6,8 +6,8 @@
 
 ---
 
-## 目前狀態：P1 修復進行中 🔶
-最後完成任務：P0 產品邏輯修復 Batch 1（2026-05-02）✅
+## 目前狀態：待機中 ✅
+最後完成任務：P1 產品邏輯修復 Batch 2（2026-05-02）✅
 
 ### P0 修復狀態（第一批，全部完成）
 - [x] BUG-01: dynamicTotal/categoryTotals 只計算 expense type
@@ -16,6 +16,13 @@
 - [x] BUG-05b: AddEditExpensePage 加「不關聯帳戶」chip，移除強制帳戶選擇
 - [x] BUG-03: BackupData v2.0 含 accounts/holdings；restoreFromBackup 完整快照還原；舊版 fallback 顯示提示
 - APK: 2026-05-02 build 成功（commit b1ffc38）
+
+### P1 修復狀態（第二批，全部完成）✅
+- [x] P1-1: onPrev/onNext 改為 _monthOffset--/++ 支援連續翻月
+- [x] P1-2: deleteAccount 後同步將相關支出和持股的 accountId 置 null（直接構造而非 copyWith，避免 nullable 問題）
+- [x] P1-3: _applyHoldingBalance 新增持股買入/刪除時自動調整帳戶餘額；add_edit_investment_page 加帳戶提示 banner（選帳戶後顯示買入扣款說明）
+- [x] P1-4: DetailPage 明細列加 +/- 符號與綠/紅色；標題從「合計」改為顯示淨額（收入 - 支出）
+- APK: 2026-05-02 build 成功（commit 7d88a92，59.1 MB）
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
@@ -115,6 +122,7 @@
 1. Firebase 正式設定（建立專案、填入 firebase_config.dart、設定 Firestore rules）
 2. Play Store Console 建立 app listing，上傳 AAB / 截圖 / feature graphic
 3. 封閉測試 → 開放測試 → 正式上架
+4. P2/P3 邏輯修復（如有安排）
 
 ### 完成紀錄
 - [x] 深色模式修復
@@ -145,6 +153,7 @@
 - [x] 資料邏輯重構（ExpenseItem type+accountId、DB v3、帳戶餘額連動、clearAll 修正、seed 資料修正、StockHolding accountId、netAssets 含投資）（2026-05-01）
 - [x] 互動式導覽升級（16步、新增持股FAB互動、長按明細互動、Scrollable.ensureVisible 滾動修正、key-based 判斷）（2026-05-01）
 - [x] 支出分析升級（甜甜圈圖 + 本月/雙月/半年切換 + 摘要文案 + 分類清單點擊篩選）（2026-05-02）
+- [x] P1 產品邏輯修復（月份累進導航、帳戶刪除孤兒清理、持股帳戶餘額連動、明細收支顯示）（2026-05-02）
 
 ### APK 安裝方式
 用手機 SSH app（Server Auditor）連接電腦，直接下載：
