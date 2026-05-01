@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'config/localization.dart';
+import 'screens/auth/welcome_page.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/categories.dart';
 import 'core/utils/error_handler.dart';
@@ -114,13 +115,47 @@ class _MoneyAppState extends State<MoneyApp> {
                     ),
                   );
                 }
-                return MainShell(state: appState);
+                return _RootRouter(appState: appState);
               },
             ),
           );
         },
       ),
     );
+  }
+}
+
+// ─── Root router (welcome → main) ───
+class _RootRouter extends StatefulWidget {
+  final AppState appState;
+  const _RootRouter({required this.appState});
+  @override
+  State<_RootRouter> createState() => _RootRouterState();
+}
+
+class _RootRouterState extends State<_RootRouter> {
+  bool? _welcomeSeen;
+
+  @override
+  void initState() {
+    super.initState();
+    WelcomePage.isSeen().then((seen) {
+      if (mounted) setState(() => _welcomeSeen = seen);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_welcomeSeen == null) {
+      return const Scaffold(
+          body: Center(child: CircularProgressIndicator(color: kGold)));
+    }
+    if (!_welcomeSeen!) {
+      return WelcomePage(
+        onComplete: () => setState(() => _welcomeSeen = true),
+      );
+    }
+    return MainShell(state: widget.appState);
   }
 }
 

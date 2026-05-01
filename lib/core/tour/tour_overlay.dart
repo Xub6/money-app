@@ -209,7 +209,8 @@ class _TourTooltip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
-    const padding = 20.0;
+    final statusBarH = MediaQuery.of(context).padding.top;
+    const padding = 12.0;
     const cardMaxH = 280.0;
 
     double cardTop;
@@ -222,7 +223,8 @@ class _TourTooltip extends StatelessWidget {
           belowTop + cardMaxH + 60 < screen.height;
       cardTop = showBelow ? belowTop : aboveTop;
     }
-    cardTop = cardTop.clamp(padding, screen.height - cardMaxH - padding);
+    cardTop = cardTop.clamp(
+        statusBarH + padding, screen.height - cardMaxH - padding);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
