@@ -1332,9 +1332,21 @@ class _ManagePageState extends State<ManagePage> {
   Future<void> _doBackup() async {
     final messenger = ScaffoldMessenger.of(context);
     try {
+      // 過濾 demo 資料，不備份進正式備份檔
+      const demoPrefix = 'tour_demo_';
       final filename = await _backupService.exportBackup(
-        expenses: widget.state.expenses,
-        fixedItems: widget.state.fixedItems,
+        expenses: widget.state.expenses
+            .where((e) => !e.id.startsWith(demoPrefix))
+            .toList(),
+        fixedItems: widget.state.fixedItems
+            .where((f) => !f.id.startsWith(demoPrefix))
+            .toList(),
+        accounts: widget.state.accounts
+            .where((a) => !a.id.startsWith(demoPrefix))
+            .toList(),
+        holdings: widget.state.holdings
+            .where((h) => !h.id.startsWith(demoPrefix))
+            .toList(),
         budget: widget.state.budget,
       );
       messenger.showSnackBar(
@@ -1408,7 +1420,7 @@ class _ManagePageState extends State<ManagePage> {
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('確定還原？'),
-          content: const Text('現有的支出記錄和固定開銷將被備份內容取代，此操作無法還原。'),
+          content: const Text('現有所有資料（支出、固定開銷、帳戶、投資）將被備份內容完整取代，此操作無法還原。'),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           actions: [
@@ -1428,14 +1440,33 @@ class _ManagePageState extends State<ManagePage> {
       widget.state.restoreFromBackup(
         newExpenses: backupData.expenses,
         newFixedItems: backupData.fixedItems,
+        newAccounts: backupData.accounts,
+        newHoldings: backupData.holdings,
         newBudget: backupData.settings?['budget'] as int?,
       );
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('✓ 已還原 ${backupData.expenses.length} 筆記錄'),
-          backgroundColor: kGreen,
-        ),
-      );
+      if (!mounted) return;
+      if (backupData.isLegacy) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              '⚠ 舊版備份已還原。此備份不含帳戶與投資資料，帳戶已清空，請重新建立或手動校正餘額。',
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 6),
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              '✓ 已還原 ${backupData.expenses.length} 筆支出、'
+              '${backupData.accounts.length} 個帳戶、'
+              '${backupData.holdings.length} 筆持股',
+            ),
+            backgroundColor: kGreen,
+          ),
+        );
+      }
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('還原失敗：$e'), backgroundColor: kRed),

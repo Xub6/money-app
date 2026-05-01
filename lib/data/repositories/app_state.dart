@@ -60,8 +60,9 @@ class AppState extends ChangeNotifier {
       )
       .toList();
 
-  int dynamicTotal(DateTime m) =>
-      monthExpenses(m).fold(0, (s, e) => s + e.amount);
+  int dynamicTotal(DateTime m) => monthExpenses(m)
+      .where((e) => e.type == TransactionType.expense)
+      .fold(0, (s, e) => s + e.amount);
   int usedTotal(DateTime m) => dynamicTotal(m) + fixedTotal;
   int remaining(DateTime m) => budget - usedTotal(m);
   double usedRate(DateTime m) => (usedTotal(m) / budget).clamp(0.0, 1.0);
@@ -85,6 +86,7 @@ class AppState extends ChangeNotifier {
   Map<String, int> categoryTotals(DateTime m) {
     final map = <String, int>{};
     for (final e in monthExpenses(m)) {
+      if (e.type != TransactionType.expense) continue;
       map[e.category] = (map[e.category] ?? 0) + e.amount;
     }
     return map;
@@ -341,6 +343,7 @@ class AppState extends ChangeNotifier {
     fixedItems.removeWhere((f) => _demoIds.contains(f.id));
     accounts.removeWhere((a) => _demoIds.contains(a.id));
     _demoIds.clear();
+    _save(); // 確保 demo 資料不殘留在 SharedPreferences
     notifyListeners();
   }
 
@@ -560,10 +563,14 @@ class AppState extends ChangeNotifier {
   void restoreFromBackup({
     required List<ExpenseItem> newExpenses,
     required List<FixedItem> newFixedItems,
+    required List<Account> newAccounts,
+    required List<StockHolding> newHoldings,
     int? newBudget,
   }) {
     expenses = newExpenses;
     fixedItems = newFixedItems;
+    accounts = newAccounts;
+    holdings = newHoldings;
     if (newBudget != null) budget = newBudget;
     _db.clear().then((_) {
       for (final e in newExpenses) {
@@ -578,7 +585,10 @@ class AppState extends ChangeNotifier {
     _save();
     notifyListeners();
     AppLogger.info(
-        'Restored from backup: ${newExpenses.length} expenses, ${newFixedItems.length} fixed items');
+        'Restored from backup: ${newExpenses.length} expenses, '
+        '${newFixedItems.length} fixed items, '
+        '${newAccounts.length} accounts, '
+        '${newHoldings.length} holdings');
   }
 
   String exportToJson() {

@@ -117,13 +117,6 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
       return;
     }
 
-    final accounts =
-        Provider.of<AppState>(context, listen: false).accounts;
-    if (accounts.isNotEmpty && _selectedAccountId == null) {
-      ErrorHandler.showErrorSnack(context, '請選擇要關聯的帳戶');
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     final newItem = ExpenseItem(
@@ -216,48 +209,90 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: accounts.map((a) {
-                  final sel = _selectedAccountId == a.id;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedAccountId = a.id),
+                children: [
+                  // 不關聯帳戶（永遠顯示在最前）
+                  GestureDetector(
+                    onTap: () => setState(() => _selectedAccountId = null),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
                       margin: const EdgeInsets.only(right: 10),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: sel
-                            ? typeColor.withValues(alpha: 0.12)
+                        color: _selectedAccountId == null
+                            ? cs.outlineVariant.withValues(alpha: 0.35)
                             : cs.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: sel ? typeColor : cs.outlineVariant,
-                          width: sel ? 1.5 : 1,
+                          color: _selectedAccountId == null
+                              ? cs.outline
+                              : cs.outlineVariant,
+                          width: _selectedAccountId == null ? 1.5 : 1,
                         ),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(a.displayName,
+                          Text('不關聯帳戶',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: sel ? typeColor : cs.onSurface,
+                                color: _selectedAccountId == null
+                                    ? cs.onSurface
+                                    : cs.onSurfaceVariant,
                               )),
                           const SizedBox(height: 2),
-                          Text(
-                            '${a.currencySymbol} ${a.balance.toStringAsFixed(0)}',
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: sel
-                                    ? typeColor.withValues(alpha: 0.8)
-                                    : cs.onSurfaceVariant),
-                          ),
+                          Text('不影響餘額',
+                              style: TextStyle(
+                                  fontSize: 11, color: cs.onSurfaceVariant)),
                         ],
                       ),
                     ),
-                  );
-                }).toList(),
+                  ),
+                  // 各帳戶 chip
+                  ...accounts.map((a) {
+                    final sel = _selectedAccountId == a.id;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedAccountId = a.id),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        margin: const EdgeInsets.only(right: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: sel
+                              ? typeColor.withValues(alpha: 0.12)
+                              : cs.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: sel ? typeColor : cs.outlineVariant,
+                            width: sel ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(a.displayName,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: sel ? typeColor : cs.onSurface,
+                                )),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${a.currencySymbol} ${a.balance.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: sel
+                                      ? typeColor.withValues(alpha: 0.8)
+                                      : cs.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
               ),
             ),
             const SizedBox(height: 24),

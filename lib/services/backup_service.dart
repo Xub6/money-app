@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import '../data/models/expense_item.dart';
 import '../data/models/fixed_item.dart';
+import '../data/models/account.dart';
+import '../data/models/stock_holding.dart';
 import '../data/models/backup_metadata.dart';
 import '../core/utils/logger.dart';
 import '../core/utils/app_exceptions.dart';
@@ -28,35 +30,36 @@ class BackupService {
     }
   }
 
-  /// Export data as JSON backup
+  /// Export data as JSON backup (v2.0 — includes accounts and holdings).
   Future<String> exportBackup({
     required List<ExpenseItem> expenses,
     required List<FixedItem> fixedItems,
+    List<Account> accounts = const [],
+    List<StockHolding> holdings = const [],
     int? budget,
     String? notes,
   }) async {
     try {
       AppLogger.info('Starting backup export...');
 
-      // Calculate total
-      final totalAmount = expenses.fold<int>(
-        0,
-        (sum, e) => sum + e.amount,
-      );
+      final totalAmount = expenses.fold<int>(0, (sum, e) => sum + e.amount);
 
-      // Create metadata
       final metadata = BackupMetadata(
         expenseCount: expenses.length,
         fixedCount: fixedItems.length,
+        accountCount: accounts.length,
+        holdingCount: holdings.length,
         totalAmount: totalAmount,
         notes: notes,
+        version: '2.0',
       );
 
-      // Create backup data
       final backupData = BackupData(
         metadata: metadata,
         expenses: expenses,
         fixedItems: fixedItems,
+        accounts: accounts,
+        holdings: holdings,
         settings: budget != null ? {'budget': budget} : null,
       );
 
