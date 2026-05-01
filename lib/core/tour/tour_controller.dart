@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import '../../screens/onboarding/onboarding_service.dart';
 import 'tour_step.dart';
 
@@ -11,8 +12,6 @@ class TourController extends ChangeNotifier {
   bool _finishing = false;
 
   void Function(int tab)? _goToTab;
-  Future<void> Function()? _scrollToFeedback;
-  Future<void> Function()? _scrollToCategoryCard;
   VoidCallback? _onTourStart;
   VoidCallback? _onTourEnd;
   VoidCallback? _onTourSkip;
@@ -35,15 +34,11 @@ class TourController extends ChangeNotifier {
 
   void init({
     required void Function(int tab) goToTab,
-    required Future<void> Function() scrollToFeedback,
-    required Future<void> Function() scrollToCategoryCard,
     VoidCallback? onTourStart,
     VoidCallback? onTourEnd,
     VoidCallback? onTourSkip,
   }) {
     _goToTab = goToTab;
-    _scrollToFeedback = scrollToFeedback;
-    _scrollToCategoryCard = scrollToCategoryCard;
     _onTourStart = onTourStart;
     _onTourEnd = onTourEnd;
     _onTourSkip = onTourSkip;
@@ -131,16 +126,21 @@ class TourController extends ChangeNotifier {
     _goToTab?.call(step.tab);
     await Future.delayed(const Duration(milliseconds: 420));
 
-    // Dashboard: scroll so categoryCard (step 3) is visible
-    if (_stepIndex == 3) {
-      await _scrollToCategoryCard?.call();
-      await Future.delayed(const Duration(milliseconds: 200));
-    }
-
-    // Manage page: scroll to bottom for steps 12+
-    if (step.tab == 3 && _stepIndex >= 12) {
-      await _scrollToFeedback?.call();
-      await Future.delayed(const Duration(milliseconds: 200));
+    // Scroll the target widget into view using Flutter's built-in mechanism.
+    // Widgets not inside a Scrollable (AppBar, FAB, BottomAppBar) will throw —
+    // we catch silently since those widgets are always visible on screen.
+    final ctx = step.targetKey.currentContext;
+    if (ctx != null) {
+      try {
+        final alignment = step.side == TooltipSide.above ? 0.6 : 0.1;
+        await Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
+          alignment: alignment,
+        );
+        await Future.delayed(const Duration(milliseconds: 120));
+      } catch (_) {}
     }
 
     _waitingForInteraction = step.isInteractive;

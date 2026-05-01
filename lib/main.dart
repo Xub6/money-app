@@ -190,8 +190,6 @@ class _MainShellState extends State<MainShell> {
     final appState = context.read<AppState>();
     ctrl.init(
       goToTab: _goToTab,
-      scrollToFeedback: _scrollManageToFeedback,
-      scrollToCategoryCard: _scrollDashToCategory,
       onTourStart: appState.loadDemoData,
       onTourEnd: appState.clearDemoData,
       onTourSkip: _onTourSkipped,
@@ -239,26 +237,6 @@ class _MainShellState extends State<MainShell> {
         ),
       );
     }
-  }
-
-  Future<void> _scrollManageToFeedback() async {
-    if (!mounted || !_manageScrollCtrl.hasClients) return;
-    await _manageScrollCtrl.animateTo(
-      _manageScrollCtrl.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  Future<void> _scrollDashToCategory() async {
-    final ctx = TourKeys.categoryCard.currentContext;
-    if (ctx == null || !mounted) return;
-    await Scrollable.ensureVisible(
-      ctx,
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOut,
-      alignment: 0.1,
-    );
   }
 
   @override
@@ -335,12 +313,20 @@ class _MainShellState extends State<MainShell> {
 
   void _fabTap() {
     final ctrl = context.read<TourController>();
-    final isInteractiveFab =
-        ctrl.isActive && ctrl.isWaitingForInteraction && ctrl.stepIndex == 4;
+    final isInteractiveFab = ctrl.isActive &&
+        ctrl.isWaitingForInteraction &&
+        ctrl.currentStep?.targetKey == TourKeys.fab;
 
     switch (_tab) {
       case 2:
-        _openAddInvestment();
+        if (isInteractiveFab) {
+          ctrl.hide();
+          _openAddInvestment().then((_) {
+            if (mounted) ctrl.onInteractionComplete();
+          });
+        } else {
+          _openAddInvestment();
+        }
       case 3:
         _openAddFixed();
       default:
@@ -1048,7 +1034,12 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   void _showItemMenu(ExpenseItem item) {
-    showModalBottomSheet(
+    final ctrl = context.read<TourController>();
+    final isLongPressStep = ctrl.isActive &&
+        ctrl.isWaitingForInteraction &&
+        ctrl.currentStep?.targetKey == TourKeys.detailList;
+
+    final future = showModalBottomSheet<dynamic>(
       context: context,
       builder: (_) => Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1083,6 +1074,12 @@ class _DetailPageState extends State<DetailPage> {
         ),
       ),
     );
+
+    if (isLongPressStep) {
+      future.then((_) {
+        if (mounted) ctrl.onInteractionComplete();
+      });
+    }
   }
 }
 
@@ -1778,7 +1775,7 @@ class _ManagePageState extends State<ManagePage> {
                     final ctrl = context.read<TourController>();
                     final isFeedbackStep = ctrl.isActive &&
                         ctrl.isWaitingForInteraction &&
-                        ctrl.stepIndex == 13;
+                        ctrl.currentStep?.targetKey == TourKeys.feedbackTile;
                     if (isFeedbackStep) ctrl.hide();
                     final future = Navigator.push(
                       context,

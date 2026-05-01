@@ -14,7 +14,6 @@ class LoginCard extends StatefulWidget {
 class _LoginCardState extends State<LoginCard> {
   UserProfile? _profile;
   bool _loading = false;
-  bool _initialized = false;
 
   @override
   void initState() {
@@ -24,7 +23,7 @@ class _LoginCardState extends State<LoginCard> {
 
   Future<void> _loadProfile() async {
     final p = await AuthService.getProfile();
-    if (mounted) setState(() { _profile = p; _initialized = true; });
+    if (mounted) setState(() => _profile = p);
   }
 
   Future<void> _signIn() async {

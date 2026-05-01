@@ -23,9 +23,11 @@ class TourStep {
   });
 }
 
-/// The 15-step guided tour definition.
-/// Index 4  = FAB (interactive)
-/// Index 13 = Feedback tile (interactive)
+/// The 16-step guided tour definition.
+/// Index 4  = FAB tab-0 (interactive — add expense)
+/// Index 6  = detailList (interactive — long press)
+/// Index 9  = FAB tab-2 (interactive — add investment)
+/// Index 14 = Feedback tile (interactive)
 List<TourStep> buildTourSteps() => [
   // ── Dashboard ────────────────────────────────────────────────── 0
   TourStep(
@@ -56,10 +58,10 @@ List<TourStep> buildTourSteps() => [
     targetKey: TourKeys.categoryCard,
     tab: 0,
     title: '本月支出圓餅圖',
-    body: '依類別分析本月支出比例，點「年度」可以看全年每月趨勢。',
+    body: '圓餅圖依類別分析本月支出比例，一眼看出花最多錢的項目。點「年度」可以看全年每月支出趨勢。',
     side: TooltipSide.above,
   ),
-  // 4 ── FAB interactive ─────────────────────────────────────────
+  // 4 ── FAB tab-0 interactive ───────────────────────────────────
   TourStep(
     targetKey: TourKeys.fab,
     tab: 0,
@@ -77,12 +79,14 @@ List<TourStep> buildTourSteps() => [
     body: '這裡列出所有支出記錄，可依分類篩選，方便查找特定類型的支出。',
     side: TooltipSide.below,
   ),
-  // 6
+  // 6 ── detailList long-press interactive ──────────────────────
   TourStep(
     targetKey: TourKeys.detailList,
     tab: 1,
     title: '長按可編輯或刪除',
-    body: '長按任一筆支出，可以編輯、複製或刪除。也可以左滑右側快速刪除。',
+    body: '長按任一筆支出，可以編輯、複製或刪除。也可以左滑出現紅色刪除鍵快速刪除。',
+    isInteractive: true,
+    hint: '👉 長按下方任一筆記錄，試試看選單功能',
     side: TooltipSide.below,
   ),
   // ── Invest ───────────────────────────────────────────────────── 7
@@ -101,7 +105,17 @@ List<TourStep> buildTourSteps() => [
     body: '點此按鈕從 Yahoo Finance 取得最新股價，所有持股損益立即更新。',
     side: TooltipSide.below,
   ),
-  // ── Manage ───────────────────────────────────────────────────── 9
+  // 9 ── FAB tab-2 interactive ───────────────────────────────────
+  TourStep(
+    targetKey: TourKeys.fab,
+    tab: 2,
+    title: '新增持股',
+    body: '在投資頁點 + 按鈕可以新增持股，搜尋台股或美股代碼，自動帶入名稱與現價。',
+    isInteractive: true,
+    hint: '👉 點下方金色按鈕，試著新增一筆持股',
+    side: TooltipSide.above,
+  ),
+  // ── Manage ──────────────────────────────────────────────────── 10
   TourStep(
     targetKey: TourKeys.navManage,
     tab: 3,
@@ -109,7 +123,7 @@ List<TourStep> buildTourSteps() => [
     body: '底部「管理」頁包含帳戶管理、預算設定、備份匯出與意見回報等功能。',
     side: TooltipSide.above,
   ),
-  // 10
+  // 11
   TourStep(
     targetKey: TourKeys.accountCard,
     tab: 3,
@@ -117,7 +131,7 @@ List<TourStep> buildTourSteps() => [
     body: '管理儲蓄帳戶和信用卡，支援多幣別，自動計算淨資產總覽。',
     side: TooltipSide.below,
   ),
-  // 11
+  // 12
   TourStep(
     targetKey: TourKeys.fixedCard,
     tab: 3,
@@ -125,7 +139,7 @@ List<TourStep> buildTourSteps() => [
     body: '設定每月固定費用（租金、訂閱服務等），可設定分期期數自動追蹤剩餘。',
     side: TooltipSide.below,
   ),
-  // 12
+  // 13
   TourStep(
     targetKey: TourKeys.backupCard,
     tab: 3,
@@ -133,7 +147,7 @@ List<TourStep> buildTourSteps() => [
     body: '備份所有資料到本機，或匯出 CSV / Excel 做進一步分析。建議定期備份！',
     side: TooltipSide.below,
   ),
-  // 13 ── Feedback interactive ────────────────────────────────────
+  // 14 ── Feedback interactive ────────────────────────────────────
   TourStep(
     targetKey: TourKeys.feedbackTile,
     tab: 3,
@@ -143,7 +157,7 @@ List<TourStep> buildTourSteps() => [
     hint: '👉 點這裡試試看開啟意見回報',
     side: TooltipSide.above,
   ),
-  // 14 ── Finish ──────────────────────────────────────────────────
+  // 15 ── Finish ──────────────────────────────────────────────────
   TourStep(
     targetKey: TourKeys.rewatchTile,
     tab: 3,
