@@ -15,6 +15,7 @@ class TourController extends ChangeNotifier {
   Future<void> Function()? _scrollToCategoryCard;
   VoidCallback? _onTourStart;
   VoidCallback? _onTourEnd;
+  VoidCallback? _onTourSkip;
 
   // ── Public state ─────────────────────────────────────────────
 
@@ -38,12 +39,14 @@ class TourController extends ChangeNotifier {
     required Future<void> Function() scrollToCategoryCard,
     VoidCallback? onTourStart,
     VoidCallback? onTourEnd,
+    VoidCallback? onTourSkip,
   }) {
     _goToTab = goToTab;
     _scrollToFeedback = scrollToFeedback;
     _scrollToCategoryCard = scrollToCategoryCard;
     _onTourStart = onTourStart;
     _onTourEnd = onTourEnd;
+    _onTourSkip = onTourSkip;
   }
 
   // ── Tour lifecycle ───────────────────────────────────────────
@@ -81,7 +84,10 @@ class TourController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> skip() => finish();
+  Future<void> skip() async {
+    await finish();
+    _onTourSkip?.call();
+  }
 
   Future<void> finish() async {
     if (_finishing) return;

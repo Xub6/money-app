@@ -194,6 +194,7 @@ class _MainShellState extends State<MainShell> {
       scrollToCategoryCard: _scrollDashToCategory,
       onTourStart: appState.loadDemoData,
       onTourEnd: appState.clearDemoData,
+      onTourSkip: _onTourSkipped,
     );
     _tourEntry = OverlayEntry(
       builder: (_) => Consumer<TourController>(
@@ -214,6 +215,30 @@ class _MainShellState extends State<MainShell> {
   void _onRewatchOnboarding() {
     if (!mounted) return;
     context.read<TourController>().start();
+  }
+
+  Future<void> _onTourSkipped() async {
+    if (!mounted) return;
+    _goToTab(3);
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+    if (_manageScrollCtrl.hasClients) {
+      await _manageScrollCtrl.animateTo(
+        _manageScrollCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('可隨時在「說明與支援」重新觀看導覽'),
+          backgroundColor: kGold,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Future<void> _scrollManageToFeedback() async {
