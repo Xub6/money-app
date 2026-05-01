@@ -175,6 +175,12 @@ class _MainShellState extends State<MainShell> {
 
   final _manageScrollCtrl = ScrollController();
   OverlayEntry? _tourEntry;
+  String? _pendingDetailFilter;
+
+  void _goToDetailWithFilter(String category) {
+    setState(() => _pendingDetailFilter = category);
+    _goToTab(1);
+  }
 
   @override
   void initState() {
@@ -373,8 +379,15 @@ class _MainShellState extends State<MainShell> {
         onCur: () => setState(() => _monthOffset = 0),
         onNext: () => setState(() => _monthOffset = 1),
         onGoDetail: () => _goToTab(1),
+        onGoCategory: _goToDetailWithFilter,
       ),
-      DetailPage(state: s, displayMonth: _displayMonth, onEdit: _editExpense),
+      DetailPage(
+        state: s,
+        displayMonth: _displayMonth,
+        onEdit: _editExpense,
+        initialFilter: _pendingDetailFilter,
+        onFilterApplied: () => setState(() => _pendingDetailFilter = null),
+      ),
       InvestPage(state: s),
       ManagePage(
         state: s,
@@ -452,11 +465,14 @@ class _MainShellState extends State<MainShell> {
 }
 
 // ─── 首頁 ───
+enum _ChartPeriod { month, bimonth, halfYear }
+
 class DashboardPage extends StatefulWidget {
   final AppState state;
   final DateTime displayMonth;
   final String monthLabel;
   final VoidCallback onPrev, onCur, onNext, onGoDetail;
+  final void Function(String category)? onGoCategory;
   const DashboardPage(
       {super.key,
       required this.state,
@@ -465,7 +481,8 @@ class DashboardPage extends StatefulWidget {
       required this.onPrev,
       required this.onCur,
       required this.onNext,
-      required this.onGoDetail});
+      required this.onGoDetail,
+      this.onGoCategory});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -473,6 +490,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   bool _includeFixed = true;
+  _ChartPeriod _chartPeriod = _ChartPeriod.month;
 
   AppState get state => widget.state;
   DateTime get displayMonth => widget.displayMonth;
@@ -481,6 +499,60 @@ class _DashboardPageState extends State<DashboardPage> {
   VoidCallback get onCur => widget.onCur;
   VoidCallback get onNext => widget.onNext;
   VoidCallback get onGoDetail => widget.onGoDetail;
+
+  List<DateTime> _chartMonths() {
+    final count = switch (_chartPeriod) {
+      _ChartPeriod.month => 1,
+      _ChartPeriod.bimonth => 2,
+      _ChartPeriod.halfYear => 6,
+    };
+    return List.generate(count,
+        (i) => DateTime(displayMonth.year, displayMonth.month - i, 1));
+  }
+
+  List<DateTime> _prevChartMonths() {
+    final months = _chartMonths();
+    final oldest = months.last;
+    return List.generate(months.length,
+        (i) => DateTime(oldest.year, oldest.month - 1 - i, 1));
+  }
+
+  String get _periodLabel => switch (_chartPeriod) {
+        _ChartPeriod.month => '本月',
+        _ChartPeriod.bimonth => '本雙月',
+        _ChartPeriod.halfYear => '本半年',
+      };
+
+  Widget _buildSummaryText(
+      BuildContext context, int total, int prevTotal) {
+    final diff = total - prevTotal;
+    final cs = Theme.of(context).colorScheme;
+    final baseStyle = TextStyle(fontSize: 13, color: cs.onSurface, height: 1.5);
+    return RichText(
+      text: TextSpan(style: baseStyle, children: [
+        TextSpan(text: '$_periodLabel的總消費為 '),
+        TextSpan(
+            text: 'NT\$ ${_fmt(total)}',
+            style: const TextStyle(
+                fontWeight: FontWeight.w800, color: kGold)),
+        if (prevTotal > 0) ...[
+          TextSpan(text: '，較上期'),
+          TextSpan(
+            text: diff >= 0 ? '增加' : '減少',
+            style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: diff >= 0 ? kRed : kGreen),
+          ),
+          TextSpan(
+            text: ' NT\$ ${_fmt(diff.abs())}',
+            style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: diff >= 0 ? kRed : kGreen),
+          ),
+        ],
+      ]),
+    );
+  }
 
   void _showAnnualSummary(BuildContext context) {
     final now = DateTime.now();
@@ -595,8 +667,32 @@ class _DashboardPageState extends State<DashboardPage> {
             : lastDay;
     final daily = (dynamic_ / days).round();
     final rec = (remain / daysLeft).round();
-    final catMap = state.categoryTotals(displayMonth);
     final over = remain < 0;
+
+    // Chart section — computed from _chartPeriod, independent of displayMonth budget
+    final chartCatMap = <String, int>{};
+    for (final m in _chartMonths()) {
+      for (final e in state.categoryTotals(m).entries) {
+        chartCatMap[e.key] = (chartCatMap[e.key] ?? 0) + e.value;
+      }
+    }
+    final chartTotal =
+        chartCatMap.values.fold(0, (s, v) => s + v);
+    int prevTotal = 0;
+    for (final m in _prevChartMonths()) {
+      prevTotal +=
+          state.categoryTotals(m).values.fold(0, (s, v) => s + v);
+    }
+    int chartCount = 0;
+    for (final m in _chartMonths()) {
+      chartCount += state
+          .monthExpenses(m)
+          .where((e) => e.type == TransactionType.expense)
+          .length;
+    }
+    final sortedCatEntries = chartCatMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final top3 = sortedCatEntries.take(3).toList();
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -796,78 +892,182 @@ class _DashboardPageState extends State<DashboardPage> {
               ])),
           const SizedBox(height: 16),
 
-          // 圓餅圖
+          // 支出分析
           _AppCard(
               key: TourKeys.categoryCard,
-              child: Column(children: [
-            Row(children: [
-              const Text('本月明細',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-              const SizedBox(width: 10),
-              GestureDetector(
-                onTap: () => _showAnnualSummary(context),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                      color: kGold, borderRadius: BorderRadius.circular(16)),
-                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.calendar_month, color: Colors.white, size: 14),
-                    SizedBox(width: 4),
-                    Text('年度',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12)),
-                  ]),
-                ),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: onGoDetail,
-                child: const Row(children: [
-                  Text('查看更多', style: TextStyle(color: kGray, fontSize: 13)),
-                  Icon(Icons.chevron_right, color: kGray, size: 18),
-                ]),
-              ),
-            ]),
-            const SizedBox(height: 18),
-            catMap.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 30),
-                    child: Text('新增支出後顯示圖表',
-                        style: TextStyle(color: Colors.grey, fontSize: 15)),
-                  )
-                : Column(children: [
-                    SizedBox(
-                        height: 220, child: _DoughnutChart(catMap: catMap)),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 8,
-                      children: catMap.entries.map((e) {
-                        final cat = categoryOf(e.key);
-                        return Row(mainAxisSize: MainAxisSize.min, children: [
-                          Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                  color: cat.color, shape: BoxShape.circle)),
-                          const SizedBox(width: 5),
-                          Text(e.key,
-                              style: const TextStyle(
-                                  color: kGray,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500)),
-                          const SizedBox(width: 3),
-                          Text('NT\$ ${_fmt(e.value)}',
-                              style:
-                                  const TextStyle(color: kGray, fontSize: 11)),
-                        ]);
-                      }).toList(),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                // ── Header ──────────────────────────────────────────
+                Row(children: [
+                  const Text('支出分析',
+                      style: TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.w800)),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () => _showAnnualSummary(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                          color: kGold,
+                          borderRadius: BorderRadius.circular(16)),
+                      child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.calendar_month,
+                                color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text('年度',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12)),
+                          ]),
                     ),
-                  ]),
-          ])),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: onGoDetail,
+                    child: const Row(children: [
+                      Text('查看更多',
+                          style: TextStyle(color: kGray, fontSize: 13)),
+                      Icon(Icons.chevron_right, color: kGray, size: 18),
+                    ]),
+                  ),
+                ]),
+                const SizedBox(height: 14),
+
+                // ── Period selector ─────────────────────────────────
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  _PeriodChip(
+                      label: '本月',
+                      selected: _chartPeriod == _ChartPeriod.month,
+                      onTap: () => setState(
+                          () => _chartPeriod = _ChartPeriod.month)),
+                  const SizedBox(width: 8),
+                  _PeriodChip(
+                      label: '雙月',
+                      selected: _chartPeriod == _ChartPeriod.bimonth,
+                      onTap: () => setState(
+                          () => _chartPeriod = _ChartPeriod.bimonth)),
+                  const SizedBox(width: 8),
+                  _PeriodChip(
+                      label: '半年',
+                      selected: _chartPeriod == _ChartPeriod.halfYear,
+                      onTap: () => setState(
+                          () => _chartPeriod = _ChartPeriod.halfYear)),
+                ]),
+                const SizedBox(height: 14),
+
+                // ── Summary text ────────────────────────────────────
+                if (chartTotal > 0)
+                  _buildSummaryText(context, chartTotal, prevTotal),
+                if (chartTotal > 0) const SizedBox(height: 16),
+
+                // ── Empty state ─────────────────────────────────────
+                if (chartTotal == 0)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 28),
+                    child: Center(
+                      child: Text('新增支出後顯示圖表',
+                          style: TextStyle(
+                              color: Colors.grey, fontSize: 15)),
+                    ),
+                  )
+                else ...[
+                  // ── Donut + Top 3 ───────────────────────────────
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 150,
+                        height: 150,
+                        child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              SizedBox.expand(
+                                child: _DoughnutChart(
+                                    catMap: chartCatMap),
+                              ),
+                              Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('$chartCount',
+                                        style: const TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w800,
+                                            color: kGold)),
+                                    Text('筆消費',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant)),
+                                  ]),
+                            ]),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: top3.map((e) {
+                              final cat = categoryOf(e.key);
+                              final pct =
+                                  e.value / chartTotal * 100;
+                              return Padding(
+                                padding: const EdgeInsets.only(
+                                    bottom: 10),
+                                child: Row(children: [
+                                  Container(
+                                    width: 9,
+                                    height: 9,
+                                    decoration: BoxDecoration(
+                                        color: cat.color,
+                                        shape: BoxShape.circle),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(e.key,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600)),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                      '${pct.toStringAsFixed(1)}%',
+                                      style: const TextStyle(
+                                          color: kGold,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12)),
+                                ]),
+                              );
+                            }).toList()),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // ── Category list ────────────────────────────────
+                  const Divider(height: 1),
+                  const SizedBox(height: 4),
+                  ...sortedCatEntries.map((e) {
+                    final cat = categoryOf(e.key);
+                    final pct = chartTotal > 0
+                        ? e.value / chartTotal * 100
+                        : 0.0;
+                    return _CategoryRow(
+                      cat: cat,
+                      name: e.key,
+                      pct: pct,
+                      amount: e.value,
+                      onTap: () =>
+                          widget.onGoCategory?.call(e.key),
+                    );
+                  }),
+                ],
+              ])),
         ]),
       ),
     );
@@ -879,12 +1079,16 @@ class DetailPage extends StatefulWidget {
   final AppState state;
   final DateTime displayMonth;
   final Function(ExpenseItem)? onEdit;
+  final String? initialFilter;
+  final VoidCallback? onFilterApplied;
 
   const DetailPage({
     super.key,
     required this.state,
     required this.displayMonth,
     this.onEdit,
+    this.initialFilter,
+    this.onFilterApplied,
   });
 
   @override
@@ -893,6 +1097,16 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   String _filterCat = '全部';
+
+  @override
+  void didUpdateWidget(DetailPage old) {
+    super.didUpdateWidget(old);
+    final f = widget.initialFilter;
+    if (f != null && f != old.initialFilter) {
+      setState(() => _filterCat = f);
+      widget.onFilterApplied?.call();
+    }
+  }
 
   void _deleteWithUndo(ExpenseItem item) {
     final originalIndex = widget.state.deleteExpense(item.id);
@@ -1897,6 +2111,90 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── 分析圖表元件 ───
+class _PeriodChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _PeriodChip(
+      {required this.label, required this.selected, required this.onTap});
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? kGold
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(label,
+              style: TextStyle(
+                  color: selected
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13)),
+        ),
+      );
+}
+
+class _CategoryRow extends StatelessWidget {
+  final Category cat;
+  final String name;
+  final double pct;
+  final int amount;
+  final VoidCallback? onTap;
+  const _CategoryRow({
+    required this.cat,
+    required this.name,
+    required this.pct,
+    required this.amount,
+    this.onTap,
+  });
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
+          child: Row(children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: cat.color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(cat.icon, color: cat.color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+                child: Text(name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14))),
+            Text('NT\$ ${_fmt(amount)}',
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700, fontSize: 14)),
+            const SizedBox(width: 10),
+            SizedBox(
+              width: 46,
+              child: Text('${pct.toStringAsFixed(1)}%',
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                      color: kGold,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13)),
+            ),
+          ]),
+        ),
+      );
 }
 
 // ─── 環形圖 ───

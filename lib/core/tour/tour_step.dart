@@ -57,8 +57,8 @@ List<TourStep> buildTourSteps() => [
   TourStep(
     targetKey: TourKeys.categoryCard,
     tab: 0,
-    title: '本月支出圓餅圖',
-    body: '圓餅圖依類別分析本月支出比例，一眼看出花最多錢的項目。點「年度」可以看全年每月支出趨勢。',
+    title: '支出分析',
+    body: '甜甜圈圖呈現各類別支出比例，可切換本月 / 雙月 / 半年範圍，並與上期比較。點選分類列可快速篩選明細。',
     side: TooltipSide.above,
   ),
   // 4 ── FAB tab-0 interactive ───────────────────────────────────
