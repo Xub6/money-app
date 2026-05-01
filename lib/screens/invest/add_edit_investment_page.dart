@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../data/models/stock_holding.dart';
+import '../../data/repositories/app_state.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/stock_service.dart';
 
@@ -69,6 +71,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
   late final TextEditingController _strategyCtrl;
   late StockCurrency _currency;
   late DateTime _purchaseDate;
+  String? _selectedAccountId;
 
   bool _fetching = false;
   String? _fetchedName;
@@ -94,6 +97,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
     _strategyCtrl = TextEditingController(text: e?.sellStrategy ?? '');
     _currency = e?.currency ?? StockCurrency.twd;
     _purchaseDate = e?.purchaseDate ?? DateTime.now();
+    _selectedAccountId = e?.accountId;
     if (e?.name.isNotEmpty == true) _fetchedName = e!.name;
     final existingRate = e?.feeRate ?? 0.001425;
     _brokerCtrl = TextEditingController();
@@ -205,6 +209,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
         sellStrategy: _strategyCtrl.text.trim(),
         createdAt: widget.existing?.createdAt,
         feeRate: feeRate.clamp(0, 0.01),
+        accountId: _selectedAccountId,
       ),
     );
   }
@@ -679,6 +684,44 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
             ),
             const SizedBox(height: 20),
 
+            // ── 關聯帳戶（選填）──
+            _SectionHeader('關聯帳戶（選填）'),
+            Builder(builder: (context) {
+              final accounts =
+                  Provider.of<AppState>(context, listen: false).accounts;
+              if (accounts.isEmpty) {
+                return _GroupCard(
+                  cs: cs,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Text('尚未建立帳戶，可在「管理」頁新增',
+                        style: TextStyle(
+                            fontSize: 13, color: cs.onSurfaceVariant)),
+                  ),
+                );
+              }
+              return Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  _AccountChip(
+                    label: '不關聯',
+                    selected: _selectedAccountId == null,
+                    cs: cs,
+                    onTap: () => setState(() => _selectedAccountId = null),
+                  ),
+                  ...accounts.map((a) => _AccountChip(
+                        label: a.displayName,
+                        selected: _selectedAccountId == a.id,
+                        cs: cs,
+                        onTap: () =>
+                            setState(() => _selectedAccountId = a.id),
+                      )),
+                ],
+              );
+            }),
+            const SizedBox(height: 20),
+
             // ── 投資筆記 ──
             _SectionHeader('投資筆記（選填）'),
             _GroupCard(
@@ -801,6 +844,48 @@ class _NoteRow extends StatelessWidget {
             ),
           ),
         ]),
+      );
+}
+
+class _AccountChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final ColorScheme cs;
+  final VoidCallback onTap;
+
+  const _AccountChip({
+    required this.label,
+    required this.selected,
+    required this.cs,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.gold.withValues(alpha: 0.12)
+                : cs.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? AppColors.gold : cs.outlineVariant,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: selected ? AppColors.gold : cs.onSurface,
+            ),
+          ),
+        ),
       );
 }
 

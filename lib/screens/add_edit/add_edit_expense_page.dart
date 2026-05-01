@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../data/models/expense_item.dart';
+import '../../data/repositories/app_state.dart';
 import '../../core/constants/categories.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/validators.dart';
@@ -26,6 +28,8 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
   late final TextEditingController _noteCtrl;
   late String _selectedCategory;
   late DateTime _selectedDate;
+  late TransactionType _type;
+  late String? _selectedAccountId;
   bool _isLoading = false;
 
   final _today = DateTime.now();
@@ -40,12 +44,16 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
       _noteCtrl = TextEditingController(text: item.note);
       _selectedCategory = item.category;
       _selectedDate = item.date;
+      _type = item.type;
+      _selectedAccountId = item.accountId;
     } else {
       _titleCtrl = TextEditingController();
       _amtCtrl = TextEditingController();
       _noteCtrl = TextEditingController();
       _selectedCategory = '餐飲';
       _selectedDate = _today;
+      _type = TransactionType.expense;
+      _selectedAccountId = null;
     }
   }
 
@@ -109,6 +117,13 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
       return;
     }
 
+    final accounts =
+        Provider.of<AppState>(context, listen: false).accounts;
+    if (accounts.isNotEmpty && _selectedAccountId == null) {
+      ErrorHandler.showErrorSnack(context, '請選擇要關聯的帳戶');
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     final newItem = ExpenseItem(
@@ -119,6 +134,8 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
       date: _selectedDate,
       note: _noteCtrl.text.trim(),
       createdAt: widget.existingItem?.createdAt,
+      type: _type,
+      accountId: _selectedAccountId,
     );
 
     Navigator.pop(context, newItem);
@@ -129,12 +146,19 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
     final isEdit = widget.existingItem != null;
     final suggestions = _suggestions;
     final cs = Theme.of(context).colorScheme;
+    final accounts = Provider.of<AppState>(context, listen: false).accounts;
+    final isIncome = _type == TransactionType.income;
+    final typeColor = isIncome ? AppColors.success : AppColors.error;
 
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
-        title: Text(isEdit ? '編輯支出' : '新增記帳',
-            style: const TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(
+          isEdit
+              ? '編輯記帳'
+              : (isIncome ? '新增收入' : '新增支出'),
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
         centerTitle: true,
         backgroundColor: cs.surface,
         foregroundColor: cs.onSurface,
@@ -164,6 +188,99 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+          // ── 收入/支出 切換 ──
+          _SectionLabel('類型'),
+          const SizedBox(height: 10),
+          Row(children: [
+            _TypeToggle(
+              label: '支出',
+              selected: !isIncome,
+              color: AppColors.error,
+              onTap: () => setState(() => _type = TransactionType.expense),
+            ),
+            const SizedBox(width: 12),
+            _TypeToggle(
+              label: '收入',
+              selected: isIncome,
+              color: AppColors.success,
+              onTap: () => setState(() => _type = TransactionType.income),
+            ),
+          ]),
+          const SizedBox(height: 24),
+
+          // ── 帳戶選擇 ──
+          if (accounts.isNotEmpty) ...[
+            _SectionLabel('帳戶'),
+            const SizedBox(height: 10),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: accounts.map((a) {
+                  final sel = _selectedAccountId == a.id;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedAccountId = a.id),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: sel
+                            ? typeColor.withValues(alpha: 0.12)
+                            : cs.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: sel ? typeColor : cs.outlineVariant,
+                          width: sel ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(a.displayName,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: sel ? typeColor : cs.onSurface,
+                              )),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${a.currencySymbol} ${a.balance.toStringAsFixed(0)}',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: sel
+                                    ? typeColor.withValues(alpha: 0.8)
+                                    : cs.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.outlineVariant),
+              ),
+              child: Row(children: [
+                Icon(Icons.info_outline_rounded,
+                    size: 16, color: cs.onSurfaceVariant),
+                const SizedBox(width: 8),
+                Text('請先在「管理」頁新增帳戶',
+                    style:
+                        TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+              ]),
+            ),
+            const SizedBox(height: 24),
+          ],
+
           // ── 日期 ──
           _SectionLabel('日期'),
           const SizedBox(height: 10),
@@ -233,8 +350,8 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
           ),
           const SizedBox(height: 24),
 
-          // ── 支出類別 ──
-          _SectionLabel('支出類別'),
+          // ── 類別 ──
+          _SectionLabel(isIncome ? '收入類別' : '支出類別'),
           const SizedBox(height: 10),
           GridView.count(
             crossAxisCount: 4,
@@ -315,8 +432,8 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             const SizedBox(height: 24),
           ],
 
-          // ── 支出明細 ──
-          _SectionLabel('支出明細'),
+          // ── 明細 ──
+          _SectionLabel(isIncome ? '收入明細' : '支出明細'),
           const SizedBox(height: 10),
           _InputField(controller: _titleCtrl, hint: '項目名稱', label: null),
           const SizedBox(height: 10),
@@ -345,14 +462,16 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _save,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.gold,
+                backgroundColor: isIncome ? AppColors.success : AppColors.gold,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
               child: Text(
-                isEdit ? '更新支出' : '儲存記帳',
+                isEdit
+                    ? '更新記帳'
+                    : (isIncome ? '儲存收入' : '儲存支出'),
                 style:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
               ),
@@ -360,6 +479,50 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
           ),
           const SizedBox(height: 20),
         ]),
+      ),
+    );
+  }
+}
+
+// ── 類型切換按鈕 ──
+
+class _TypeToggle extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _TypeToggle({
+    required this.label,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? color.withValues(alpha: 0.12) : cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? color : cs.outlineVariant,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: selected ? color : cs.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }

@@ -14,7 +14,6 @@ import '../../services/encryption_service.dart';
 import '../../services/stock_service.dart';
 import '../../core/tour/tour_demo_data.dart';
 
-/// Enhanced app state with CRUD operations
 class AppState extends ChangeNotifier {
   List<ExpenseItem> expenses = [];
   List<FixedItem> fixedItems = [];
@@ -91,11 +90,29 @@ class AppState extends ChangeNotifier {
     return map;
   }
 
+  // ─── Account Balance Helpers ───
+
+  /// Adjusts the linked account balance for an expense/income item.
+  /// Pass [reverse: true] to undo the effect (e.g. on delete or before update).
+  void _applyBalance(ExpenseItem item, {bool reverse = false}) {
+    if (item.accountId == null) return;
+    final idx = accounts.indexWhere((a) => a.id == item.accountId);
+    if (idx < 0) return;
+    // income adds to balance; expense subtracts
+    final delta = item.type == TransactionType.income
+        ? item.amount.toDouble()
+        : -item.amount.toDouble();
+    final actual = reverse ? -delta : delta;
+    accounts[idx] = accounts[idx].copyWith(
+      balance: accounts[idx].balance + actual,
+    );
+  }
+
   // ─── CRUD Operations ───
 
-  /// Add new expense
   void addExpense(ExpenseItem item) {
     expenses.insert(0, item);
+    _applyBalance(item);
     _updateStreak();
     _db.insertExpense(item).catchError((Object e) {
       AppLogger.error('DB insertExpense failed', error: e);
@@ -106,12 +123,13 @@ class AppState extends ChangeNotifier {
     AppLogger.info('Expense added: ${item.title}');
   }
 
-  /// Update existing expense
   void updateExpense(String id, ExpenseItem newItem) {
     final index = expenses.indexWhere((e) => e.id == id);
     if (index >= 0) {
+      _applyBalance(expenses[index], reverse: true); // undo old effect
       final updated = newItem.copyWith(editedAt: DateTime.now());
       expenses[index] = updated;
+      _applyBalance(updated); // apply new effect
       _db.updateExpense(updated).catchError((e) {
         AppLogger.error('DB updateExpense failed', error: e);
       });
@@ -123,10 +141,12 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Delete expense, returns original index for undo
   int deleteExpense(String id) {
     final index = expenses.indexWhere((e) => e.id == id);
-    if (index >= 0) expenses.removeAt(index);
+    if (index >= 0) {
+      _applyBalance(expenses[index], reverse: true);
+      expenses.removeAt(index);
+    }
     _db.deleteExpense(id).catchError((e) {
       AppLogger.error('DB deleteExpense failed', error: e);
     });
@@ -136,10 +156,10 @@ class AppState extends ChangeNotifier {
     return index;
   }
 
-  /// Insert expense at specific index (for undo)
   void insertExpenseAt(int index, ExpenseItem item) {
     final safeIndex = index.clamp(0, expenses.length);
     expenses.insert(safeIndex, item);
+    _applyBalance(item);
     _db.insertExpense(item).catchError((Object e) {
       AppLogger.error('DB insertExpense (undo) failed', error: e);
       return '';
@@ -148,7 +168,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Add fixed item
   void addFixed(FixedItem item) {
     fixedItems.add(item);
     _db.insertFixedItem(item).catchError((Object e) {
@@ -160,7 +179,6 @@ class AppState extends ChangeNotifier {
     AppLogger.info('Fixed item added: ${item.title}');
   }
 
-  /// Update fixed item
   void updateFixed(String id, FixedItem newItem) {
     final index = fixedItems.indexWhere((f) => f.id == id);
     if (index >= 0) {
@@ -175,7 +193,6 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Delete fixed item
   void deleteFixed(String id) {
     fixedItems.removeWhere((f) => f.id == id);
     _db.deleteFixedItem(id).catchError((e) {
@@ -249,7 +266,7 @@ class AppState extends ChangeNotifier {
       .where((a) => a.category == AccountCategory.credit && a.countInTotal)
       .fold(0.0, (s, a) => s + a.balanceTwd(fxRates).abs());
 
-  double get netAssets => totalAssets - totalLiabilities;
+  double get netAssets => totalAssets - totalLiabilities + totalPortfolioValue;
 
   void setUsdTwdRate(double rate) {
     fxRates['USD'] = rate;
@@ -275,7 +292,6 @@ class AppState extends ChangeNotifier {
       ? 0
       : totalPortfolioProfit / totalPortfolioCost * 100;
 
-  /// Set budget
   void setBudget(int v) {
     budget = v;
     _save();
@@ -283,7 +299,6 @@ class AppState extends ChangeNotifier {
     AppLogger.info('Budget updated to: $v');
   }
 
-  /// Get expense by ID
   ExpenseItem? getExpense(String id) {
     try {
       return expenses.firstWhere((e) => e.id == id);
@@ -292,7 +307,6 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Get fixed item by ID
   FixedItem? getFixed(String id) {
     try {
       return fixedItems.firstWhere((f) => f.id == id);
@@ -304,7 +318,7 @@ class AppState extends ChangeNotifier {
   // ─── Tour Demo Data ───
 
   void loadDemoData() {
-    if (_demoIds.isNotEmpty) return; // already loaded
+    if (_demoIds.isNotEmpty) return;
     final demoExp = buildDemoExpenses();
     final demoHold = buildDemoHoldings();
     final demoFixed = buildDemoFixed();
@@ -358,7 +372,6 @@ class AppState extends ChangeNotifier {
       AppLogger.warning('⚠ EncryptionService init failed: $e');
     }
 
-    // Run one-time migration from SharedPreferences → SQLite
     try {
       if (!await MigrationHelper.hasMigrated()) {
         AppLogger.info('Starting SharedPreferences → SQLite migration...');
@@ -373,12 +386,10 @@ class AppState extends ChangeNotifier {
       AppLogger.warning('⚠ Migration skipped: $e');
     }
 
-    // Load meta fields from SharedPreferences (encrypted keys preferred, plain fallback)
     try {
       streak = _prefs?.getInt('streak') ?? 0;
       _lastDate = _prefs?.getString('lastDate') ?? '';
 
-      // budget — encrypted preferred
       final budgetEnc = _prefs?.getString('budget_enc');
       if (budgetEnc != null) {
         budget = int.tryParse(_enc.decrypt(budgetEnc)) ?? 30000;
@@ -386,7 +397,6 @@ class AppState extends ChangeNotifier {
         budget = _prefs?.getInt('budget') ?? 30000;
       }
 
-      // fxRates — encrypted preferred
       final fxEnc = _prefs?.getString('fxRates_enc');
       if (fxEnc != null) {
         final map = _enc.decryptMap(fxEnc);
@@ -401,7 +411,6 @@ class AppState extends ChangeNotifier {
         }
       }
 
-      // holdings — encrypted preferred
       final holdingsEnc = _prefs?.getString('holdings_enc');
       if (holdingsEnc != null) {
         final map = _enc.decryptMap(holdingsEnc);
@@ -419,7 +428,6 @@ class AppState extends ChangeNotifier {
         }
       }
 
-      // accounts — encrypted preferred
       final accountsEnc = _prefs?.getString('accounts_enc');
       if (accountsEnc != null) {
         final map = _enc.decryptMap(accountsEnc);
@@ -440,7 +448,8 @@ class AppState extends ChangeNotifier {
       AppLogger.error('✗ Error loading meta from SharedPreferences: $e');
     }
 
-    // Load expenses from SQLite (primary), fall back to SharedPreferences if empty
+    // Load expenses from SQLite (primary), fall back to SharedPreferences if empty.
+    // No hardcoded defaults — fresh users start with an empty list.
     try {
       expenses = await _db.getAllExpenses();
       AppLogger.info('✓ Loaded ${expenses.length} expenses from SQLite');
@@ -455,51 +464,14 @@ class AppState extends ChangeNotifier {
           for (final e in expenses) {
             _db.insertExpense(e).catchError((_) => '');
           }
-        } else {
-          final now = DateTime.now();
-          expenses = [
-            ExpenseItem(
-                title: '午餐便當',
-                category: '餐飲',
-                amount: 120,
-                date: now,
-                note: '【範例】可左滑刪除'),
-            ExpenseItem(
-                title: '咖啡',
-                category: '餐飲',
-                amount: 65,
-                date: now,
-                note: '【範例】可左滑刪除'),
-            ExpenseItem(
-                title: '線上課程',
-                category: '教育',
-                amount: 1800,
-                date: now,
-                note: '【範例】可左滑刪除'),
-            ExpenseItem(
-                title: '電影',
-                category: '娛樂',
-                amount: 420,
-                date: now,
-                note: '【範例】可左滑刪除'),
-            ExpenseItem(
-                title: '文具',
-                category: '教育',
-                amount: 430,
-                date: now,
-                note: '【範例】可左滑刪除'),
-          ];
-          for (final e in expenses) {
-            _db.insertExpense(e).catchError((_) => '');
-          }
-          AppLogger.info('✓ Using default expenses');
         }
       }
     } catch (e) {
       AppLogger.error('✗ Error loading expenses: $e');
     }
 
-    // Load fixed items from SQLite (primary), fall back to SharedPreferences if empty
+    // Load fixed items from SQLite (primary), fall back to SharedPreferences if empty.
+    // No hardcoded defaults — fresh users start with an empty list.
     try {
       fixedItems = await _db.getAllFixedItems();
       AppLogger.info('✓ Loaded ${fixedItems.length} fixed items from SQLite');
@@ -514,17 +486,6 @@ class AppState extends ChangeNotifier {
           for (final f in fixedItems) {
             _db.insertFixedItem(f).catchError((_) => '');
           }
-        } else {
-          fixedItems = [
-            FixedItem(title: 'YouTube Premium', amount: 100),
-            FixedItem(title: 'ChatGPT', amount: 620),
-            FixedItem(title: 'Claude', amount: 600),
-            FixedItem(title: '魚油', amount: 200),
-          ];
-          for (final f in fixedItems) {
-            _db.insertFixedItem(f).catchError((_) => '');
-          }
-          AppLogger.info('✓ Using default fixed items');
         }
       }
     } catch (e) {
@@ -537,8 +498,6 @@ class AppState extends ChangeNotifier {
     refreshUsdTwdRate();
   }
 
-  /// Save meta fields to SharedPreferences with AES encryption.
-  /// expenses and fixedItems are persisted directly to SQLite in each CRUD operation.
   Future<void> _save() async {
     try {
       _prefs?.setInt('streak', streak);
@@ -558,7 +517,6 @@ class AppState extends ChangeNotifier {
         _enc.encryptMap({'data': accounts.map((a) => a.toJson()).toList()}),
       );
 
-      // Remove legacy unencrypted keys after first successful encrypted save
       _prefs?.remove('budget');
       _prefs?.remove('fxRates');
       _prefs?.remove('usdTwdRate');
@@ -571,23 +529,32 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Clears all expense and fixed-item history.
+  /// Reverses any account balance changes that were made by those transactions.
+  /// Accounts, holdings, budget, and FX rates are preserved.
   void clearAll() {
+    // Restore account balances affected by cleared expenses
+    for (final e in expenses) {
+      _applyBalance(e, reverse: true);
+    }
+
     expenses = [];
+    fixedItems = [];
     streak = 0;
     _lastDate = '';
+
     _db.clear().catchError((e) {
       AppLogger.error('DB clear failed', error: e);
     });
     _prefs?.remove('expenses');
     _prefs?.remove('fixed');
-    _prefs?.remove('budget_enc');
-    _prefs?.remove('holdings_enc');
-    _prefs?.remove('accounts_enc');
-    _prefs?.remove('fxRates_enc');
     _prefs?.setInt('streak', 0);
     _prefs?.setString('lastDate', '');
+
+    // Persist updated account balances
+    _save();
     notifyListeners();
-    AppLogger.info('All data cleared');
+    AppLogger.info('All expense/fixed data cleared; account balances restored');
   }
 
   void restoreFromBackup({
@@ -614,7 +581,6 @@ class AppState extends ChangeNotifier {
         'Restored from backup: ${newExpenses.length} expenses, ${newFixedItems.length} fixed items');
   }
 
-  /// Export data to JSON
   String exportToJson() {
     return jsonEncode({
       'version': '1.0',
@@ -625,7 +591,6 @@ class AppState extends ChangeNotifier {
     });
   }
 
-  /// Import data from JSON
   void importFromJson(String jsonString) {
     try {
       final data = jsonDecode(jsonString) as Map<String, dynamic>;

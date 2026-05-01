@@ -8,7 +8,7 @@ import '../../core/utils/logger.dart';
 /// SQLite database initialization and schema
 class AppDatabase {
   static const String _databaseName = 'money_app.db';
-  static const int _version = 2;
+  static const int _version = 3;
 
   static const String _expensesTable = 'expenses';
   static const String _fixedItemsTable = 'fixed_items';
@@ -63,7 +63,9 @@ class AppDatabase {
           edited_at TEXT,
           sync_status TEXT DEFAULT 'local',
           attachment_path TEXT,
-          metadata TEXT
+          metadata TEXT,
+          type TEXT DEFAULT 'expense',
+          account_id TEXT
         )
       ''');
 
@@ -124,6 +126,15 @@ class AppDatabase {
           'ALTER TABLE $_fixedItemsTable ADD COLUMN total_periods INTEGER',
         );
         AppLogger.info('v2: Added total_periods column to fixed_items');
+      }
+      if (oldVersion < 3) {
+        await db.execute(
+          "ALTER TABLE $_expensesTable ADD COLUMN type TEXT DEFAULT 'expense'",
+        );
+        await db.execute(
+          'ALTER TABLE $_expensesTable ADD COLUMN account_id TEXT',
+        );
+        AppLogger.info('v3: Added type and account_id columns to expenses');
       }
     } catch (e) {
       AppLogger.error('Database upgrade failed', error: e);

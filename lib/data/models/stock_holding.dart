@@ -15,6 +15,7 @@ class StockHolding {
   final String sellStrategy;
   final DateTime createdAt;
   final double feeRate; // 手續費率，預設 0.1425%
+  final String? accountId;
 
   StockHolding({
     String? id,
@@ -29,17 +30,17 @@ class StockHolding {
     this.sellStrategy = '',
     DateTime? createdAt,
     this.feeRate = 0.001425,
+    this.accountId,
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now();
 
-  static const _twdTxTaxRate = 0.003; // 交易稅固定 0.3%
+  static const _twdTxTaxRate = 0.003;
 
   double currentValueTwd(double usdTwd) {
     if (currency == StockCurrency.usd) return shares * currentPrice * usdTwd;
     return shares * currentPrice;
   }
 
-  // 預估實收現值（扣賣出手續費＋交易稅）
   double netCurrentValueTwd(double usdTwd) {
     final gross = currentValueTwd(usdTwd);
     if (currency == StockCurrency.twd) {
@@ -68,6 +69,7 @@ class StockHolding {
         'sellStrategy': sellStrategy,
         'createdAt': createdAt.toIso8601String(),
         'feeRate': feeRate,
+        'accountId': accountId,
       };
 
   factory StockHolding.fromJson(Map<String, dynamic> j) => StockHolding(
@@ -84,9 +86,15 @@ class StockHolding {
         sellStrategy: j['sellStrategy'] as String? ?? '',
         createdAt: DateTime.parse(j['createdAt'] as String),
         feeRate: (j['feeRate'] as num?)?.toDouble() ?? 0.001425,
+        accountId: j['accountId'] as String?,
       );
 
-  StockHolding copyWith({double? currentPrice, String? name}) => StockHolding(
+  StockHolding copyWith({
+    double? currentPrice,
+    String? name,
+    String? accountId,
+  }) =>
+      StockHolding(
         id: id,
         code: code,
         name: name ?? this.name,
@@ -99,5 +107,6 @@ class StockHolding {
         sellStrategy: sellStrategy,
         createdAt: createdAt,
         feeRate: feeRate,
+        accountId: accountId ?? this.accountId,
       );
 }

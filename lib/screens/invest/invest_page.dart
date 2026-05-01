@@ -249,14 +249,24 @@ class _InvestPageState extends State<InvestPage> {
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _HoldingCard(
-                      holding: holdings[i],
-                      usdTwd: s.usdTwdRate,
-                      onTap: () => _showHoldingDetail(holdings[i]),
-                    ),
-                  ),
+                  (context, i) {
+                    final h = holdings[i];
+                    final accountName = h.accountId != null
+                        ? s.accounts
+                            .where((a) => a.id == h.accountId)
+                            .map((a) => a.displayName)
+                            .firstOrNull
+                        : null;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _HoldingCard(
+                        holding: h,
+                        usdTwd: s.usdTwdRate,
+                        accountName: accountName,
+                        onTap: () => _showHoldingDetail(h),
+                      ),
+                    );
+                  },
                   childCount: holdings.length,
                 ),
               ),
@@ -394,10 +404,15 @@ class _PortfolioSummaryCard extends StatelessWidget {
 class _HoldingCard extends StatelessWidget {
   final StockHolding holding;
   final double usdTwd;
+  final String? accountName;
   final VoidCallback onTap;
 
-  const _HoldingCard(
-      {required this.holding, required this.usdTwd, required this.onTap});
+  const _HoldingCard({
+    required this.holding,
+    required this.usdTwd,
+    required this.onTap,
+    this.accountName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -452,6 +467,21 @@ class _HoldingCard extends StatelessWidget {
                   child: Text(h.code,
                       style:
                           TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                ),
+              if (accountName != null)
+                Container(
+                  margin: const EdgeInsets.only(top: 2, bottom: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _kGold.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(accountName!,
+                      style: const TextStyle(
+                          color: _kGold,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600)),
                 ),
               const SizedBox(height: 2),
               if (h.currentPrice > 0) ...[

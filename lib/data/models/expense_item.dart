@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
-/// Sync status for items
 enum SyncStatus {
-  local('local'), // Only in local device
-  synced('synced'), // Synced to server/backup
-  failed('failed'); // Sync failed
+  local('local'),
+  synced('synced'),
+  failed('failed');
 
   final String value;
   const SyncStatus(this.value);
@@ -18,19 +17,35 @@ enum SyncStatus {
   }
 }
 
-/// Expense item model
+enum TransactionType {
+  expense('expense'),
+  income('income');
+
+  final String value;
+  const TransactionType(this.value);
+
+  static TransactionType fromString(String value) {
+    return TransactionType.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => TransactionType.expense,
+    );
+  }
+}
+
 class ExpenseItem {
   final String id;
   final String title;
   final String category;
-  final int amount; // Amount in cents to avoid float precision issues
+  final int amount;
   final DateTime date;
   final String note;
-  final DateTime createdAt; // When created
-  final DateTime? editedAt; // When last edited (null if never edited)
-  final SyncStatus syncStatus; // Sync state
-  final String? attachmentPath; // Path to receipt image (optional)
-  final Map<String, dynamic>? metadata; // Extensible metadata
+  final DateTime createdAt;
+  final DateTime? editedAt;
+  final SyncStatus syncStatus;
+  final String? attachmentPath;
+  final Map<String, dynamic>? metadata;
+  final TransactionType type;
+  final String? accountId;
 
   ExpenseItem({
     String? id,
@@ -44,17 +59,15 @@ class ExpenseItem {
     this.syncStatus = SyncStatus.local,
     this.attachmentPath,
     this.metadata,
+    this.type = TransactionType.expense,
+    this.accountId,
   })  : id = id ?? const Uuid().v4(),
         note = note,
         createdAt = createdAt ?? DateTime.now();
 
-  /// Whether this item has been edited
   bool get isEdited => editedAt != null;
-
-  /// Whether this item is pending sync
   bool get isPending => syncStatus == SyncStatus.local;
 
-  /// Create a copy with modifications
   ExpenseItem copyWith({
     String? id,
     String? title,
@@ -67,6 +80,8 @@ class ExpenseItem {
     SyncStatus? syncStatus,
     String? attachmentPath,
     Map<String, dynamic>? metadata,
+    TransactionType? type,
+    String? accountId,
   }) {
     return ExpenseItem(
       id: id ?? this.id,
@@ -80,10 +95,11 @@ class ExpenseItem {
       syncStatus: syncStatus ?? this.syncStatus,
       attachmentPath: attachmentPath ?? this.attachmentPath,
       metadata: metadata ?? this.metadata,
+      type: type ?? this.type,
+      accountId: accountId ?? this.accountId,
     );
   }
 
-  /// Convert to JSON for storage
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
@@ -96,9 +112,10 @@ class ExpenseItem {
         'syncStatus': syncStatus.value,
         'attachmentPath': attachmentPath,
         'metadata': metadata,
+        'type': type.value,
+        'accountId': accountId,
       };
 
-  /// Create from JSON
   factory ExpenseItem.fromJson(Map<String, dynamic> json) => ExpenseItem(
         id: json['id'] as String? ?? const Uuid().v4(),
         title: json['title'] as String? ?? '',
@@ -118,9 +135,10 @@ class ExpenseItem {
             SyncStatus.fromString(json['syncStatus'] as String? ?? 'local'),
         attachmentPath: json['attachmentPath'] as String?,
         metadata: json['metadata'] as Map<String, dynamic>?,
+        type: TransactionType.fromString(json['type'] as String? ?? 'expense'),
+        accountId: json['accountId'] as String?,
       );
 
-  /// Convert to database JSON (SQLite format)
   Map<String, dynamic> toDatabaseJson() => {
         'id': id,
         'title': title,
@@ -133,9 +151,10 @@ class ExpenseItem {
         'sync_status': syncStatus.value,
         'attachment_path': attachmentPath,
         'metadata': metadata != null ? jsonEncode(metadata) : null,
+        'type': type.value,
+        'account_id': accountId,
       };
 
-  /// Create from database
   factory ExpenseItem.fromDatabase(Map<String, dynamic> map) => ExpenseItem(
         id: map['id'] as String,
         title: map['title'] as String,
@@ -150,6 +169,8 @@ class ExpenseItem {
         syncStatus:
             SyncStatus.fromString(map['sync_status'] as String? ?? 'local'),
         attachmentPath: map['attachment_path'] as String?,
+        type: TransactionType.fromString(map['type'] as String? ?? 'expense'),
+        accountId: map['account_id'] as String?,
       );
 
   @override
