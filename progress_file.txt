@@ -7,7 +7,7 @@
 ---
 
 ## 目前狀態：待機中 ✅
-最後完成任務：Play Store 上架素材準備完成（2026-05-01）✅
+最後完成任務：資料邏輯重構完成（2026-05-01）✅
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
@@ -85,6 +85,18 @@
 - [x] 新手導覽 demo 資料（tour_demo_data.dart，tour 期間注入假資料）
 - [x] GitHub Release v0.3.0-beta（APK 下載連結）
 
+### 資料邏輯重構完成（2026-05-01）✅
+- [x] 問題 3：移除 _load() 硬編碼 seed 資料，重開不再自動產生範例記帳/固定開銷
+- [x] 問題 4：clearAll() 補清 fixedItems 記憶體，delete 操作已正確持久化
+- [x] 問題 5：clearAll() 還原受影響帳戶餘額，保留帳戶/持股/預算資料
+- [x] 問題 1：ExpenseItem 加入 TransactionType（支出/收入）和 accountId 欄位
+- [x] DB v3 migration：expenses 表加入 type, account_id 欄位
+- [x] AddEditExpensePage：支出/收入切換 + 帳戶選擇器（有帳戶時必選）
+- [x] addExpense/updateExpense/deleteExpense 自動更新帳戶餘額
+- [x] netAssets = totalAssets - totalLiabilities + totalPortfolioValue
+- [x] 問題 2：StockHolding 加入 accountId，AddEditInvestmentPage 帳戶選擇器（選填）
+- [x] InvestPage 持股卡片顯示關聯帳戶名稱
+
 ### 下一步（優先順序）
 1. Firebase 正式設定（建立專案、填入 firebase_config.dart、設定 Firestore rules）
 2. Play Store Console 建立 app listing，上傳 AAB / 截圖 / feature graphic
@@ -116,6 +128,7 @@
 - [x] 新手導覽 demo 資料（2026-05-01）
 - [x] Gmail 登入功能（Firebase Auth + Firestore，預設關閉）（2026-05-01）
 - [x] Play Store 上架素材（截圖×5、Feature Graphic、Privacy Policy v2）（2026-05-01）
+- [x] 資料邏輯重構（ExpenseItem type+accountId、DB v3、帳戶餘額連動、clearAll 修正、seed 資料修正、StockHolding accountId、netAssets 含投資）（2026-05-01）
 
 ### APK 安裝方式
 用手機 SSH app（Server Auditor）連接電腦，直接下載：
