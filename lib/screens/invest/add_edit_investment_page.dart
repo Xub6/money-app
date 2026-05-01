@@ -720,6 +720,29 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                 ],
               );
             }),
+            if (_selectedAccountId != null) ...[
+              const SizedBox(height: 8),
+              Builder(builder: (context) {
+                final cs = Theme.of(context).colorScheme;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(children: [
+                    Icon(Icons.info_outline, size: 16, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '買入時將從帳戶扣除總成本；刪除持股時將退回金額',
+                        style: TextStyle(fontSize: 12, color: cs.primary),
+                      ),
+                    ),
+                  ]),
+                );
+              }),
+            ],
             const SizedBox(height: 20),
 
             // ── 投資筆記 ──

@@ -375,9 +375,9 @@ class _MainShellState extends State<MainShell> {
         state: s,
         displayMonth: _displayMonth,
         monthLabel: _monthLabel,
-        onPrev: () => setState(() => _monthOffset = -1),
+        onPrev: () => setState(() => _monthOffset--),
         onCur: () => setState(() => _monthOffset = 0),
-        onNext: () => setState(() => _monthOffset = 1),
+        onNext: () => setState(() => _monthOffset++),
         onGoDetail: () => _goToTab(1),
         onGoCategory: _goToDetailWithFilter,
       ),
@@ -1123,7 +1123,13 @@ class _DetailPageState extends State<DetailPage> {
     final cats = ['全部', ...items.map((e) => e.category).toSet().toList()];
     if (_filterCat != '全部')
       items = items.where((e) => e.category == _filterCat).toList();
-    final totalShown = items.fold(0, (s, e) => s + e.amount);
+    final incomeShown = items
+        .where((e) => e.type == TransactionType.income)
+        .fold(0, (s, e) => s + e.amount);
+    final expenseShown = items
+        .where((e) => e.type == TransactionType.expense)
+        .fold(0, (s, e) => s + e.amount);
+    final netShown = incomeShown - expenseShown;
 
     return SafeArea(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1134,9 +1140,12 @@ class _DetailPageState extends State<DetailPage> {
                 child: Text('明細',
                     style:
                         TextStyle(fontSize: 28, fontWeight: FontWeight.w800))),
-            Text('合計 NT\$ ${_fmt(totalShown)}',
-                style: const TextStyle(
-                    color: kGold, fontWeight: FontWeight.w700, fontSize: 13)),
+            Text(
+                '${netShown >= 0 ? "+" : "-"}NT\$ ${_fmt(netShown.abs())}',
+                style: TextStyle(
+                    color: netShown >= 0 ? kGreen : kRed,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13)),
           ]),
         ),
         const SizedBox(height: 12),
@@ -1232,9 +1241,14 @@ class _DetailPageState extends State<DetailPage> {
                               ],
                             ),
                             isThreeLine: true,
-                            trailing: Text('NT\$ ${_fmt(item.amount)}',
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w800)),
+                            trailing: Text(
+                                '${item.type == TransactionType.income ? "+" : "-"}NT\$ ${_fmt(item.amount)}',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: item.type == TransactionType.income
+                                        ? kGreen
+                                        : kRed)),
                           ),
                         ),
                       ),

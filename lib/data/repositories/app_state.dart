@@ -207,8 +207,22 @@ class AppState extends ChangeNotifier {
 
   // ─── Stock Holdings ───
 
+  /// Adjusts the linked account balance for a stock purchase/removal.
+  /// Buying debits totalCost from the account; [reverse: true] refunds it.
+  void _applyHoldingBalance(StockHolding h, {bool reverse = false}) {
+    if (h.accountId == null) return;
+    final idx = accounts.indexWhere((a) => a.id == h.accountId);
+    if (idx < 0) return;
+    final delta = -h.totalCost; // buying reduces account balance
+    final actual = reverse ? -delta : delta;
+    accounts[idx] = accounts[idx].copyWith(
+      balance: accounts[idx].balance + actual,
+    );
+  }
+
   void addHolding(StockHolding h) {
     holdings.insert(0, h);
+    _applyHoldingBalance(h);
     _save();
     notifyListeners();
   }
@@ -216,14 +230,20 @@ class AppState extends ChangeNotifier {
   void updateHolding(String id, StockHolding updated) {
     final i = holdings.indexWhere((h) => h.id == id);
     if (i >= 0) {
+      _applyHoldingBalance(holdings[i], reverse: true); // undo old cost
       holdings[i] = updated;
+      _applyHoldingBalance(updated); // apply new cost
       _save();
       notifyListeners();
     }
   }
 
   void deleteHolding(String id) {
-    holdings.removeWhere((h) => h.id == id);
+    final i = holdings.indexWhere((h) => h.id == id);
+    if (i >= 0) {
+      _applyHoldingBalance(holdings[i], reverse: true); // refund cost
+      holdings.removeAt(i);
+    }
     _save();
     notifyListeners();
   }
@@ -256,6 +276,37 @@ class AppState extends ChangeNotifier {
 
   void deleteAccount(String id) {
     accounts.removeWhere((a) => a.id == id);
+    // Nullify accountId on any expenses that referenced the deleted account
+    final updatedExpenses = <ExpenseItem>[];
+    for (final e in expenses) {
+      if (e.accountId == id) {
+        final cleared = ExpenseItem(
+          id: e.id, title: e.title, category: e.category,
+          amount: e.amount, date: e.date, note: e.note,
+          createdAt: e.createdAt, editedAt: e.editedAt,
+          syncStatus: e.syncStatus, attachmentPath: e.attachmentPath,
+          metadata: e.metadata, type: e.type, accountId: null,
+        );
+        updatedExpenses.add(cleared);
+        _db.updateExpense(cleared).catchError((Object err) {
+          AppLogger.error('DB updateExpense (deleteAccount) failed', error: err);
+        });
+      } else {
+        updatedExpenses.add(e);
+      }
+    }
+    expenses = updatedExpenses;
+    // Nullify accountId on any holdings that referenced the deleted account
+    holdings = holdings.map((h) {
+      if (h.accountId != id) return h;
+      return StockHolding(
+        id: h.id, code: h.code, name: h.name, shares: h.shares,
+        totalCost: h.totalCost, currency: h.currency,
+        purchaseDate: h.purchaseDate, currentPrice: h.currentPrice,
+        buyReason: h.buyReason, sellStrategy: h.sellStrategy,
+        createdAt: h.createdAt, feeRate: h.feeRate, accountId: null,
+      );
+    }).toList();
     _save();
     notifyListeners();
   }
