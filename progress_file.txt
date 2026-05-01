@@ -6,8 +6,16 @@
 
 ---
 
-## 目前狀態：待機中 ✅
-最後完成任務：DashboardPage 支出分析升級（2026-05-02）✅
+## 目前狀態：P1 修復進行中 🔶
+最後完成任務：P0 產品邏輯修復 Batch 1（2026-05-02）✅
+
+### P0 修復狀態（第一批，全部完成）
+- [x] BUG-01: dynamicTotal/categoryTotals 只計算 expense type
+- [x] BUG-02: categoryTotals 排除 income（同上）
+- [x] BUG-04: clearDemoData() 加 _save()，demo data 不再殘留 SP
+- [x] BUG-05b: AddEditExpensePage 加「不關聯帳戶」chip，移除強制帳戶選擇
+- [x] BUG-03: BackupData v2.0 含 accounts/holdings；restoreFromBackup 完整快照還原；舊版 fallback 顯示提示
+- APK: 2026-05-02 build 成功（commit b1ffc38）
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
