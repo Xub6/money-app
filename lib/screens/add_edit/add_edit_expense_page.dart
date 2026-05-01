@@ -88,7 +88,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
   List<ExpenseItem> get _suggestions {
     final seen = <String>{};
     return widget.allExpenses
-        .where((e) => e.category == _selectedCategory)
+        .where((e) => e.type == _type && e.category == _selectedCategory)
         .where((e) => seen.add(e.title))
         .take(5)
         .toList();
@@ -190,14 +190,20 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
               label: '支出',
               selected: !isIncome,
               color: AppColors.error,
-              onTap: () => setState(() => _type = TransactionType.expense),
+              onTap: () => setState(() {
+                _type = TransactionType.expense;
+                if (isIncomeCategoryName(_selectedCategory)) _selectedCategory = '餐飲';
+              }),
             ),
             const SizedBox(width: 12),
             _TypeToggle(
               label: '收入',
               selected: isIncome,
               color: AppColors.success,
-              onTap: () => setState(() => _type = TransactionType.income),
+              onTap: () => setState(() {
+                _type = TransactionType.income;
+                if (!isIncomeCategoryName(_selectedCategory)) _selectedCategory = '薪資';
+              }),
             ),
           ]),
           const SizedBox(height: 24),
@@ -395,7 +401,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
             childAspectRatio: 0.95,
-            children: kCategories.map((c) {
+            children: (isIncome ? kIncomeCategories : kCategories).map((c) {
               final sel = _selectedCategory == c.name;
               return GestureDetector(
                 onTap: () => setState(() => _selectedCategory = c.name),

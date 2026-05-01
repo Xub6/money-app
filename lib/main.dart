@@ -692,7 +692,6 @@ class _DashboardPageState extends State<DashboardPage> {
     }
     final sortedCatEntries = chartCatMap.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final top3 = sortedCatEntries.take(3).toList();
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -739,29 +738,33 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ]),
             const SizedBox(height: 14),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              _MonthBtn(
-                  text: DateFormat('M月').format(DateTime(
-                      DateTime.now().year, DateTime.now().month - 1, 1)),
-                  selected: monthLabel ==
-                      DateFormat('M月').format(DateTime(
-                          DateTime.now().year, DateTime.now().month - 1, 1)),
-                  onTap: onPrev),
-              const SizedBox(width: 10),
-              _MonthBtn(
-                  text: DateFormat('M月').format(DateTime.now()),
-                  selected:
-                      monthLabel == DateFormat('M月').format(DateTime.now()),
-                  onTap: onCur),
-              const SizedBox(width: 10),
-              _MonthBtn(
-                  text: DateFormat('M月').format(DateTime(
-                      DateTime.now().year, DateTime.now().month + 1, 1)),
-                  selected: monthLabel ==
-                      DateFormat('M月').format(DateTime(
-                          DateTime.now().year, DateTime.now().month + 1, 1)),
-                  onTap: onNext),
-            ]),
+            Builder(builder: (_) {
+              final n = DateTime.now();
+              final prevM = DateTime(n.year, n.month - 1, 1);
+              final thisM = DateTime(n.year, n.month, 1);
+              final nextM = DateTime(n.year, n.month + 1, 1);
+              bool sameM(DateTime a, DateTime b) =>
+                  a.year == b.year && a.month == b.month;
+              return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                _MonthBtn(
+                    label: '上月',
+                    subText: DateFormat('M月').format(prevM),
+                    selected: sameM(displayMonth, prevM),
+                    onTap: onPrev),
+                const SizedBox(width: 10),
+                _MonthBtn(
+                    label: '本月',
+                    subText: DateFormat('M月').format(thisM),
+                    selected: sameM(displayMonth, thisM),
+                    onTap: onCur),
+                const SizedBox(width: 10),
+                _MonthBtn(
+                    label: '下月',
+                    subText: DateFormat('M月').format(nextM),
+                    selected: sameM(displayMonth, nextM),
+                    onTap: onNext),
+              ]);
+            }),
           ])),
           const SizedBox(height: 16),
 
@@ -776,8 +779,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('預算進度',
-                              style: TextStyle(
+                          Text(
+                              '${DateFormat('yyyy/MM').format(displayMonth)} 預算進度',
+                              style: const TextStyle(
                                   color: kGray,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600)),
@@ -975,79 +979,32 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   )
                 else ...[
-                  // ── Donut + Top 3 ───────────────────────────────
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 150,
-                        height: 150,
-                        child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              SizedBox.expand(
-                                child: _DoughnutChart(
-                                    catMap: chartCatMap),
-                              ),
-                              Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text('$chartCount',
-                                        style: const TextStyle(
-                                            fontSize: 26,
-                                            fontWeight: FontWeight.w800,
-                                            color: kGold)),
-                                    Text('筆消費',
-                                        style: TextStyle(
-                                            fontSize: 11,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant)),
-                                  ]),
-                            ]),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: top3.map((e) {
-                              final cat = categoryOf(e.key);
-                              final pct =
-                                  e.value / chartTotal * 100;
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                    bottom: 10),
-                                child: Row(children: [
-                                  Container(
-                                    width: 9,
-                                    height: 9,
-                                    decoration: BoxDecoration(
-                                        color: cat.color,
-                                        shape: BoxShape.circle),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(e.key,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600)),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                      '${pct.toStringAsFixed(1)}%',
-                                      style: const TextStyle(
-                                          color: kGold,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 12)),
-                                ]),
-                              );
-                            }).toList()),
-                      ),
-                    ],
+                  // ── Centered Donut ───────────────────────────────
+                  Center(
+                    child: SizedBox(
+                      width: 200,
+                      height: 200,
+                      child: Stack(alignment: Alignment.center, children: [
+                        SizedBox.expand(
+                          child: _DoughnutChart(catMap: chartCatMap),
+                        ),
+                        Column(mainAxisSize: MainAxisSize.min, children: [
+                          Text('$chartCount',
+                              style: const TextStyle(
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.w800,
+                                  color: kGold)),
+                          Text('筆消費',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant)),
+                        ]),
+                      ]),
+                    ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
 
                   // ── Category list ────────────────────────────────
                   const Divider(height: 1),
@@ -1075,6 +1032,8 @@ class _DashboardPageState extends State<DashboardPage> {
 }
 
 // ─── 明細頁 ───
+enum _DetailTypeFilter { all, expense, income }
+
 class DetailPage extends StatefulWidget {
   final AppState state;
   final DateTime displayMonth;
@@ -1097,13 +1056,17 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   String _filterCat = '全部';
+  _DetailTypeFilter _typeFilter = _DetailTypeFilter.all;
 
   @override
   void didUpdateWidget(DetailPage old) {
     super.didUpdateWidget(old);
     final f = widget.initialFilter;
     if (f != null && f != old.initialFilter) {
-      setState(() => _filterCat = f);
+      setState(() {
+        _filterCat = f;
+        _typeFilter = _DetailTypeFilter.expense;
+      });
       widget.onFilterApplied?.call();
     }
   }
@@ -1119,10 +1082,18 @@ class _DetailPageState extends State<DetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    var items = widget.state.monthExpenses(widget.displayMonth);
-    final cats = ['全部', ...items.map((e) => e.category).toSet().toList()];
-    if (_filterCat != '全部')
-      items = items.where((e) => e.category == _filterCat).toList();
+    final allMonthItems = widget.state.monthExpenses(widget.displayMonth);
+    // Apply type filter
+    final typeFiltered = switch (_typeFilter) {
+      _DetailTypeFilter.income => allMonthItems.where((e) => e.type == TransactionType.income).toList(),
+      _DetailTypeFilter.expense => allMonthItems.where((e) => e.type == TransactionType.expense).toList(),
+      _DetailTypeFilter.all => allMonthItems,
+    };
+    final cats = ['全部', ...typeFiltered.map((e) => e.category).toSet().toList()];
+    final effectiveCat = cats.contains(_filterCat) ? _filterCat : '全部';
+    var items = effectiveCat != '全部'
+        ? typeFiltered.where((e) => e.category == effectiveCat).toList()
+        : typeFiltered;
     final incomeShown = items
         .where((e) => e.type == TransactionType.income)
         .fold(0, (s, e) => s + e.amount);
@@ -1131,15 +1102,15 @@ class _DetailPageState extends State<DetailPage> {
         .fold(0, (s, e) => s + e.amount);
     final netShown = incomeShown - expenseShown;
 
+    final cs = Theme.of(context).colorScheme;
     return SafeArea(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
           child: Row(children: [
-            const Expanded(
-                child: Text('明細',
-                    style:
-                        TextStyle(fontSize: 28, fontWeight: FontWeight.w800))),
+            const Text('明細',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+            const Spacer(),
             Text(
                 '${netShown >= 0 ? "+" : "-"}NT\$ ${_fmt(netShown.abs())}',
                 style: TextStyle(
@@ -1148,7 +1119,47 @@ class _DetailPageState extends State<DetailPage> {
                     fontSize: 13)),
           ]),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+        // 月份 + 類型篩選
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: kGold.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                DateFormat('yyyy/MM').format(widget.displayMonth),
+                style: const TextStyle(
+                    color: kGold, fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+            ),
+            const SizedBox(width: 10),
+            _DetailTypeChip(
+              label: '全部',
+              selected: _typeFilter == _DetailTypeFilter.all,
+              onTap: () => setState(() { _typeFilter = _DetailTypeFilter.all; _filterCat = '全部'; }),
+            ),
+            const SizedBox(width: 6),
+            _DetailTypeChip(
+              label: '支出',
+              selected: _typeFilter == _DetailTypeFilter.expense,
+              color: kRed,
+              onTap: () => setState(() { _typeFilter = _DetailTypeFilter.expense; _filterCat = '全部'; }),
+            ),
+            const SizedBox(width: 6),
+            _DetailTypeChip(
+              label: '收入',
+              selected: _typeFilter == _DetailTypeFilter.income,
+              color: kGreen,
+              onTap: () => setState(() { _typeFilter = _DetailTypeFilter.income; _filterCat = '全部'; }),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 10),
+        // 分類篩選
         SizedBox(
           height: 38,
           child: ListView.separated(
@@ -1157,7 +1168,7 @@ class _DetailPageState extends State<DetailPage> {
             itemCount: cats.length,
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (_, i) {
-              final sel = cats[i] == _filterCat;
+              final sel = cats[i] == effectiveCat;
               return GestureDetector(
                 onTap: () => setState(() => _filterCat = cats[i]),
                 child: AnimatedContainer(
@@ -1167,14 +1178,12 @@ class _DetailPageState extends State<DetailPage> {
                   decoration: BoxDecoration(
                     color: sel
                         ? kGold
-                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                        : cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(cats[i],
                       style: TextStyle(
-                          color: sel
-                              ? Colors.white
-                              : Theme.of(context).colorScheme.onSurface,
+                          color: sel ? Colors.white : cs.onSurface,
                           fontWeight: FontWeight.w700,
                           fontSize: 13)),
                 ),
@@ -1565,43 +1574,166 @@ class _ManagePageState extends State<ManagePage> {
           // Gmail 登入卡片
           const LoginCard(),
 
-          // 我的賬戶
-          _AppCard(
-              key: TourKeys.accountCard,
-              child: GestureDetector(
+          // 我的帳戶 — 核心功能入口
+          GestureDetector(
+            key: TourKeys.accountCard,
             onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (_) => AccountPage(state: widget.state))),
             behavior: HitTestBehavior.opaque,
-            child: Row(children: [
-              const Icon(Icons.account_balance_wallet_rounded, color: kGold),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    const Text('我的賬戶',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15)),
-                    ListenableBuilder(
-                      listenable: widget.state,
-                      builder: (_, __) {
-                        final net = widget.state.netAssets;
-                        final isNeg = net < 0;
-                        return Text(
-                          '淨資產 NT\$ ${NumberFormat('#,##0', 'en_US').format(net.round())}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isNeg ? kRed : kGray,
-                          ),
-                        );
-                      },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                    color: kGold.withValues(alpha: 0.35), width: 1.5),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Row(children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: kGold.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ])),
-              const Icon(Icons.chevron_right, color: kGray, size: 18),
-            ]),
-          )),
+                    child: const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: kGold,
+                        size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      const Text('我的帳戶',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w800, fontSize: 17)),
+                      ListenableBuilder(
+                        listenable: widget.state,
+                        builder: (_, __) => Text(
+                          '${widget.state.accounts.length} 個帳戶',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant),
+                        ),
+                      ),
+                    ]),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: kGold.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text('管理',
+                          style: TextStyle(
+                              color: kGold,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13)),
+                      SizedBox(width: 2),
+                      Icon(Icons.chevron_right, color: kGold, size: 15),
+                    ]),
+                  ),
+                ]),
+                const SizedBox(height: 16),
+                ListenableBuilder(
+                  listenable: widget.state,
+                  builder: (_, __) {
+                    final net = widget.state.netAssets;
+                    final assets = widget.state.totalAssets;
+                    final liabilities = widget.state.totalLiabilities;
+                    final isNeg = net < 0;
+                    final cs = Theme.of(context).colorScheme;
+                    return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(
+                        'NT\$ ${NumberFormat('#,##0', 'en_US').format(net.round())}',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: isNeg ? kRed : cs.onSurface,
+                        ),
+                      ),
+                      const Text('淨資產',
+                          style: TextStyle(
+                              color: kGray,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 12),
+                      Row(children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: cs.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text('資產',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: cs.onSurfaceVariant)),
+                              const SizedBox(height: 2),
+                              Text(
+                                'NT\$ ${NumberFormat('#,##0', 'en_US').format(assets.round())}',
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: kGreen),
+                              ),
+                            ]),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: cs.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text('負債',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: cs.onSurfaceVariant)),
+                              const SizedBox(height: 2),
+                              Text(
+                                'NT\$ ${NumberFormat('#,##0', 'en_US').format(liabilities.round())}',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: liabilities > 0
+                                        ? kRed
+                                        : cs.onSurfaceVariant),
+                              ),
+                            ]),
+                          ),
+                        ),
+                      ]),
+                    ]);
+                  },
+                ),
+              ]),
+            ),
+          ),
           const SizedBox(height: 16),
 
           // 外觀設定
@@ -2071,32 +2203,43 @@ class _AppCard extends StatelessWidget {
 }
 
 class _MonthBtn extends StatelessWidget {
-  final String text;
+  final String label;
+  final String subText;
   final bool selected;
   final VoidCallback onTap;
   const _MonthBtn(
-      {required this.text, required this.selected, required this.onTap});
+      {required this.label,
+      required this.subText,
+      required this.selected,
+      required this.onTap});
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-          decoration: BoxDecoration(
-            color: selected
-                ? kGold
-                : Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(text,
-              style: TextStyle(
-                  color: selected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14)),
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? kGold : cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
         ),
-      );
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(label,
+              style: TextStyle(
+                  color: selected ? Colors.white.withValues(alpha: 0.85) : cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11)),
+          const SizedBox(height: 2),
+          Text(subText,
+              style: TextStyle(
+                  color: selected ? Colors.white : cs.onSurface,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15)),
+        ]),
+      ),
+    );
+  }
 }
 
 class _BudgetStat extends StatelessWidget {
@@ -2153,6 +2296,50 @@ class _NavItem extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
         ]),
+      ),
+    );
+  }
+}
+
+// ─── 明細類型篩選 chip ───
+class _DetailTypeChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final Color? color;
+  final VoidCallback onTap;
+  const _DetailTypeChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.color,
+  });
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = color ?? kGold;
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? activeColor.withValues(alpha: 0.15)
+              : cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected ? activeColor : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? activeColor : cs.onSurface,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }
