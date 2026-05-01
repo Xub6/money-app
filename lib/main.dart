@@ -29,6 +29,9 @@ import 'screens/onboarding/onboarding_service.dart';
 import 'core/tour/tour_controller.dart';
 import 'core/tour/tour_keys.dart';
 import 'core/tour/tour_overlay.dart';
+import 'config/firebase_config.dart';
+import 'screens/auth/login_card.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 // ─── 顏色別名（相容現有 widget）───
 const kGold = AppColors.gold;
@@ -47,6 +50,10 @@ void main() async {
     AppLogger.error('Flutter Error',
         error: details.exception, stackTrace: details.stack);
   };
+
+  if (kFirebaseConfigured) {
+    await Firebase.initializeApp(options: kFirebaseOptions);
+  }
 
   AppLogger.info('App starting...');
   runApp(const MoneyApp());
@@ -1238,6 +1245,9 @@ class _ManagePageState extends State<ManagePage> {
           const Text('管理',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 18),
+
+          // Gmail 登入卡片
+          const LoginCard(),
 
           // 我的賬戶
           _AppCard(
