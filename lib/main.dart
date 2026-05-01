@@ -145,10 +145,13 @@ class _MainShellState extends State<MainShell> {
 
   void _initTour() {
     final ctrl = context.read<TourController>();
+    final appState = context.read<AppState>();
     ctrl.init(
       goToTab: _goToTab,
       scrollToFeedback: _scrollManageToFeedback,
       scrollToCategoryCard: _scrollDashToCategory,
+      onTourStart: appState.loadDemoData,
+      onTourEnd: appState.clearDemoData,
     );
     _tourEntry = OverlayEntry(
       builder: (_) => Consumer<TourController>(

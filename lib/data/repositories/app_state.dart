@@ -12,6 +12,7 @@ import '../databases/migration_helper.dart';
 import '../databases/app_database.dart';
 import '../../services/encryption_service.dart';
 import '../../services/stock_service.dart';
+import '../../core/tour/tour_demo_data.dart';
 
 /// Enhanced app state with CRUD operations
 class AppState extends ChangeNotifier {
@@ -36,6 +37,7 @@ class AppState extends ChangeNotifier {
 
   final _db = AppDatabase();
   final _enc = EncryptionService();
+  final _demoIds = <String>{};
 
   AppState() {
     _load();
@@ -297,6 +299,35 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       return null;
     }
+  }
+
+  // ─── Tour Demo Data ───
+
+  void loadDemoData() {
+    if (_demoIds.isNotEmpty) return; // already loaded
+    final demoExp = buildDemoExpenses();
+    final demoHold = buildDemoHoldings();
+    final demoFixed = buildDemoFixed();
+    final demoAcc = buildDemoAccounts();
+    for (final e in demoExp)  _demoIds.add(e.id);
+    for (final h in demoHold) _demoIds.add(h.id);
+    for (final f in demoFixed) _demoIds.add(f.id);
+    for (final a in demoAcc)  _demoIds.add(a.id);
+    expenses.insertAll(0, demoExp);
+    holdings.insertAll(0, demoHold);
+    fixedItems.insertAll(0, demoFixed);
+    accounts.insertAll(0, demoAcc);
+    notifyListeners();
+  }
+
+  void clearDemoData() {
+    if (_demoIds.isEmpty) return;
+    expenses.removeWhere((e) => _demoIds.contains(e.id));
+    holdings.removeWhere((h) => _demoIds.contains(h.id));
+    fixedItems.removeWhere((f) => _demoIds.contains(f.id));
+    accounts.removeWhere((a) => _demoIds.contains(a.id));
+    _demoIds.clear();
+    notifyListeners();
   }
 
   // ─── Utility ───

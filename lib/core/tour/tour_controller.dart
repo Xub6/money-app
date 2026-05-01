@@ -13,6 +13,8 @@ class TourController extends ChangeNotifier {
   void Function(int tab)? _goToTab;
   Future<void> Function()? _scrollToFeedback;
   Future<void> Function()? _scrollToCategoryCard;
+  VoidCallback? _onTourStart;
+  VoidCallback? _onTourEnd;
 
   // ── Public state ─────────────────────────────────────────────
 
@@ -34,15 +36,20 @@ class TourController extends ChangeNotifier {
     required void Function(int tab) goToTab,
     required Future<void> Function() scrollToFeedback,
     required Future<void> Function() scrollToCategoryCard,
+    VoidCallback? onTourStart,
+    VoidCallback? onTourEnd,
   }) {
     _goToTab = goToTab;
     _scrollToFeedback = scrollToFeedback;
     _scrollToCategoryCard = scrollToCategoryCard;
+    _onTourStart = onTourStart;
+    _onTourEnd = onTourEnd;
   }
 
   // ── Tour lifecycle ───────────────────────────────────────────
 
   Future<void> start() async {
+    _onTourStart?.call();
     _steps = buildTourSteps();
     _stepIndex = 0;
     _active = true;
@@ -83,6 +90,7 @@ class TourController extends ChangeNotifier {
     _hidden = false;
     _waitingForInteraction = false;
     notifyListeners();
+    _onTourEnd?.call();
     await OnboardingService.markOnboardingSeen();
   }
 
