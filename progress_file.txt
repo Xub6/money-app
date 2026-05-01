@@ -7,7 +7,7 @@
 ---
 
 ## 目前狀態：待機中 ✅
-最後完成任務：互動式導覽升級完成（2026-05-01）✅
+最後完成任務：DashboardPage 支出分析升級（2026-05-02）✅
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
@@ -136,6 +136,7 @@
 - [x] Play Store 上架素材（截圖×5、Feature Graphic、Privacy Policy v2）（2026-05-01）
 - [x] 資料邏輯重構（ExpenseItem type+accountId、DB v3、帳戶餘額連動、clearAll 修正、seed 資料修正、StockHolding accountId、netAssets 含投資）（2026-05-01）
 - [x] 互動式導覽升級（16步、新增持股FAB互動、長按明細互動、Scrollable.ensureVisible 滾動修正、key-based 判斷）（2026-05-01）
+- [x] 支出分析升級（甜甜圈圖 + 本月/雙月/半年切換 + 摘要文案 + 分類清單點擊篩選）（2026-05-02）
 
 ### APK 安裝方式
 用手機 SSH app（Server Auditor）連接電腦，直接下載：
