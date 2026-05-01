@@ -9,9 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.3.3
-  intl: ^0.19.0
+  intl: ^0.20.2
 
   # Phase 1 & 2: Core dependencies
   uuid: ^4.0.0                      # Secure ID generation

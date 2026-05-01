@@ -4,9 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Simple theme provider
 class ThemeProvider extends ChangeNotifier {
   bool _isDarkMode = false;
+  Locale _locale = const Locale('zh', 'TW');
   SharedPreferences? _prefs;
 
   bool get isDarkMode => _isDarkMode;
+  Locale get locale => _locale;
 
   ThemeProvider() {
     _init();
@@ -15,12 +17,22 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> _init() async {
     _prefs = await SharedPreferences.getInstance();
     _isDarkMode = _prefs?.getBool('isDarkMode') ?? false;
+    final langCode = _prefs?.getString('languageCode') ?? 'zh';
+    final countryCode = _prefs?.getString('countryCode') ?? 'TW';
+    _locale = Locale(langCode, countryCode);
     notifyListeners();
   }
 
   Future<void> toggleTheme() async {
     _isDarkMode = !_isDarkMode;
     await _prefs?.setBool('isDarkMode', _isDarkMode);
+    notifyListeners();
+  }
+
+  Future<void> setLocale(Locale locale) async {
+    _locale = locale;
+    await _prefs?.setString('languageCode', locale.languageCode);
+    await _prefs?.setString('countryCode', locale.countryCode ?? 'TW');
     notifyListeners();
   }
 

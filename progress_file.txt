@@ -15,7 +15,7 @@
 - [x] ManagePage 備份按鈕
 - [x] ManagePage 恢復備份按鈕（備份清單選擇 + 確認對話框）
 
-### Phase 2 狀態：30% 進行中
+### Phase 2 狀態：100% 完成 ✅
 
 **已完成：**
 - [x] SQLite 切換為 expenses / fixedItems 主要儲存（2026-04-28）
@@ -30,8 +30,8 @@
   - export_service.dart: exportFullReportAsExcel()，3 個 sheet（月度統計/支出明細/固定開銷）
   - main.dart: _doExportExcel() + ManagePage「匯出 Excel」按鈕
 
-**待完成：**
-- [ ] i18n 國際化
+**已完成：**
+- [x] i18n 國際化（flutter_localizations + locale 選擇器，2026-05-01）
 
 ### Onboarding 完成（2026-04-30）✅
 - [x] lib/screens/onboarding/onboarding_service.dart（OnboardingService：isOnboardingSeen / markOnboardingSeen）
@@ -75,9 +75,12 @@
 - [x] lib/screens/invest/invest_page.dart：加 TourKeys.investHeader / investRefresh
 - APK 已建置並推送 GitHub（commit ee144c0）
 
+### Phase 3 狀態：進行中 🔶
+
 ### 下一步（優先順序）
-1. 實機驗收 15 步導覽（首次啟動 + 重新觀看 + 互動步驟 FAB/feedbackTile）
-2. i18n 國際化 — 約 4h，最耗時，可最後做
+1. flutter analyze 確認 0 warning
+2. Phase 3 UI 細節優化
+3. Play Store 上架準備（截圖、store listing、Privacy Policy）
 
 ### 完成紀錄
 - [x] 深色模式修復

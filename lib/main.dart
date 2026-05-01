@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import 'config/localization.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/categories.dart';
 import 'core/utils/error_handler.dart';
@@ -84,6 +86,14 @@ class _MoneyAppState extends State<MoneyApp> {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: '錢錢管家',
+            locale: themeProvider.locale,
+            localizationsDelegates: const [
+              AppLocalizationsDelegate(),
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
             theme: themeProvider.lightTheme,
             darkTheme: themeProvider.darkTheme,
             themeMode:
@@ -1157,6 +1167,63 @@ class _ManagePageState extends State<ManagePage> {
 
   void _addFixed() => _openFixedDialog();
 
+  String _localeDisplayName(Locale locale) {
+    switch ('${locale.languageCode}_${locale.countryCode}') {
+      case 'zh_TW':
+        return '繁體中文 (Traditional Chinese)';
+      case 'zh_CN':
+        return '简体中文 (Simplified Chinese)';
+      case 'en_US':
+        return 'English';
+      case 'ja_JP':
+        return '日本語 (Japanese)';
+      default:
+        return '繁體中文 (Traditional Chinese)';
+    }
+  }
+
+  void _showLanguagePicker(BuildContext context, ThemeProvider themeProvider) {
+    final options = [
+      (const Locale('zh', 'TW'), '繁體中文', 'Traditional Chinese'),
+      (const Locale('zh', 'CN'), '简体中文', 'Simplified Chinese'),
+      (const Locale('en', 'US'), 'English', ''),
+      (const Locale('ja', 'JP'), '日本語', 'Japanese'),
+    ];
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+            child: Text('語言 / Language',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          ),
+          ...options.map((o) {
+            final isSelected = themeProvider.locale == o.$1;
+            return ListTile(
+              title: Text(o.$2,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? kGold : null)),
+              subtitle:
+                  o.$3.isNotEmpty ? Text(o.$3, style: const TextStyle(fontSize: 12)) : null,
+              trailing: isSelected
+                  ? const Icon(Icons.check_rounded, color: kGold)
+                  : null,
+              onTap: () {
+                themeProvider.setLocale(o.$1);
+                Navigator.pop(context);
+              },
+            );
+          }),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -1229,6 +1296,29 @@ class _ManagePageState extends State<ManagePage> {
               activeColor: kGold,
             ),
           ])),
+          const SizedBox(height: 16),
+
+          // 語言設定
+          _AppCard(
+              child: InkWell(
+            onTap: () => _showLanguagePicker(context, themeProvider),
+            borderRadius: BorderRadius.circular(22),
+            child: Row(children: [
+              const Icon(Icons.language_rounded, color: kGold),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    const Text('語言 / Language',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(_localeDisplayName(themeProvider.locale),
+                        style: const TextStyle(color: kGray, fontSize: 12)),
+                  ])),
+              const Icon(Icons.chevron_right, color: kGray, size: 18),
+            ]),
+          )),
           const SizedBox(height: 16),
 
           // 月預算
