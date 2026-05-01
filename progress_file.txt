@@ -7,7 +7,7 @@
 ---
 
 ## 目前狀態：待機中 ✅
-最後完成任務：資料邏輯重構完成（2026-05-01）✅
+最後完成任務：互動式導覽升級完成（2026-05-01）✅
 
 ### Phase 1 狀態：100% 完成 ✅
 - [x] 新功能集成到 main.dart（DashboardPage、DetailPage、ManagePage 全部完整）
@@ -97,6 +97,12 @@
 - [x] 問題 2：StockHolding 加入 accountId，AddEditInvestmentPage 帳戶選擇器（選填）
 - [x] InvestPage 持股卡片顯示關聯帳戶名稱
 
+### 互動式導覽升級完成（2026-05-01）✅
+- [x] tour_step.dart：新增第9步「新增持股」FAB互動（tab 2），第6步改為長按互動，更新圓餅圖說明文字，共16步
+- [x] tour_controller.dart：改用 Scrollable.ensureVisible() 自動滾動，移除硬編碼 index 和注入捲動 callback
+- [x] main.dart：FAB/feedbackTile 改用 key-based 判斷（currentStep.targetKey），_showItemMenu 加長按互動回呼
+- [x] login_card.dart：移除 unused _initialized 欄位，flutter analyze 0 warning
+
 ### 下一步（優先順序）
 1. Firebase 正式設定（建立專案、填入 firebase_config.dart、設定 Firestore rules）
 2. Play Store Console 建立 app listing，上傳 AAB / 截圖 / feature graphic
@@ -129,6 +135,7 @@
 - [x] Gmail 登入功能（Firebase Auth + Firestore，預設關閉）（2026-05-01）
 - [x] Play Store 上架素材（截圖×5、Feature Graphic、Privacy Policy v2）（2026-05-01）
 - [x] 資料邏輯重構（ExpenseItem type+accountId、DB v3、帳戶餘額連動、clearAll 修正、seed 資料修正、StockHolding accountId、netAssets 含投資）（2026-05-01）
+- [x] 互動式導覽升級（16步、新增持股FAB互動、長按明細互動、Scrollable.ensureVisible 滾動修正、key-based 判斷）（2026-05-01）
 
 ### APK 安裝方式
 用手機 SSH app（Server Auditor）連接電腦，直接下載：
