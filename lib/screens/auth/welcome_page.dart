@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/firebase_config.dart';
 import '../../core/constants/app_colors.dart';
@@ -110,10 +111,8 @@ class _WelcomePageState extends State<WelcomePage> {
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('G',
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800)),
+                              FaIcon(FontAwesomeIcons.google,
+                                  size: 18, color: Colors.black),
                               SizedBox(width: 10),
                               Text('使用 Google 登入',
                                   style: TextStyle(
