@@ -693,6 +693,21 @@ class _DashboardPageState extends State<DashboardPage> {
     final sortedCatEntries = chartCatMap.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
+    // Merge categories beyond top 6 into '其他'
+    const kMaxChartCategories = 6;
+    final mergedSortedEntries = sortedCatEntries.length > kMaxChartCategories
+        ? [
+            ...sortedCatEntries.take(kMaxChartCategories),
+            MapEntry(
+              '其他',
+              sortedCatEntries
+                  .skip(kMaxChartCategories)
+                  .fold<int>(0, (s, e) => s + e.value),
+            ),
+          ]
+        : sortedCatEntries;
+    final mergedCatMap = Map<String, int>.fromEntries(mergedSortedEntries);
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
@@ -705,65 +720,110 @@ class _DashboardPageState extends State<DashboardPage> {
           _AppCard(
               key: TourKeys.monthCard,
               child: Column(children: [
-            Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              Tooltip(
-                message: '每天記帳可維持連續天數',
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: state.recordedToday
-                        ? Theme.of(context).colorScheme.errorContainer
-                        : Theme.of(context).colorScheme.tertiaryContainer,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Text(state.recordedToday ? '🔥' : '⚠️',
-                        style: const TextStyle(fontSize: 13)),
-                    const SizedBox(width: 4),
-                    Text(
-                      state.recordedToday
-                          ? '連續記帳 ${state.streak} 天'
-                          : '今天還沒記帳（${state.streak} 天）',
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 目前查看月份 標籤（左上）
+                Builder(builder: (ctx) {
+                  final n = DateTime.now();
+                  final isNow = displayMonth.year == n.year &&
+                      displayMonth.month == n.month;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Theme.of(ctx)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      isNow
+                          ? '目前月份'
+                          : '查看：${displayMonth.year}年${displayMonth.month}月',
                       style: TextStyle(
-                        color: state.recordedToday
-                            ? Theme.of(context).colorScheme.onErrorContainer
-                            : Theme.of(context).colorScheme.onTertiaryContainer,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
+                        color: isNow
+                            ? kGold
+                            : Theme.of(ctx).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ]),
+                  );
+                }),
+                // 連續記帳徽章（右上）
+                Tooltip(
+                  message: '每天記帳可維持連續天數',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: state.recordedToday
+                          ? Theme.of(context).colorScheme.errorContainer
+                          : Theme.of(context).colorScheme.tertiaryContainer,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text(state.recordedToday ? '🔥' : '⚠️',
+                          style: const TextStyle(fontSize: 13)),
+                      const SizedBox(width: 4),
+                      Text(
+                        state.recordedToday
+                            ? '連續記帳 ${state.streak} 天'
+                            : '今天還沒記帳（${state.streak} 天）',
+                        style: TextStyle(
+                          color: state.recordedToday
+                              ? Theme.of(context)
+                                  .colorScheme
+                                  .onErrorContainer
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onTertiaryContainer,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ]),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
             const SizedBox(height: 14),
             Builder(builder: (_) {
               final n = DateTime.now();
-              final prevM = DateTime(n.year, n.month - 1, 1);
+              // prevM/nextM 相對 selectedMonth；thisM 是真實本月
+              final prevM =
+                  DateTime(displayMonth.year, displayMonth.month - 1, 1);
               final thisM = DateTime(n.year, n.month, 1);
-              final nextM = DateTime(n.year, n.month + 1, 1);
+              final nextM =
+                  DateTime(displayMonth.year, displayMonth.month + 1, 1);
               bool sameM(DateTime a, DateTime b) =>
                   a.year == b.year && a.month == b.month;
-              return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                _MonthBtn(
-                    label: '上月',
-                    subText: DateFormat('M月').format(prevM),
-                    selected: sameM(displayMonth, prevM),
-                    onTap: onPrev),
-                const SizedBox(width: 10),
-                _MonthBtn(
-                    label: '本月',
-                    subText: DateFormat('M月').format(thisM),
-                    selected: sameM(displayMonth, thisM),
-                    onTap: onCur),
-                const SizedBox(width: 10),
-                _MonthBtn(
-                    label: '下月',
-                    subText: DateFormat('M月').format(nextM),
-                    selected: sameM(displayMonth, nextM),
-                    onTap: onNext),
-              ]);
+              return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 左：selectedMonth - 1（純導航，不高亮）
+                    _MonthBtn(
+                        label: '上月',
+                        subText: DateFormat('M月').format(prevM),
+                        selected: false,
+                        onTap: onPrev),
+                    const SizedBox(width: 10),
+                    // 中：真實本月（僅當 selectedMonth == 本月時高亮）
+                    _MonthBtn(
+                        label: '本月',
+                        subText: DateFormat('M月').format(thisM),
+                        selected: sameM(displayMonth, thisM),
+                        onTap: onCur),
+                    const SizedBox(width: 10),
+                    // 右：selectedMonth + 1（純導航，不高亮）
+                    _MonthBtn(
+                        label: '下月',
+                        subText: DateFormat('M月').format(nextM),
+                        selected: false,
+                        onTap: onNext),
+                  ]);
             }),
           ])),
           const SizedBox(height: 16),
@@ -973,7 +1033,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 28),
                     child: Center(
-                      child: Text('新增支出後顯示圖表',
+                      child: Text('本月尚無支出紀錄',
                           style: TextStyle(
                               color: Colors.grey, fontSize: 15)),
                     ),
@@ -986,7 +1046,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       height: 200,
                       child: Stack(alignment: Alignment.center, children: [
                         SizedBox.expand(
-                          child: _DoughnutChart(catMap: chartCatMap),
+                          child: _DoughnutChart(catMap: mergedCatMap),
                         ),
                         Column(mainAxisSize: MainAxisSize.min, children: [
                           Text('$chartCount',
@@ -1009,7 +1069,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   // ── Category list ────────────────────────────────
                   const Divider(height: 1),
                   const SizedBox(height: 4),
-                  ...sortedCatEntries.map((e) {
+                  ...mergedSortedEntries.map((e) {
                     final cat = categoryOf(e.key);
                     final pct = chartTotal > 0
                         ? e.value / chartTotal * 100
@@ -1019,8 +1079,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       name: e.key,
                       pct: pct,
                       amount: e.value,
-                      onTap: () =>
-                          widget.onGoCategory?.call(e.key),
+                      onTap: e.key == '其他'
+                          ? null
+                          : () => widget.onGoCategory?.call(e.key),
                     );
                   }),
                 ],
@@ -1089,7 +1150,7 @@ class _DetailPageState extends State<DetailPage> {
       _DetailTypeFilter.expense => allMonthItems.where((e) => e.type == TransactionType.expense).toList(),
       _DetailTypeFilter.all => allMonthItems,
     };
-    final cats = ['全部', ...typeFiltered.map((e) => e.category).toSet().toList()];
+    final cats = ['全部', ...typeFiltered.map((e) => e.category).toSet()];
     final effectiveCat = cats.contains(_filterCat) ? _filterCat : '全部';
     var items = effectiveCat != '全部'
         ? typeFiltered.where((e) => e.category == effectiveCat).toList()
@@ -2462,21 +2523,26 @@ class _DoughnutPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = sw);
     double start = -pi / 2;
-    const gap = 0.07;
+    // gapRadians: gap allocated per segment boundary (centered in slot)
+    // StrokeCap.butt gives clean cuts; round caps bleed ~sw/2 px into the gap
+    const gapRadians = 0.07;
     for (final e in catMap.entries) {
-      final sweep = (e.value / total) * 2 * pi - gap;
-      canvas.drawArc(
-        Rect.fromCircle(center: Offset(cx, cy), radius: r),
-        start,
-        sweep,
-        false,
-        Paint()
-          ..color = categoryOf(e.key).color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = sw
-          ..strokeCap = StrokeCap.round,
-      );
-      start += sweep + gap;
+      final slotAngle = (e.value / total) * 2 * pi;
+      final sweep = slotAngle - gapRadians;
+      if (sweep > 0.01) {
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset(cx, cy), radius: r),
+          start + gapRadians / 2,
+          sweep,
+          false,
+          Paint()
+            ..color = categoryOf(e.key).color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = sw
+            ..strokeCap = StrokeCap.butt,
+        );
+      }
+      start += slotAngle;
     }
   }
 
