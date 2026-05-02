@@ -1,301 +1,137 @@
-# 錢錢管家 v2.0 - 開發進度報告
+# 錢錢管家 — 開發進度報告
 
-> 最後更新：2026-04-19
+> 最後更新：2026-05-02（RC 前總驗收）
+> 前一版本日期：2026-04-19（已大幅過期，本版完全覆寫）
 
-## 📊 總體進度
+---
+
+## 總體進度
 
 ```
-■■■■■■■■■■■■■■■■■■□□  95% 完成
-
-第一階段：95% ✅
-第二階段：30% ⏳  
-第三階段：0% ⏰
-```
-
----
-
-## 🎯 第一階段 - 核心功能與數據管理（已完成 95%）
-
-### ✅ 已完成
-
-#### 基礎設施層
-- [x] 色彩常數和主題配置（app_colors.dart）
-- [x] 分類定義和工具函數（categories.dart）
-- [x] 數字、日期格式化工具（formatters.dart）
-- [x] 數據驗證工具（validators.dart）
-- [x] 自定義異常系統（app_exceptions.dart：6 種異常類型）
-- [x] 統一錯誤處理（error_handler.dart）
-- [x] 完整的日志系統（logger.dart：支持文件導出）
-
-#### 數據層
-- [x] 改進的 ExpenseItem 模型
-  - 新增字段：editedAt、syncStatus、attachmentPath、metadata
-  - 新增方法：copyWith()、toDatabaseJson()、fromDatabase()
-- [x] 改進的 FixedItem 模型
-  - 新增字段：category、startDate、endDate、renewalCycle、isActive
-  - 完整的生命週期管理
-- [x] 備份元數據模型（backup_metadata.dart）
-- [x] 搜索結果模型（search_result.dart）
-
-#### 業務邏輯層
-- [x] 改進的 AppState（app_state.dart）
-  - CRUD 方法：addExpense、updateExpense、deleteExpense
-  - addFixed、updateFixed、deleteFixed
-  - getExpense、getFixed
-  - 數據導入/導出功能
-
-#### 服務層
-- [x] 備份服務（backup_service.dart）
-  - JSON 導出/導入
-  - 自動備份管理
-  - 備份驗證和完整性檢查
-- [x] 搜索服務（search_service.dart）
-  - 多維搜索（標題、備註、分類、日期、金額）
-  - 相關度計算
-  - 搜索建議功能
-
-#### UI 層
-- [x] 新增/編輯支出頁面（add_edit_expense_page.dart）
-  - 統一的新增和編輯邏輯
-  - 完整的表單驗證
-  - 日期選擇器
-  - 分類選擇器
-- [x] 搜索頁面（search_page.dart）
-  - 即時搜索
-  - 多維篩選（日期範圍、分類）
-  - 結果排序
-
-#### 文檔和指南
-- [x] 集成指南（INTEGRATION_GUIDE.md）
-  - 快速集成方案
-  - 完全重構方案
-  - API 使用示例
-
-### ⏳ 需要完成
-
-- [ ] 將新功能集成到現有 main.dart（預計 2-3 小時）
-- [ ] 修改 DetailPage 支持編輯和長按菜單（預計 1 小時）
-- [ ] 在 ManagePage 添加備份和恢復按鈕（預計 1 小時）
-
----
-
-## 🔄 第二階段 - 數據庫與高級功能（已完成 30%）
-
-### ✅ 已完成
-
-#### 數據庫
-- [x] SQLite 初始化和 schema（app_database.dart）
-  - 完整的表結構設計
-  - 自動索引創建
-  - 版本控制支持
-  - CRUD 操作方法
-
-#### 導出功能
-- [x] CSV 導出服務（export_service.dart）
-  - 支出導出
-  - 固定開銷導出
-  - 完整月度報告
-  - 文件管理
-
-### ⏳ 進行中
-
-- [ ] 數據遷移工具（migration_helper.dart）
-- [ ] SharedPreferences → SQLite 自動遷移
-
-### ⏰ 未開始
-
-- [ ] 國際化 (i18n) 支持
-- [ ] 數據加密服務
-- [ ] Excel 導出（需要額外包）
-
----
-
-## 📦 新增依賴
-
-```yaml
-dependencies:
-  uuid: ^4.0.0              # 安全 ID 生成 ✅ 添加
-  sqflite: ^2.3.0           # SQLite 數據庫 ✅ 添加
-  path_provider: ^2.1.0     # 文件路徑 ✅ 添加
-  csv: ^6.0.0               # CSV 導出 ✅ 添加
-  excel: ^3.0.0             # Excel 導出 ✅ 添加
-  flutter_secure_storage: ^9.0.0  # 安全存儲 ✅ 添加
-  encrypt: ^4.0.0           # AES 加密 ✅ 添加
-  provider: ^6.0.0          # 狀態管理 ✅ 添加
+■■■■■■■■■■■■■■■■■■■■  100% — Release Candidate ✅
 ```
 
 ---
 
-## 📁 新建文件清單
+## 目前狀態：Release Candidate Ready
 
-### Core 層（7 個文件）
-```
-lib/core/constants/
-  ├── app_colors.dart
-  ├── categories.dart
-  └── (待建：app_themes.dart)
-
-lib/core/utils/
-  ├── formatters.dart
-  ├── validators.dart
-  ├── app_exceptions.dart
-  ├── error_handler.dart
-  ├── logger.dart
-  └── date_utils.dart
-```
-
-### Data 層（7 個文件）
-```
-lib/data/models/
-  ├── expense_item.dart
-  ├── fixed_item.dart
-  ├── backup_metadata.dart
-  └── search_result.dart
-
-lib/data/repositories/
-  ├── app_state.dart
-  └── (待建：backup_repository.dart)
-
-lib/data/databases/
-  ├── app_database.dart
-  └── (待建：migration_helper.dart)
-```
-
-### Services 層（4 個文件）
-```
-lib/services/
-  ├── backup_service.dart
-  ├── search_service.dart
-  ├── export_service.dart
-  └── (待建：encryption_service.dart, undo_redo_service.dart)
-```
-
-### Screens 層（2 個文件）
-```
-lib/screens/add_edit/
-  └── add_edit_expense_page.dart
-
-lib/screens/search/
-  └── search_page.dart
-```
-
-### 文檔（2 個文件）
-```
-INTEGRATION_GUIDE.md
-PROJECT_STATUS.md （本文件）
-```
-
-**總計：23 個新文件已創建或規劃**
+所有 P0 / P1 / P2 修復已完成，並通過 Sean 手機實機確認。
+自動化測試全數通過，APK 與 AAB 皆已建置。
 
 ---
 
-## 💾 代碼統計
+## 完成功能總覽
 
-| 類別 | 代碼行數 | 說明 |
-|------|---------|------|
-| Core 層 | ~800 | 常數、工具、異常 |
-| Data 層 | ~1200 | 模型、數據庫、備份 |
-| Services 層 | ~1500 | 業務邏輯 |
-| Screens 層 | ~800 | UI 組件 |
-| 文檔 | ~300 | 指南和說明 |
-| **總計** | **~4600** | 第一+二階段 |
+### 核心記帳
+- 支出 / 收入新增、編輯、刪除（長按選單）
+- 分類系統（餐飲、交通、娛樂等）
+- 月份切換（累進導航 + BottomSheet 任意月份跳轉）
+- 首頁月份 chip 狀態指示（金色 active，永遠高辨識）
+- 預算進度（含 / 不含固定開銷，設定持久化）
+- 支出分析（甜甜圈圖 + 本月 / 雙月 / 半年切換）
+- 明細頁（收支切換、分類篩選、月份選擇器、淨額顯示）
 
----
+### 帳戶管理
+- 多帳戶（儲蓄 / 信用 / 其他，多幣別）
+- 淨資產總覽（= 資產 - 負債 + 投資組合現值）
+- 支出 / 收入自動調整帳戶餘額
+- 刪除帳戶後關聯支出 / 持股 accountId 自動置 null
 
-## 🚀 下一步行動
+### 投資追蹤
+- 台股（TWSE API 中文名稱）、美股（Yahoo Finance）
+- 現價刷新、損益計算（含手續費 / 交易稅）
+- 持股買入 / 刪除自動連動帳戶餘額
 
-### 立即可做
-1. ✅ 運行 `flutter pub get` 下載新依賴
-2. ✅ 運行 `flutter analyze` 檢查代碼
-3. ✅ 按照 INTEGRATION_GUIDE.md 將新功能集成到 main.dart
+### 資料管理
+- SQLite 主要儲存（v3 schema：支出含 type / account_id）
+- AES 加密 SharedPreferences meta
+- JSON 備份 v2.0（含帳戶 / 持股 / 預算）
+- 備份建立、還原、**單筆刪除**（v2.0 新增）
+- Excel / CSV 匯出（3 個 sheet）
 
-### 本週可做
-1. 完成第一階段集成
-2. 測試編輯、搜索、備份功能
-3. 開始實施數據遷移工具
+### UX / 品質
+- 深色模式全面 colorScheme（iOS/Material 標準色）
+- 新手導覽（16 步 Coach-marks Tour + demo 資料）
+- 互動式說明（FAB / 長按明細 互動步驟）
+- i18n 國際化骨架（flutter_localizations）
+- Feedback 功能（n8n webhook，附圖，ManagePage 入口）
+- SearchPage 全文搜尋
 
-### 下週計劃
-1. 完成 SQLite 遷移
-2. 實施 i18n（國際化）
-3. 添加 Excel 導出
-4. 開始第三階段：深色模式、測試、撤銷
-
----
-
-## 🔍 代碼質量
-
-- ✅ 所有新代碼遵循 Dart 最佳實踐
-- ✅ 完整的錯誤處理和日志
-- ✅ 充分的代碼註釋和文檔
-- ✅ 向後兼容現有數據格式
-- ✅ 無 breaking changes
-
----
-
-## ⚠️ 已知問題
-
-無重大問題。所有新功能已驗證：
-- 數據模型序列化/反序列化正常
-- 異常處理完善
-- 備份文件有效
-- 搜索算法有效
+### 上架素材
+- Play Store 截圖 × 5（1080×1920）
+- Feature Graphic（1024×500）
+- Privacy Policy（GitHub Pages）
+- Store listing 文案（繁體中文）
+- Firebase Auth（Google 登入，預設關閉，kFirebaseConfigured=false）
 
 ---
 
-## 🎓 開發工藝
+## 修復紀錄（P0 / P1 / P2）
 
-### 代碼組織原則
-1. **單一職責**：每個類專注於一個功能
-2. **依賴倒置**：使用 Repository 模式隔離數據源
-3. **配置外部化**：常數集中管理
-4. **測試友好**：業務邏輯與 UI 分離
+### P0（全部完成 2026-05-02）
+| ID | 問題 | 狀態 |
+|----|------|------|
+| BUG-01/02 | dynamicTotal / categoryTotals 誤計入收入 | ✅ |
+| BUG-04 | clearDemoData() 未呼叫 _save()，demo 殘留 | ✅ |
+| BUG-05b | 強制帳戶選擇，加「不關聯帳戶」chip | ✅ |
+| BUG-03 | BackupData v2.0 含帳戶 / 持股，舊版 fallback | ✅ |
 
-### 架構模式
-- MVC（Model-View-Controller）+ Repository 模式
-- 清晰的分層結構：Core → Data → Services → Screens
-- 可擴展的服務架構
+### P1（全部完成 2026-05-02）
+| ID | 問題 | 狀態 |
+|----|------|------|
+| P1-1 | 月份切換不支援連續翻月 | ✅ |
+| P1-2 | 刪除帳戶後孤兒 accountId 未清除 | ✅ |
+| P1-3 | 持股買入/刪除未連動帳戶餘額 | ✅ |
+| P1-4 | 明細收支顯示無符號 / 顏色 | ✅ |
 
----
-
-## 📈 性能指標
-
-**預期改進**：
-- 搜索速度：從 O(n) 改進到 O(log n)（使用數據庫索引）
-- 啟動時間：+300ms（SQLite 初始化）
-- 內存使用：+10MB（緩存層）
-
----
-
-## 📚 文檔完整性
-
-- ✅ API 文檔：所有公開類均有 JSDoc 註釋
-- ✅ 集成指南：包含代碼示例和使用案例
-- ✅ 遷移指南：說明如何從舊系統升級
-- ✅ 故障排除：常見問題解答
+### P2（全部完成並 Sean 手機實機確認 2026-05-02）
+| ID | 問題 | 狀態 |
+|----|------|------|
+| P2-1 | 首頁月份 chip 辨識度不足 | ✅ Sean 確認 |
+| P2-2 | 含固定開銷開關重開 App 後重置 | ✅ Sean 確認 |
+| P2-3 | 明細頁月份按鈕太小、不可操作 | ✅ Sean 確認 |
+| P2-4 | 首頁 / 明細頁 selectedMonth 不同步 | ✅ Sean 確認 |
+| P2-5 | 備份無法刪除單筆 | ✅ Sean 確認 |
 
 ---
 
-## 🏆 里程碑
+## 自動化驗證結果（2026-05-02）
 
-- ✅ **2026-04-19 10:00** - 第一階段基礎設施完成
-- ✅ **2026-04-19 14:00** - 搜索和備份服務完成
-- ✅ **2026-04-19 16:00** - SQLite 和導出服務完成
-- ⏳ **2026-04-19 18:00** - 第一階段完全集成（目標）
-- ⏳ **2026-04-20** - 第二階段：數據庫遷移和 i18n
-- ⏳ **2026-04-22** - 第三階段：深色模式、測試、優化
-
----
-
-## 📞 支持和反饋
-
-若要查看具體的代碼實現，請參考：
-- **API 使用**：INTEGRATION_GUIDE.md
-- **代碼示例**：各個文件的註釋
-- **錯誤處理**：core/utils/error_handler.dart
-- **日志記錄**：core/utils/logger.dart
+| 項目 | 結果 |
+|------|------|
+| flutter analyze | 0 error / 0 warning / 36 info |
+| flutter test | 17/17 passed |
+| flutter build apk --release | ✅ 59.3 MB |
+| AAB（play store 用） | ✅ 已存在 build/app/outputs/bundle/release/app-release.aab |
 
 ---
 
-**專案總體狀態：🟢 進展順利**
+## 未解決已知問題（不阻擋 RC）
 
-所有第一階段核心功能已實現。準備進行集成和測試。
+- 36 個 flutter analyze info（均為 prefer_const / deprecated deprecated_member_use 等風格建議，不影響功能）
+- Firebase Auth 預設關閉（kFirebaseConfigured=false），Google 登入需 Sean 設定 Firebase 專案後才能啟用
+- i18n 只有骨架，僅繁體中文，無多語系切換 UI
+
+---
+
+## 尚未完成（上架前 Sean 需手動處理）
+
+1. Firebase 正式設定（若要啟用 Google 登入）
+2. 產生 signed AAB / APK（需 keystore）
+3. Play Console：上傳 AAB、截圖、Feature Graphic、填寫 store listing
+4. 隱私政策 URL 填入 Play Console
+5. 封閉測試 → 開放測試 → 正式上架審核
+
+---
+
+## 技術架構快覽
+
+| 層 | 說明 |
+|----|------|
+| UI | Flutter Widget（main.dart 約 2800 行，各 Screen 分檔） |
+| 狀態 | Provider（AppState, ThemeProvider, TourController） |
+| 儲存 | SQLite（expenses/fixedItems）+ AES 加密 SP（meta） |
+| 股價 | Yahoo Finance API（美股）/ TWSE API（台股） |
+| 匯率 | Yahoo Finance（並行抓取 7 幣別） |
+| 備份 | App Documents 目錄 JSON 檔案（v2.0 schema） |
+| 測試 | Unit（17 cases）+ Smoke（3 cases） |

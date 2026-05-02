@@ -6,8 +6,15 @@
 
 ---
 
-## 目前狀態：待機中 ✅
-最後完成任務：P2 備份清單新增單筆刪除功能（2026-05-02）✅
+## 目前狀態：Release Candidate 前總驗收完成 ✅
+最後完成任務：RC 前文件更新 + QA Checklist 產生（2026-05-02）✅
+
+### P2 修復狀態（全部完成並通過 Sean 手機實機確認）✅
+- [x] 明細頁月份選擇器（BottomSheet，年份翻頁 + 12 月格子）— Sean 確認 ✅
+- [x] 首頁 / 明細頁 selectedMonth 同步（_setDisplayMonth 回呼）— Sean 確認 ✅
+- [x] 首頁左上月份 chip 金色高亮（半透明金底 + 金框 + 金字）— Sean 確認 ✅
+- [x] 含固定開銷開關 SharedPreferences 持久化（key: budget_include_fixed_expenses）— Sean 確認 ✅
+- [x] 備份單筆刪除（垃圾桶 icon + confirm dialog + 空狀態 + loading 防連點）— Sean 確認 ✅
 
 ### P0 修復狀態（第一批，全部完成）
 - [x] BUG-01: dynamicTotal/categoryTotals 只計算 expense type
