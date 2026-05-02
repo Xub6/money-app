@@ -7,7 +7,7 @@
 ---
 
 ## 目前狀態：待機中 ✅
-最後完成任務：P2 明細頁月份按鈕放大 + BottomSheet 月份選擇器（2026-05-02）✅
+最後完成任務：P2 備份清單新增單筆刪除功能（2026-05-02）✅
 
 ### P0 修復狀態（第一批，全部完成）
 - [x] BUG-01: dynamicTotal/categoryTotals 只計算 expense type
@@ -159,6 +159,7 @@
 - [x] P2 月份 chip 改金色 active 樣式（半透明金底+金色邊框+金色文字，永遠高辨識度）（2026-05-02）
 - [x] P2 含固定開銷 SharedPreferences 持久化（key: budget_include_fixed_expenses，initState 讀取，切換時立即寫入）（2026-05-02）
 - [x] P2 明細頁月份按鈕放大（15px/金邊框/箭頭）+ BottomSheet 月份選擇器（年份翻頁+12月格子+金色高亮，首頁明細頁月份完全同步）（2026-05-02）
+- [x] P2 備份清單單筆刪除（_BackupPickerSheet 改 Stateful，每列垃圾桶icon，confirm dialog，刪除後刷新清單，空狀態提示，刪除中 loading 防連點）（2026-05-02）
 
 ### APK 安裝方式
 用手機 SSH app（Server Auditor）連接電腦，直接下載：

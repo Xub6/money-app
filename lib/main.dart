@@ -1554,7 +1554,10 @@ class _ManagePageState extends State<ManagePage> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        builder: (_) => _BackupPickerSheet(backups: backups),
+        builder: (_) => _BackupPickerSheet(
+          backups: backups,
+          backupService: _backupService,
+        ),
       );
       if (selectedFilename == null || !mounted) return;
       final ok = await showDialog<bool>(
@@ -2764,12 +2767,81 @@ class _KeepAlivePageState extends State<_KeepAlivePage>
   }
 }
 
-class _BackupPickerSheet extends StatelessWidget {
+class _BackupPickerSheet extends StatefulWidget {
   final List<BackupMetadata> backups;
-  const _BackupPickerSheet({required this.backups});
+  final BackupService backupService;
+  const _BackupPickerSheet(
+      {required this.backups, required this.backupService});
+
+  @override
+  State<_BackupPickerSheet> createState() => _BackupPickerSheetState();
+}
+
+class _BackupPickerSheetState extends State<_BackupPickerSheet> {
+  late List<BackupMetadata> _backups;
+  final Set<String> _deleting = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _backups = List.from(widget.backups);
+  }
+
+  Future<void> _confirmDelete(BackupMetadata b) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('刪除備份？'),
+        content: const Text('刪除後無法復原，確定要刪除此備份嗎？'),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('刪除',
+                style: TextStyle(
+                    color: Colors.red, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    await _doDelete(b);
+  }
+
+  Future<void> _doDelete(BackupMetadata b) async {
+    setState(() => _deleting.add(b.filename));
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await widget.backupService.deleteBackup(b.filename);
+      if (!mounted) return;
+      setState(() {
+        _backups.removeWhere((x) => x.filename == b.filename);
+        _deleting.remove(b.filename);
+      });
+      messenger.showSnackBar(
+        const SnackBar(
+            content: Text('備份已刪除'), backgroundColor: kGray),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _deleting.remove(b.filename));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('刪除失敗，請稍後再試'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
       child: Column(
@@ -2785,16 +2857,48 @@ class _BackupPickerSheet extends StatelessWidget {
                 onPressed: () => Navigator.pop(context)),
           ]),
           const SizedBox(height: 8),
-          ...backups.map((b) => ListTile(
+          if (_backups.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Center(
+                child: Text(
+                  '目前沒有備份資料',
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant, fontSize: 14),
+                ),
+              ),
+            )
+          else
+            ..._backups.map((b) {
+              final busy = _deleting.contains(b.filename);
+              return ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.restore_rounded, color: kGold),
+                leading:
+                    const Icon(Icons.restore_rounded, color: kGold),
                 title: Text(
                   DateFormat('yyyy/MM/dd HH:mm').format(b.timestamp),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: Text('${b.expenseCount} 筆支出・${b.fixedCount} 項固定開銷'),
-                onTap: () => Navigator.pop(context, b.filename),
-              )),
+                subtitle: Text(
+                    '${b.expenseCount} 筆支出・${b.fixedCount} 項固定開銷'),
+                onTap:
+                    busy ? null : () => Navigator.pop(context, b.filename),
+                trailing: busy
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: kGold),
+                      )
+                    : IconButton(
+                        icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.red),
+                        tooltip: '刪除此備份',
+                        onPressed: () => _confirmDelete(b),
+                      ),
+              );
+            }),
         ],
       ),
     );
