@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'config/localization.dart';
 import 'screens/auth/welcome_page.dart';
@@ -492,6 +493,26 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _includeFixed = true;
   _ChartPeriod _chartPeriod = _ChartPeriod.month;
 
+  static const _kIncludeFixedKey = 'budget_include_fixed_expenses';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadIncludeFixed();
+  }
+
+  Future<void> _loadIncludeFixed() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getBool(_kIncludeFixedKey);
+    if (saved != null && mounted) setState(() => _includeFixed = saved);
+  }
+
+  Future<void> _setIncludeFixed(bool value) async {
+    setState(() => _includeFixed = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kIncludeFixedKey, value);
+  }
+
   AppState get state => widget.state;
   DateTime get displayMonth => widget.displayMonth;
   String get monthLabel => widget.monthLabel;
@@ -724,8 +745,8 @@ class _DashboardPageState extends State<DashboardPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 目前查看月份 標籤（左上）
-                Builder(builder: (ctx) {
+                // 目前查看月份 標籤（左上）—— 永遠金色 active 樣式
+                Builder(builder: (_) {
                   final n = DateTime.now();
                   final isNow = displayMonth.year == n.year &&
                       displayMonth.month == n.month;
@@ -733,21 +754,19 @@ class _DashboardPageState extends State<DashboardPage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: Theme.of(ctx)
-                          .colorScheme
-                          .surfaceContainerHighest,
+                      color: kGold.withValues(alpha: 0.15),
+                      border: Border.all(
+                          color: kGold.withValues(alpha: 0.55), width: 1),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
                       isNow
                           ? '目前月份'
                           : '查看：${displayMonth.year}年${displayMonth.month}月',
-                      style: TextStyle(
-                        color: isNow
-                            ? kGold
-                            : Theme.of(ctx).colorScheme.onSurfaceVariant,
+                      style: const TextStyle(
+                        color: kGold,
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   );
@@ -847,8 +866,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   fontWeight: FontWeight.w600)),
                           const SizedBox(height: 4),
                           GestureDetector(
-                            onTap: () =>
-                                setState(() => _includeFixed = !_includeFixed),
+                            onTap: () => _setIncludeFixed(!_includeFixed),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 4),
