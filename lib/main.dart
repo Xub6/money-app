@@ -270,6 +270,12 @@ class _MainShellState extends State<MainShell> {
     return DateTime(now.year, now.month + _monthOffset, 1);
   }
 
+  void _setDisplayMonth(DateTime m) {
+    final now = DateTime.now();
+    setState(() =>
+        _monthOffset = (m.year - now.year) * 12 + (m.month - now.month));
+  }
+
   IconData get _fabIcon => switch (_tab) {
         2 => Icons.trending_up_rounded,
         3 => Icons.playlist_add_rounded,
@@ -388,6 +394,7 @@ class _MainShellState extends State<MainShell> {
         onEdit: _editExpense,
         initialFilter: _pendingDetailFilter,
         onFilterApplied: () => setState(() => _pendingDetailFilter = null),
+        onMonthChanged: _setDisplayMonth,
       ),
       InvestPage(state: s),
       ManagePage(
@@ -1119,6 +1126,7 @@ class DetailPage extends StatefulWidget {
   final Function(ExpenseItem)? onEdit;
   final String? initialFilter;
   final VoidCallback? onFilterApplied;
+  final void Function(DateTime)? onMonthChanged;
 
   const DetailPage({
     super.key,
@@ -1127,6 +1135,7 @@ class DetailPage extends StatefulWidget {
     this.onEdit,
     this.initialFilter,
     this.onFilterApplied,
+    this.onMonthChanged,
   });
 
   @override
@@ -1156,6 +1165,23 @@ class _DetailPageState extends State<DetailPage> {
       context,
       '已刪除「${item.title}」',
       () => widget.state.insertExpenseAt(originalIndex, item),
+    );
+  }
+
+  void _showMonthPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _MonthPickerSheet(
+        selected: widget.displayMonth,
+        onPick: (m) {
+          Navigator.pop(context);
+          widget.onMonthChanged?.call(m);
+        },
+      ),
     );
   }
 
@@ -1203,16 +1229,29 @@ class _DetailPageState extends State<DetailPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18),
           child: Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: kGold.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                DateFormat('yyyy/MM').format(widget.displayMonth),
-                style: const TextStyle(
-                    color: kGold, fontWeight: FontWeight.w700, fontSize: 13),
+            GestureDetector(
+              onTap: _showMonthPicker,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: kGold.withValues(alpha: 0.12),
+                  border: Border.all(
+                      color: kGold.withValues(alpha: 0.55), width: 1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(
+                    DateFormat('yyyy/MM').format(widget.displayMonth),
+                    style: const TextStyle(
+                        color: kGold,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.keyboard_arrow_down_rounded,
+                      color: kGold, size: 18),
+                ]),
               ),
             ),
             const SizedBox(width: 10),
@@ -2316,6 +2355,123 @@ class _MonthBtn extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                   fontSize: 15)),
         ]),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// 月份選擇器 BottomSheet
+// ─────────────────────────────────────────────
+class _MonthPickerSheet extends StatefulWidget {
+  final DateTime selected;
+  final void Function(DateTime) onPick;
+  const _MonthPickerSheet({required this.selected, required this.onPick});
+
+  @override
+  State<_MonthPickerSheet> createState() => _MonthPickerSheetState();
+}
+
+class _MonthPickerSheetState extends State<_MonthPickerSheet> {
+  late int _year;
+
+  @override
+  void initState() {
+    super.initState();
+    _year = widget.selected.year;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // drag handle
+          Container(
+            width: 36,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Text('選擇月份',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 16),
+          // 年份切換
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left_rounded, size: 28),
+                onPressed: () => setState(() => _year--),
+                splashRadius: 22,
+              ),
+              SizedBox(
+                width: 90,
+                child: Text('$_year 年',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700)),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right_rounded, size: 28),
+                onPressed: () => setState(() => _year++),
+                splashRadius: 22,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // 月份格子（4 欄 × 3 列）
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 2.0,
+            ),
+            itemCount: 12,
+            itemBuilder: (_, i) {
+              final month = i + 1;
+              final isSel = _year == widget.selected.year &&
+                  month == widget.selected.month;
+              return GestureDetector(
+                onTap: () =>
+                    widget.onPick(DateTime(_year, month, 1)),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color:
+                        isSel ? kGold : cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                    border: isSel
+                        ? null
+                        : Border.all(
+                            color: cs.outlineVariant
+                                .withValues(alpha: 0.4),
+                            width: 1),
+                  ),
+                  child: Text(
+                    '$month月',
+                    style: TextStyle(
+                      color: isSel ? Colors.white : cs.onSurface,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }
