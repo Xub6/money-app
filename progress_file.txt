@@ -6,8 +6,41 @@
 
 ---
 
-## 目前狀態：等待 Google Play Console 身分驗證審核 🔵
-最後完成任務：AAB 建置完成 + Play Console 帳戶建立（Qoryva Studio）+ 身分驗證送出（2026-05-05）✅
+## 目前狀態：i18n RC 四大頁修復完成（2026-05-06）✅
+最後完成任務：i18n RC 四大頁中文殘留清除（commit e3b73f4）✅
+
+### i18n RC 四大頁結果（2026-05-06）
+- [x] DashboardPage（Budget）：中文 sentinel 全部已有 translateCategory 處理，無明顯殘留 ✅
+- [x] DetailPage：中文 sentinel '全部' 已有 AppLocalizations.of 處理 ✅
+- [x] InvestPage：invest_page.dart 無中文殘留 ✅
+- [x] ManagePage：唯一殘留 '起・共 {n} 期' → 加 fixed_start_periods key，4 語言全補 ✅
+- [x] flutter analyze：0 error / 0 warning ✅
+- [x] flutter build apk：59.4MB ✅
+- [x] commit e3b73f4 + push ✅
+
+### 本 session 已修（已 commit）
+- lib/config/localization.dart（fixed_start_periods key + 4 語言）
+- lib/main.dart（ManagePage 固定開銷顯示改用 AppLocalizations）
+- lib/screens/auth/welcome_page.dart（dead_null_aware warning 修復）
+- lib/screens/onboarding/onboarding_page.dart + slides × 6（i18n 化）
+- lib/services/export_service.dart（CSV/Excel 欄位 i18n 化）
+
+### 下一步（依用戶指示）
+等四大頁通過後，再處理：
+- onboarding dialog/snackbar/validation/search 次要區域
+- tour_step.dart / tour_overlay.dart（中文 tour 文字）
+- validators.dart（中文 validation error messages）
+- error_handler.dart（中文 error messages）
+- formatters.dart（今天/昨天/M月d日）
+- fixed_item.dart RenewalCycle.label（每月/每年）
+
+### i18n P0 RC Blocker 修復記錄（2026-05-05）
+- **問題**：語言切換在真機毫無效果，UI 全程顯示中文
+- **根因**：AppLocalizations.of(context, key) 被呼叫 0 次，所有字串均為硬編碼
+- **修復**：localization.dart 完整改寫（zh_TW/zh_CN/en_US/ja_JP 四語言字典，60+ keys），main.dart + invest_page.dart 替換 20+ 字串，isSupported() 改為 languageCode 比對
+- **驗證**：flutter analyze 0 errors，flutter build apk 59.3MB ✅
+- **commit**：7f0faeb
+- **教訓**：LL-004 記錄至 LESSONS_LEARNED.md，QA-001~005 更新至 universal-app-release-quality-gate skill
 
 ### Play Console 狀態（2026-05-05）
 - 開發者名稱：Qoryva Studio
