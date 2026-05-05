@@ -6,8 +6,27 @@
 
 ---
 
-## 目前狀態：Release Candidate 前總驗收完成 ✅
-最後完成任務：RC 前文件更新 + QA Checklist 產生（2026-05-02）✅
+## 目前狀態：等待 Google Play Console 身分驗證審核 🔵
+最後完成任務：AAB 建置完成 + Play Console 帳戶建立（Qoryva Studio）+ 身分驗證送出（2026-05-05）✅
+
+### Play Console 狀態（2026-05-05）
+- 開發者名稱：Qoryva Studio
+- 帳戶類型：個人開發者
+- 身分驗證：已送出，Google 審核中
+- 電話驗證：等身分驗證完成後進行
+- 建立 App：等身分驗證完成後解鎖
+- AAB（已就緒）：build\app\outputs\bundle\release\app-release.aab（49 MB，2026-05-05 build）
+- 程式碼狀態：凍結，不做任何修改
+
+### 上架素材狀態（2026-05-05）
+- 截圖 × 5：✅ docs/screenshot_1~5.png
+- Feature Graphic：✅ docs/feature-graphic.png
+- Privacy Policy：✅ https://xub6.github.io/money-app/privacy-policy.html（Sean 瀏覽器驗證通過）
+- GitHub Pages：✅ main / docs 設定完成，.nojekyll 已加入
+- 商店文案：✅ 已備妥（App 名稱 / 簡短說明 / 完整說明）
+- 資料安全表單草稿：✅ 已備妥
+- 內容分級建議答案：✅ 已備妥
+- AAB 簽名：✅ Qoryva Studio keystore
 
 ### P2 修復狀態（全部完成並通過 Sean 手機實機確認）✅
 - [x] 明細頁月份選擇器（BottomSheet，年份翻頁 + 12 月格子）— Sean 確認 ✅
