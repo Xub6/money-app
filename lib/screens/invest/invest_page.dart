@@ -70,10 +70,10 @@ class _InvestPageState extends State<InvestPage> {
       final total = s.holdings.length;
       final updated = prices.length;
       final msg = updated == 0
-          ? '無法取得股價，請確認網路或稍後再試'
+          ? AppLocalizations.of(context, 'price_fetch_failed')
           : updated < total
-              ? '已更新 $updated/$total 檔現價'
-              : '已更新 $updated 檔現價';
+              ? AppLocalizations.ofParam(context, 'price_updated_partial', {'updated': updated, 'total': total})
+              : AppLocalizations.ofParam(context, 'price_updated_all', {'n': updated});
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(msg),
         backgroundColor: updated == 0 ? _kRed : _kGreen,
@@ -96,7 +96,7 @@ class _InvestPageState extends State<InvestPage> {
       context: context,
       builder: (_) => AlertDialog(
         title:
-            const Text('設定匯率', style: TextStyle(fontWeight: FontWeight.w800)),
+            Text(AppLocalizations.of(context, 'set_fx_rate'), style: const TextStyle(fontWeight: FontWeight.w800)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: TextField(
           controller: ctrl,
@@ -107,7 +107,7 @@ class _InvestPageState extends State<InvestPage> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text('取消')),
+              onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context, 'cancel'))),
           TextButton(
             onPressed: () {
               final rate = double.tryParse(ctrl.text.trim());
@@ -116,8 +116,8 @@ class _InvestPageState extends State<InvestPage> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('確認',
-                style: TextStyle(color: _kGold, fontWeight: FontWeight.w700)),
+            child: Text(AppLocalizations.of(context, 'confirm'),
+                style: const TextStyle(color: _kGold, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -141,7 +141,7 @@ class _InvestPageState extends State<InvestPage> {
           Navigator.pop(context);
           s.deleteHolding(h.id);
           ErrorHandler.showUndoSnack(
-              context, '已刪除 ${h.code}', () => s.addHolding(h));
+              context, AppLocalizations.ofParam(context, 'deleted_holding', {'code': h.code}), () => s.addHolding(h));
         },
       ),
     );
@@ -212,11 +212,11 @@ class _InvestPageState extends State<InvestPage> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 20, 18, 12),
               child: Row(children: [
-                const Text('持股明細',
+                Text(AppLocalizations.of(context, 'holding_detail'),
                     style:
-                        TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                        const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
                 const Spacer(),
-                Text('${holdings.length} 檔',
+                Text(AppLocalizations.ofParam(context, 'holdings_count', {'n': holdings.length}),
                     style: const TextStyle(color: Colors.grey, fontSize: 13)),
               ]),
             ),
@@ -236,11 +236,11 @@ class _InvestPageState extends State<InvestPage> {
                     Icon(Icons.show_chart_rounded,
                         size: 48, color: Colors.grey.shade300),
                     const SizedBox(height: 12),
-                    const Text('還沒有持股',
-                        style: TextStyle(color: Colors.grey, fontSize: 15)),
+                    Text(AppLocalizations.of(context, 'no_holdings'),
+                        style: const TextStyle(color: Colors.grey, fontSize: 15)),
                     const SizedBox(height: 6),
-                    const Text('點右上角 + 新增第一筆投資',
-                        style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    Text(AppLocalizations.of(context, 'add_first_invest'),
+                        style: const TextStyle(color: Colors.grey, fontSize: 13)),
                   ]),
                 ),
               ),
@@ -276,7 +276,7 @@ class _InvestPageState extends State<InvestPage> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 100),
               child: Text(
-                '投資功能僅供個人紀錄與資訊整理使用，不構成投資建議。投資有風險，請自行判斷。',
+                AppLocalizations.of(context, 'invest_disclaimer'),
                 style: TextStyle(
                   fontSize: 11,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -320,7 +320,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text('投資總覽',
+          Text(AppLocalizations.of(context, 'invest_overview'),
               style: TextStyle(
                   color: cs.onSurfaceVariant,
                   fontSize: 13,
@@ -349,7 +349,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
           ),
         ]),
         const SizedBox(height: 14),
-        Text('總現值', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+        Text(AppLocalizations.of(context, 'total_value'), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
         const SizedBox(height: 4),
         Text('NT\$ ${_fmt(totalValue)}',
             style: TextStyle(
@@ -363,7 +363,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
           Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('總成本',
+              Text(AppLocalizations.of(context, 'total_cost'),
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               const SizedBox(height: 4),
               Text('NT\$ ${_fmt(totalCost)}',
@@ -376,7 +376,7 @@ class _PortfolioSummaryCard extends StatelessWidget {
           Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('總損益',
+              Text(AppLocalizations.of(context, 'total_profit'),
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               const SizedBox(height: 4),
               Text(
@@ -498,7 +498,7 @@ class _HoldingCard extends StatelessWidget {
                       style:
                           TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
               ] else
-                Text('尚無現價',
+                Text(AppLocalizations.of(context, 'no_current_price'),
                     style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
             ]),
           ),
@@ -601,31 +601,31 @@ class _HoldingDetailSheet extends StatelessWidget {
                   onPressed: onDelete),
             ]),
             const SizedBox(height: 16),
-            _DetailRow('股數', '${_fmtShares(h.shares)} 股', cs: cs),
-            _DetailRow('總成本', 'NT\$ ${_fmt(h.totalCost)}', cs: cs),
+            _DetailRow(AppLocalizations.of(context, 'shares'), AppLocalizations.ofParam(context, 'shares_value', {'n': _fmtShares(h.shares)}), cs: cs),
+            _DetailRow(AppLocalizations.of(context, 'total_cost'), 'NT\$ ${_fmt(h.totalCost)}', cs: cs),
             if (h.currentPrice > 0) ...[
               _DetailRow(
-                  '現價',
+                  AppLocalizations.of(context, 'current_price'),
                   isUsd
                       ? 'US\$ ${_fmtPrice(h.currentPrice)}  (≈ NT\$ ${_fmt(h.currentPrice * usdTwd)})'
                       : 'NT\$ ${_fmtPrice(h.currentPrice)}',
                   cs: cs),
-              _DetailRow('現值', 'NT\$ ${_fmt(currentValue)}', cs: cs),
+              _DetailRow(AppLocalizations.of(context, 'current_value_label'), 'NT\$ ${_fmt(currentValue)}', cs: cs),
             ],
             _DetailRow(
-              '預估損益',
+              AppLocalizations.of(context, 'est_profit'),
               '${isGain ? '+' : ''}NT\$ ${_fmt(profit)}  (${isGain ? '+' : ''}${pct.toStringAsFixed(2)}%)',
               valueColor: profitColor,
               subtitle: isUsd
                   ? null
-                  : '已扣手續費 ${(h.feeRate * 100).toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '')}%＋交易稅 0.3%',
+                  : AppLocalizations.ofParam(context, 'fee_and_tax_note', {'fee': (h.feeRate * 100).toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '')}),
               cs: cs,
             ),
-            _DetailRow('買入日期', DateFormat('yyyy/MM/dd').format(h.purchaseDate),
+            _DetailRow(AppLocalizations.of(context, 'buy_date'), DateFormat('yyyy/MM/dd').format(h.purchaseDate),
                 cs: cs),
             if (h.buyReason.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text('買入理由',
+              Text(AppLocalizations.of(context, 'buy_reason'),
                   style: TextStyle(
                       fontSize: 12,
                       color: cs.onSurfaceVariant,
@@ -635,7 +635,7 @@ class _HoldingDetailSheet extends StatelessWidget {
             ],
             if (h.sellStrategy.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text('出場策略',
+              Text(AppLocalizations.of(context, 'sell_strategy'),
                   style: TextStyle(
                       fontSize: 12,
                       color: cs.onSurfaceVariant,

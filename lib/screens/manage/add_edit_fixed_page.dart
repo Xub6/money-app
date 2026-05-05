@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import '../../config/localization.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/fixed_item.dart';
 
@@ -86,9 +87,9 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Row(children: [
-                  const Text('選擇月份',
+                  Text(AppLocalizations.of(context, 'select_month'),
                       style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                          const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   const Spacer(),
                   TextButton(
                     onPressed: () {
@@ -97,8 +98,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                       });
                       Navigator.pop(ctx);
                     },
-                    child: const Text('確定',
-                        style: TextStyle(
+                    child: Text(AppLocalizations.of(context, 'confirm'),
+                        style: const TextStyle(
                             color: AppColors.gold,
                             fontWeight: FontWeight.w700)),
                   ),
@@ -119,7 +120,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                         builder: (ctx, i) {
                           final y = now.year - 10 + i;
                           return Center(
-                            child: Text('$y 年',
+                            child: Text(AppLocalizations.ofParam(context, 'year_label', {'year': y}),
                                 style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w500,
@@ -141,7 +142,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                       children: List.generate(
                         12,
                         (i) => Center(
-                          child: Text('${i + 1} 月',
+                          child: Text(AppLocalizations.ofParam(context, 'month_label', {'month': i + 1}),
                               style: TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w500,
@@ -166,7 +167,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
     final amt = int.tryParse(_amtCtrl.text.trim());
     if (title.isEmpty || amt == null || amt <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('請填寫名稱和金額')),
+        SnackBar(content: Text(AppLocalizations.of(context, 'please_fill_name_amount'))),
       );
       return;
     }
@@ -176,7 +177,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
       periods = int.tryParse(_periodsCtrl.text.trim());
       if (periods == null || periods <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('請輸入有效的期數')),
+          SnackBar(content: Text(AppLocalizations.of(context, 'please_enter_valid_periods'))),
         );
         return;
       }
@@ -261,18 +262,18 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
         foregroundColor: cs.onSurface,
         elevation: 0,
         centerTitle: true,
-        title: Text(isEdit ? '編輯固定開銷' : '新增固定開銷',
+        title: Text(isEdit ? AppLocalizations.of(context, 'edit_fixed') : AppLocalizations.of(context, 'add_fixed'),
             style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('取消',
+          child: Text(AppLocalizations.of(context, 'cancel'),
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: 15)),
         ),
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text('儲存',
-                style: TextStyle(
+            child: Text(AppLocalizations.of(context, 'save_label'),
+                style: const TextStyle(
                     color: AppColors.gold,
                     fontWeight: FontWeight.w700,
                     fontSize: 15)),
@@ -285,16 +286,16 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           children: [
             // ── 基本資訊 ──
-            _sectionHeader('基本資訊'),
+            _sectionHeader(AppLocalizations.of(context, 'basic_info')),
             _card([
               _row(
-                label: '名稱',
+                label: AppLocalizations.of(context, 'name_label'),
                 child: TextField(
                   controller: _titleCtrl,
                   textAlign: TextAlign.end,
                   style: const TextStyle(fontSize: 15),
                   decoration: InputDecoration(
-                    hintText: '例如：房貸、Netflix',
+                    hintText: AppLocalizations.of(context, 'fixed_name_hint'),
                     hintStyle: TextStyle(color: cs.onSurfaceVariant),
                     border: InputBorder.none,
                     isDense: true,
@@ -303,7 +304,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                 ),
               ),
               _row(
-                label: '每月金額',
+                label: AppLocalizations.of(context, 'monthly_amount'),
                 topBorder: true,
                 child: TextField(
                   controller: _amtCtrl,
@@ -326,11 +327,11 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
             ]),
 
             // ── 時間設定 ──
-            _sectionHeader('時間設定'),
+            _sectionHeader(AppLocalizations.of(context, 'time_settings')),
             _card([
               // Start month
               _row(
-                label: '開始月份',
+                label: AppLocalizations.of(context, 'start_month'),
                 child: GestureDetector(
                   onTap: _pickStartMonth,
                   child: Row(
@@ -351,7 +352,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
 
               // Periods toggle
               _row(
-                label: '設定期數',
+                label: AppLocalizations.of(context, 'set_periods'),
                 topBorder: true,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -371,7 +372,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
               // Periods input (shown when toggle on)
               if (_hasPeriods) ...[
                 _row(
-                  label: '總期數',
+                  label: AppLocalizations.of(context, 'total_periods'),
                   topBorder: true,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -398,14 +399,14 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Text('期', style: TextStyle(color: cs.onSurfaceVariant)),
+                      Text(AppLocalizations.of(context, 'period_unit'), style: TextStyle(color: cs.onSurfaceVariant)),
                     ],
                   ),
                 ),
 
                 // Computed end month
                 _row(
-                  label: '結束月份',
+                  label: AppLocalizations.of(context, 'end_month'),
                   topBorder: true,
                   child: Text(
                     _endMonthLabel,
@@ -429,10 +430,10 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                     final total = widget.existing!.totalPeriods!;
                     final done = total - remaining;
                     return _row(
-                      label: '目前進度',
+                      label: AppLocalizations.of(context, 'current_progress'),
                       topBorder: true,
                       child: Text(
-                        '第 $current 期・已繳 $done 期・剩 $remaining 期',
+                        AppLocalizations.ofParam(context, 'progress_fmt', {'current': current, 'done': done, 'remaining': remaining}),
                         textAlign: TextAlign.end,
                         style:
                             TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
@@ -444,7 +445,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
             ]),
 
             // ── 備註 ──
-            _sectionHeader('備註（選填）'),
+            _sectionHeader(AppLocalizations.of(context, 'notes_optional')),
             _card([
               Padding(
                 padding:
@@ -454,7 +455,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                   maxLines: 3,
                   style: const TextStyle(fontSize: 15),
                   decoration: InputDecoration(
-                    hintText: '例如：土地銀行房貸，利率 1.78%',
+                    hintText: AppLocalizations.of(context, 'fixed_notes_hint'),
                     hintStyle:
                         TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
                     border: InputBorder.none,

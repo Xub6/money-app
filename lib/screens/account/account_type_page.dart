@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/localization.dart';
 import '../../data/models/account.dart';
 import '../../core/constants/app_colors.dart';
 
@@ -73,7 +74,7 @@ class AccountTypePage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title:
-            const Text('帳戶類型', style: TextStyle(fontWeight: FontWeight.w800)),
+            Text(AppLocalizations.of(context, 'account_type'), style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -84,8 +85,8 @@ class AccountTypePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            section('儲蓄帳戶', savings),
-            section('信用帳戶', credit),
+            section(AppLocalizations.of(context, 'savings_accounts'), savings),
+            section(AppLocalizations.of(context, 'credit_accounts'), credit),
             const SizedBox(height: 40),
           ],
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../config/localization.dart';
 import '../../data/models/stock_holding.dart';
 import '../../data/repositories/app_state.dart';
 import '../../core/constants/app_colors.dart';
@@ -133,7 +134,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
     if (quote == null) {
       setState(() {
         _fetching = false;
-        _fetchError = '找不到「$code」，請確認代碼是否正確';
+        _fetchError = AppLocalizations.ofParam(context, 'stock_not_found', {'code': code});
       });
     } else {
       _priceCtrl.text = quote.price.toString();
@@ -180,17 +181,17 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
   void _save() {
     final code = _codeCtrl.text.trim().toUpperCase();
     if (code.isEmpty) {
-      _snack('請輸入股票代碼');
+      _snack(AppLocalizations.of(context, 'enter_stock_code'));
       return;
     }
     final shares = double.tryParse(_sharesCtrl.text.trim());
     if (shares == null || shares <= 0) {
-      _snack('請輸入有效的股數');
+      _snack(AppLocalizations.of(context, 'enter_valid_shares'));
       return;
     }
     final cost = double.tryParse(_costCtrl.text.trim());
     if (cost == null || cost <= 0) {
-      _snack('請輸入有效的成本（TWD）');
+      _snack(AppLocalizations.of(context, 'enter_valid_cost'));
       return;
     }
     final feeRate = (double.tryParse(_feeRateCtrl.text.trim()) ?? 0.1425) / 100;
@@ -228,16 +229,16 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
         backgroundColor: cs.surface,
         elevation: 0,
         centerTitle: true,
-        title: Text(isEdit ? '編輯持股' : '新增投資',
+        title: Text(isEdit ? AppLocalizations.of(context, 'edit_holding') : AppLocalizations.of(context, 'add_investment'),
             style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消', style: TextStyle(color: AppColors.gold)),
+          child: Text(AppLocalizations.of(context, 'cancel'), style: const TextStyle(color: AppColors.gold)),
         ),
         actions: [
           TextButton(
             onPressed: _save,
-            child: Text(isEdit ? '更新' : '儲存',
+            child: Text(isEdit ? AppLocalizations.of(context, 'update') : AppLocalizations.of(context, 'save_label'),
                 style: const TextStyle(
                     color: AppColors.gold,
                     fontWeight: FontWeight.w800,
@@ -252,12 +253,12 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // ── 幣別 ──
-            _SectionHeader('選擇市場'),
+            _SectionHeader(AppLocalizations.of(context, 'select_market')),
             _GroupCard(
                 cs: cs,
                 child: Row(children: [
                   _CurrencyChip(
-                    label: '🇹🇼  台股',
+                    label: AppLocalizations.of(context, 'tw_stocks'),
                     selected: _isTwd,
                     onTap: () => setState(() {
                       _currency = StockCurrency.twd;
@@ -269,7 +270,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                   ),
                   const SizedBox(width: 10),
                   _CurrencyChip(
-                    label: '🇺🇸  美股',
+                    label: AppLocalizations.of(context, 'us_stocks'),
                     selected: !_isTwd,
                     onTap: () => setState(() {
                       _currency = StockCurrency.usd;
@@ -283,7 +284,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
             const SizedBox(height: 20),
 
             // ── 股票代碼 + 搜尋 ──
-            _SectionHeader(_isTwd ? '股票代碼（例：2330、0050）' : '股票代碼（例：AAPL、TSLA）'),
+            _SectionHeader(_isTwd ? AppLocalizations.of(context, 'code_section_tw') : AppLocalizations.of(context, 'code_section_us')),
             _GroupCard(
               cs: cs,
               child: Column(
@@ -303,7 +304,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                           onChanged: _searchSuggestions,
                           onSubmitted: (_) => _fetchPrice(),
                           decoration: InputDecoration(
-                            hintText: _isTwd ? '輸入代碼或名稱' : 'Enter symbol',
+                            hintText: _isTwd ? AppLocalizations.of(context, 'code_input_hint_tw') : 'Enter symbol',
                             hintStyle: TextStyle(
                                 color: cs.onSurfaceVariant,
                                 fontWeight: FontWeight.w400,
@@ -334,8 +335,8 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                                   color: AppColors.gold,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Text('查詢現價',
-                                    style: TextStyle(
+                                child: Text(AppLocalizations.of(context, 'query_price'),
+                                    style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 13)),
@@ -447,7 +448,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
             const SizedBox(height: 20),
 
             // ── 券商 & 手續費 ──
-            _SectionHeader(_isTwd ? '券商與手續費（台股）' : '券商與手續費（美股）'),
+            _SectionHeader(_isTwd ? AppLocalizations.of(context, 'broker_fee_section_tw') : AppLocalizations.of(context, 'broker_fee_section_us')),
             _GroupCard(
                 cs: cs,
                 child: Column(
@@ -456,7 +457,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                       SizedBox(
                         height: 52,
                         child: Row(children: [
-                          Text('券商',
+                          Text(AppLocalizations.of(context, 'broker'),
                               style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
@@ -470,7 +471,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                                   fontWeight: FontWeight.w600,
                                   color: cs.onSurface),
                               decoration: InputDecoration(
-                                hintText: _isTwd ? '輸入券商名稱' : 'Enter broker',
+                                hintText: _isTwd ? AppLocalizations.of(context, 'broker_hint_tw') : 'Enter broker',
                                 hintStyle: TextStyle(
                                     color: cs.onSurfaceVariant,
                                     fontWeight: FontWeight.w400,
@@ -531,7 +532,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                                                     fontSize: 14,
                                                     color: cs.onSurface)),
                                           ),
-                                          Text('手續費 ${b.feeLabel}',
+                                          Text(AppLocalizations.ofParam(context, 'fee_label_fmt', {'fee': b.feeLabel}),
                                               style: TextStyle(
                                                   fontSize: 12,
                                                   color: cs.onSurfaceVariant)),
@@ -543,7 +544,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                         ),
                       Divider(height: 1, color: cs.outlineVariant),
                       _InlineRow(
-                        label: '手續費',
+                        label: AppLocalizations.of(context, 'fee_rate'),
                         cs: cs,
                         child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -578,9 +579,9 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                       if (_isTwd) ...[
                         Divider(height: 1, color: cs.outlineVariant),
                         _InlineRow(
-                          label: '交易稅',
+                          label: AppLocalizations.of(context, 'tx_tax'),
                           cs: cs,
-                          child: Text('0.3%（固定）',
+                          child: Text(AppLocalizations.of(context, 'fixed_rate_03'),
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                   color: cs.onSurfaceVariant,
@@ -591,12 +592,12 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
             const SizedBox(height: 20),
 
             // ── 股票資訊 ──
-            _SectionHeader('交易資訊'),
+            _SectionHeader(AppLocalizations.of(context, 'trade_info')),
             _GroupCard(
               cs: cs,
               child: Column(children: [
                 _InlineRow(
-                  label: '股數',
+                  label: AppLocalizations.of(context, 'shares'),
                   cs: cs,
                   child: TextField(
                     controller: _sharesCtrl,
@@ -616,7 +617,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                 ),
                 Divider(height: 1, color: cs.outlineVariant),
                 _InlineRow(
-                  label: '總成本',
+                  label: AppLocalizations.of(context, 'total_cost'),
                   cs: cs,
                   child: TextField(
                     controller: _costCtrl,
@@ -638,7 +639,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                 ),
                 Divider(height: 1, color: cs.outlineVariant),
                 _InlineRow(
-                  label: '現價',
+                  label: AppLocalizations.of(context, 'current_price'),
                   cs: cs,
                   child: TextField(
                     controller: _priceCtrl,
@@ -648,7 +649,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                     style: TextStyle(
                         fontWeight: FontWeight.w700, color: cs.onSurface),
                     decoration: InputDecoration(
-                      hintText: '自動帶入',
+                      hintText: AppLocalizations.of(context, 'auto_fill'),
                       hintStyle: TextStyle(color: cs.onSurfaceVariant),
                       border: InputBorder.none,
                       isDense: true,
@@ -663,14 +664,14 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
             const SizedBox(height: 20),
 
             // ── 購買日期 ──
-            _SectionHeader('購買日期'),
+            _SectionHeader(AppLocalizations.of(context, 'purchase_date')),
             _GroupCard(
               cs: cs,
               child: GestureDetector(
                 onTap: _pickDate,
                 behavior: HitTestBehavior.opaque,
                 child: _InlineRow(
-                  label: '日期',
+                  label: AppLocalizations.of(context, 'date'),
                   cs: cs,
                   child: Text(
                     DateFormat('MMM d, yyyy', 'en_US').format(_purchaseDate),
@@ -685,7 +686,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
             const SizedBox(height: 20),
 
             // ── 關聯帳戶（選填）──
-            _SectionHeader('關聯帳戶（選填）'),
+            _SectionHeader(AppLocalizations.of(context, 'linked_account_optional')),
             Builder(builder: (context) {
               final accounts =
                   Provider.of<AppState>(context, listen: false).accounts;
@@ -694,7 +695,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                   cs: cs,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text('尚未建立帳戶，可在「管理」頁新增',
+                    child: Text(AppLocalizations.of(context, 'no_accounts_invest_hint'),
                         style: TextStyle(
                             fontSize: 13, color: cs.onSurfaceVariant)),
                   ),
@@ -705,7 +706,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                 runSpacing: 10,
                 children: [
                   _AccountChip(
-                    label: '不關聯',
+                    label: AppLocalizations.of(context, 'unlinked'),
                     selected: _selectedAccountId == null,
                     cs: cs,
                     onTap: () => setState(() => _selectedAccountId = null),
@@ -735,7 +736,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '買入時將從帳戶扣除總成本；刪除持股時將退回金額',
+                        AppLocalizations.of(context, 'account_deduct_note'),
                         style: TextStyle(fontSize: 12, color: cs.primary),
                       ),
                     ),
@@ -746,23 +747,23 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
             const SizedBox(height: 20),
 
             // ── 投資筆記 ──
-            _SectionHeader('投資筆記（選填）'),
+            _SectionHeader(AppLocalizations.of(context, 'invest_notes_optional')),
             _GroupCard(
               cs: cs,
               child: Column(children: [
                 _NoteRow(
                   emoji: '💡',
-                  label: '買入理由',
+                  label: AppLocalizations.of(context, 'buy_reason'),
                   controller: _reasonCtrl,
-                  hint: '例如：看好 AI 趨勢',
+                  hint: AppLocalizations.of(context, 'buy_reason_hint'),
                   cs: cs,
                 ),
                 Divider(height: 1, color: cs.outlineVariant),
                 _NoteRow(
                   emoji: '🏳️',
-                  label: '賣出時機',
+                  label: AppLocalizations.of(context, 'sell_timing'),
                   controller: _strategyCtrl,
-                  hint: '例如：漲 30% 賣出一半',
+                  hint: AppLocalizations.of(context, 'sell_timing_hint'),
                   cs: cs,
                 ),
               ]),

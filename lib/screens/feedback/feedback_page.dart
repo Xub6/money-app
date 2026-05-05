@@ -5,18 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../config/localization.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/feedback_request.dart';
 import '../../services/feedback_service.dart';
 import '../../widgets/feedback/feedback_image_picker.dart';
 
-const _kCategories = [
-  '使用問題',
-  '功能建議',
-  '資料異常',
-  '投資頁問題',
-  '備份 / 還原問題',
-  '其他',
+const _kCategoryKeys = [
+  'feedback_cat_usage',
+  'feedback_cat_feature',
+  'feedback_cat_data',
+  'feedback_cat_invest',
+  'feedback_cat_backup',
+  'feedback_cat_other',
 ];
 
 class FeedbackPage extends StatefulWidget {
@@ -103,21 +104,18 @@ class _FeedbackPageState extends State<FeedbackPage> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('確認附圖內容'),
-          content: const Text(
-            '請確認截圖中沒有不想提供的個人資訊，'
-            '例如身分證字號、銀行帳號、信用卡號、密碼或其他敏感資料。',
-          ),
+          title: Text(AppLocalizations.of(ctx, 'confirm_image')),
+          content: Text(AppLocalizations.of(ctx, 'confirm_image_content')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('取消'),
+              child: Text(AppLocalizations.of(ctx, 'cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text(
-                '確認送出',
-                style: TextStyle(fontWeight: FontWeight.w700),
+              child: Text(
+                AppLocalizations.of(ctx, 'confirm_submit'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -146,9 +144,9 @@ class _FeedbackPageState extends State<FeedbackPage> {
       );
       await _service.submit(request);
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('已送出，謝謝你的回饋。我們會持續改善錢錢管家。'),
-          duration: Duration(seconds: 4),
+        SnackBar(
+          content: Text(AppLocalizations.of(context, 'feedback_sent')),
+          duration: const Duration(seconds: 4),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -156,9 +154,9 @@ class _FeedbackPageState extends State<FeedbackPage> {
     } catch (_) {
       if (mounted) setState(() => _submitting = false);
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('送出失敗，請稍後再試。你也可以直接來信 hello@qoryva.com。'),
-          duration: Duration(seconds: 6),
+        SnackBar(
+          content: Text(AppLocalizations.of(context, 'feedback_failed')),
+          duration: const Duration(seconds: 6),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -170,8 +168,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('回報問題與建議',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(AppLocalizations.of(context, 'report_issue'),
+            style: const TextStyle(fontWeight: FontWeight.w700)),
         elevation: 0,
       ),
       body: Form(
@@ -182,15 +180,14 @@ class _FeedbackPageState extends State<FeedbackPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '遇到問題、功能建議或使用感受，都可以在這裡告訴我們。'
-                '若方便，也可以附上截圖協助我們判斷。',
+                AppLocalizations.of(context, 'feedback_intro'),
                 style: TextStyle(
                     fontSize: 14, color: cs.onSurfaceVariant, height: 1.5),
               ),
               const SizedBox(height: 20),
 
               // ── 回饋類型 ──
-              const _Label('回饋類型', required: true),
+              _Label(AppLocalizations.of(context, 'feedback_type'), required: true),
               const SizedBox(height: 6),
               _Card(
                 child: DropdownButtonFormField<String>(
@@ -200,19 +197,19 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
                   ),
-                  hint: const Text('請選擇回饋類型'),
-                  items: _kCategories
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                  hint: Text(AppLocalizations.of(context, 'select_feedback_type')),
+                  items: _kCategoryKeys
+                      .map((k) => DropdownMenuItem(value: k, child: Text(AppLocalizations.of(context, k))))
                       .toList(),
                   onChanged:
                       _submitting ? null : (v) => setState(() => _category = v),
-                  validator: (v) => v == null ? '請選擇回饋類型' : null,
+                  validator: (v) => v == null ? AppLocalizations.of(context, 'select_feedback_type') : null,
                 ),
               ),
               const SizedBox(height: 16),
 
               // ── 問題描述 ──
-              const _Label('問題描述', required: true),
+              _Label(AppLocalizations.of(context, 'issue_description'), required: true),
               const SizedBox(height: 6),
               _Card(
                 child: TextFormField(
@@ -221,16 +218,16 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   minLines: 4,
                   maxLines: 10,
                   keyboardType: TextInputType.multiline,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
-                    hintText: '請描述你遇到的狀況、操作步驟，或希望新增的功能。',
+                    hintText: AppLocalizations.of(context, 'issue_description_hint'),
                     hintMaxLines: 3,
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return '請填寫問題描述';
-                    if (v.trim().length < 10) return '請至少輸入 10 個字';
+                    if (v == null || v.trim().isEmpty) return AppLocalizations.of(context, 'please_fill_issue');
+                    if (v.trim().length < 10) return AppLocalizations.of(context, 'please_enter_min_10');
                     return null;
                   },
                 ),
@@ -238,24 +235,24 @@ class _FeedbackPageState extends State<FeedbackPage> {
               const SizedBox(height: 16),
 
               // ── 聯絡 Email ──
-              const _Label('聯絡 Email', required: false),
+              _Label(AppLocalizations.of(context, 'contact_email'), required: false),
               const SizedBox(height: 6),
               _Card(
                 child: TextFormField(
                   controller: _emailCtrl,
                   enabled: !_submitting,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
-                    hintText: '如果希望我們回覆你，請留下 Email',
+                    hintText: AppLocalizations.of(context, 'contact_email_hint'),
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return null;
                     final re = RegExp(
                         r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$');
-                    if (!re.hasMatch(v.trim())) return 'Email 格式不正確';
+                    if (!re.hasMatch(v.trim())) return AppLocalizations.of(context, 'invalid_email');
                     return null;
                   },
                 ),
@@ -263,7 +260,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
               const SizedBox(height: 16),
 
               // ── 附加圖片 ──
-              const _Label('附加圖片（選填，最多 3 張）', required: false),
+              _Label(AppLocalizations.of(context, 'attach_images'), required: false),
               const SizedBox(height: 6),
               _Card(
                 child: AbsorbPointer(
@@ -301,9 +298,9 @@ class _FeedbackPageState extends State<FeedbackPage> {
                           child: CircularProgressIndicator(
                               color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text(
-                          '送出',
-                          style: TextStyle(
+                      : Text(
+                          AppLocalizations.of(context, 'submit'),
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w700),
                         ),
                 ),
@@ -312,9 +309,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
               // ── 法務提示 ──
               Text(
-                '請不要在回饋內容中填寫身分證字號、銀行帳號、信用卡號、'
-                '密碼或其他敏感資料。送出後，我們會使用你提供的內容協助'
-                '排查問題與改善服務。',
+                AppLocalizations.of(context, 'feedback_legal_note'),
                 style: TextStyle(
                     fontSize: 11, color: cs.onSurfaceVariant, height: 1.5),
               ),

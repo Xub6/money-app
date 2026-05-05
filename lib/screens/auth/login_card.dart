@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/firebase_config.dart';
+import '../../config/localization.dart';
 import '../../data/models/user_profile.dart';
 import '../../services/auth_service.dart';
 import '../../core/constants/app_colors.dart';
@@ -33,7 +34,7 @@ class _LoginCardState extends State<LoginCard> {
     if (p != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('歡迎，${p.displayName}！'),
+          content: Text(AppLocalizations.ofParam(context, 'welcome_name', {'name': p.displayName})),
           backgroundColor: AppColors.gold,
           behavior: SnackBarBehavior.floating,
         ),
@@ -45,13 +46,13 @@ class _LoginCardState extends State<LoginCard> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('確認登出'),
-        content: const Text('登出後不影響本機資料。'),
+        title: Text(AppLocalizations.of(context, 'confirm_logout')),
+        content: Text(AppLocalizations.of(context, 'logout_note')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context, 'cancel'))),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('登出', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text(AppLocalizations.of(context, 'logout'), style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         ],
       ),
@@ -76,7 +77,7 @@ class _LoginCardState extends State<LoginCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('個人帳號',
+        Text(AppLocalizations.of(context, 'personal_account'),
             style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -117,10 +118,10 @@ class _LoginCardState extends State<LoginCard> {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('使用 Gmail 登入',
+                Text(AppLocalizations.of(context, 'sign_in_gmail'),
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: cs.onSurface)),
                 const SizedBox(height: 2),
-                Text('備份資料 · 接收最新功能通知',
+                Text(AppLocalizations.of(context, 'backup_description'),
                     style: TextStyle(fontSize: 12, color: cs.onSurface.withValues(alpha: 0.5))),
               ]),
             ),
@@ -139,12 +140,12 @@ class _LoginCardState extends State<LoginCard> {
               child: _loading
                   ? const SizedBox(width: 18, height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                  : const Text('Google 登入', style: TextStyle(fontWeight: FontWeight.w700)),
+                  : Text(AppLocalizations.of(context, 'google_signin'), style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
           ),
           const SizedBox(height: 10),
           Center(
-            child: Text('登入為選填，不影響 App 功能',
+            child: Text(AppLocalizations.of(context, 'signin_optional'),
                 style: TextStyle(fontSize: 11, color: cs.onSurface.withValues(alpha: 0.35))),
           ),
         ],
@@ -186,9 +187,9 @@ class _LoginCardState extends State<LoginCard> {
         Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
         SwitchListTile(
           dense: true,
-          title: Text('接收最新消息與功能更新',
+          title: Text(AppLocalizations.of(context, 'receive_updates'),
               style: TextStyle(fontSize: 14, color: cs.onSurface)),
-          subtitle: Text('不定期發送新功能介紹，可隨時關閉',
+          subtitle: Text(AppLocalizations.of(context, 'receive_updates_subtitle'),
               style: TextStyle(fontSize: 11, color: cs.onSurface.withValues(alpha: 0.45))),
           value: p.marketingOptIn,
           onChanged: _toggleOptIn,
@@ -197,7 +198,7 @@ class _LoginCardState extends State<LoginCard> {
         Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
         TextButton(
           onPressed: _signOut,
-          child: Text('登出', style: TextStyle(color: cs.error, fontSize: 14)),
+          child: Text(AppLocalizations.of(context, 'logout'), style: TextStyle(color: cs.error, fontSize: 14)),
         ),
       ],
     );

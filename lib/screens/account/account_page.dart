@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../config/localization.dart';
 import '../../core/utils/error_handler.dart';
 import '../../data/repositories/app_state.dart';
 import '../../data/models/account.dart';
@@ -38,7 +39,7 @@ class _AccountPageState extends State<AccountPage> {
   void _delete(Account a) {
     s.deleteAccount(a.id);
     ErrorHandler.showUndoSnack(
-        context, '已刪除「${a.displayName}」', () => s.addAccount(a));
+        context, AppLocalizations.ofParam(context, 'deleted_item', {'name': a.displayName}), () => s.addAccount(a));
   }
 
   @override
@@ -52,7 +53,7 @@ class _AccountPageState extends State<AccountPage> {
         foregroundColor: cs.onSurface,
         elevation: 0,
         centerTitle: true,
-        title: const Text('賬戶', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(AppLocalizations.of(context, 'accounts'), style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           color: AppColors.gold,
@@ -93,7 +94,7 @@ class _AccountPageState extends State<AccountPage> {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('淨資產',
+                          Text(AppLocalizations.of(context, 'net_assets'),
                               style: TextStyle(
                                   color: cs.onSurfaceVariant,
                                   fontSize: 13,
@@ -117,7 +118,7 @@ class _AccountPageState extends State<AccountPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                  Text('資產',
+                                  Text(AppLocalizations.of(context, 'assets'),
                                       style: TextStyle(
                                           color: cs.onSurfaceVariant,
                                           fontSize: 12)),
@@ -132,7 +133,7 @@ class _AccountPageState extends State<AccountPage> {
                                 child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                  Text('負債',
+                                  Text(AppLocalizations.of(context, 'liabilities'),
                                       style: TextStyle(
                                           color: cs.onSurfaceVariant,
                                           fontSize: 12)),
@@ -157,13 +158,13 @@ class _AccountPageState extends State<AccountPage> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(18, 22, 18, 10),
                     child: Row(children: [
-                      Text('儲蓄帳戶',
+                      Text(AppLocalizations.of(context, 'savings_accounts'),
                           style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: cs.onSurface)),
                       const Spacer(),
-                      Text('${savings.length} 個',
+                      Text(AppLocalizations.ofParam(context, 'count_unit', {'n': savings.length}),
                           style: TextStyle(
                               color: cs.onSurfaceVariant, fontSize: 13)),
                     ]),
@@ -194,13 +195,13 @@ class _AccountPageState extends State<AccountPage> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(18, 22, 18, 10),
                     child: Row(children: [
-                      Text('信用帳戶',
+                      Text(AppLocalizations.of(context, 'credit_accounts'),
                           style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: cs.onSurface)),
                       const Spacer(),
-                      Text('${credit.length} 個',
+                      Text(AppLocalizations.ofParam(context, 'count_unit', {'n': credit.length}),
                           style: TextStyle(
                               color: cs.onSurfaceVariant, fontSize: 13)),
                     ]),
@@ -241,11 +242,11 @@ class _AccountPageState extends State<AccountPage> {
                         Icon(Icons.account_balance_wallet_outlined,
                             size: 48, color: cs.onSurfaceVariant),
                         const SizedBox(height: 12),
-                        Text('還沒有帳戶',
+                        Text(AppLocalizations.of(context, 'no_accounts'),
                             style: TextStyle(
                                 color: cs.onSurfaceVariant, fontSize: 15)),
                         const SizedBox(height: 6),
-                        Text('點右上角 + 新增第一個帳戶',
+                        Text(AppLocalizations.of(context, 'add_first_account'),
                             style: TextStyle(
                                 color: cs.onSurfaceVariant, fontSize: 13)),
                       ]),
@@ -302,19 +303,19 @@ class _AccountCard extends StatelessWidget {
               builder: (ctx) => AlertDialog(
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16)),
-                title: const Text('確認刪除',
-                    style: TextStyle(fontWeight: FontWeight.w800)),
-                content: Text('確定要刪除「${a.displayName}」嗎？'),
+                title: Text(AppLocalizations.of(context, 'confirm_delete_title'),
+                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                content: Text(AppLocalizations.ofParam(context, 'delete_confirm_account', {'name': a.displayName})),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
-                    child: Text('取消',
+                    child: Text(AppLocalizations.of(context, 'cancel'),
                         style: TextStyle(color: cs.onSurfaceVariant)),
                   ),
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, true),
-                    child: const Text('刪除',
-                        style: TextStyle(
+                    child: Text(AppLocalizations.of(context, 'delete'),
+                        style: const TextStyle(
                             color: AppColors.error,
                             fontWeight: FontWeight.w700)),
                   ),

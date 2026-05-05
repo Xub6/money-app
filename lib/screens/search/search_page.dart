@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../config/localization.dart';
 import '../../data/models/expense_item.dart';
 import '../../data/models/fixed_item.dart';
 import '../../services/search_service.dart';
@@ -84,7 +85,7 @@ class _SearchPageState extends State<SearchPage> {
           _startDate ?? DateTime.now().subtract(const Duration(days: 30)),
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
-      helpText: '選擇開始日期',
+      helpText: AppLocalizations.of(context, 'select_start_date'),
     );
     if (start == null || !mounted) return;
 
@@ -93,7 +94,7 @@ class _SearchPageState extends State<SearchPage> {
       initialDate: _endDate ?? DateTime.now(),
       firstDate: start,
       lastDate: DateTime.now(),
-      helpText: '選擇結束日期',
+      helpText: AppLocalizations.of(context, 'select_end_date'),
     );
     if (end == null) return;
 
@@ -130,7 +131,7 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text('搜索', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(AppLocalizations.of(context, 'search'), style: const TextStyle(fontWeight: FontWeight.w800)),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -149,7 +150,7 @@ class _SearchPageState extends State<SearchPage> {
               controller: _searchCtrl,
               onChanged: (_) => _performSearch(),
               decoration: InputDecoration(
-                hintText: '搜索支出、固定開銷...',
+                hintText: AppLocalizations.of(context, 'search_hint'),
                 prefixIcon: const Icon(Icons.search, color: AppColors.gold),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
@@ -184,7 +185,7 @@ class _SearchPageState extends State<SearchPage> {
                   label: Text(
                     _startDate != null && _endDate != null
                         ? '${DateFormat('M/d').format(_startDate!)} - ${DateFormat('M/d').format(_endDate!)}'
-                        : '日期範圍',
+                        : AppLocalizations.of(context, 'date_range'),
                   ),
                   onSelected: (_) => _selectDateRange(),
                   backgroundColor: _startDate != null
@@ -196,7 +197,7 @@ class _SearchPageState extends State<SearchPage> {
                 // Category filter
                 if (_selectedCategories.isEmpty)
                   FilterChip(
-                    label: const Text('分類'),
+                    label: Text(AppLocalizations.of(context, 'filter_category')),
                     onSelected: (_) => _showCategoryFilter(),
                     backgroundColor:
                         Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -223,7 +224,7 @@ class _SearchPageState extends State<SearchPage> {
                     _endDate != null ||
                     _selectedCategories.isNotEmpty)
                   FilterChip(
-                    label: const Text('清除'),
+                    label: Text(AppLocalizations.of(context, 'clear_filter')),
                     onSelected: (_) => _clearFilters(),
                     backgroundColor: Colors.red.shade100,
                   ),
@@ -241,7 +242,7 @@ class _SearchPageState extends State<SearchPage> {
                 : _results.isEmpty
                     ? Center(
                         child: Text(
-                          _searchCtrl.text.isEmpty ? '輸入搜索詞開始' : '沒有找到結果',
+                          _searchCtrl.text.isEmpty ? AppLocalizations.of(context, 'search_prompt') : AppLocalizations.of(context, 'no_results'),
                           style: TextStyle(
                               color: Theme.of(context)
                                   .colorScheme
@@ -286,7 +287,7 @@ class _SearchPageState extends State<SearchPage> {
         title: Text(item.title,
             style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text(
-          '${item.category}・${formatDate(item.date)}\n${item.note.isEmpty ? "無備註" : item.note}',
+          '${AppLocalizations.translateCategory(context, item.category)}・${formatDate(item.date)}\n${item.note.isEmpty ? AppLocalizations.of(context, 'no_note') : item.note}',
         ),
         isThreeLine: true,
         trailing: Column(
@@ -298,9 +299,9 @@ class _SearchPageState extends State<SearchPage> {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
             ),
             if (item.isEdited)
-              const Text(
-                '已編輯',
-                style: TextStyle(fontSize: 11, color: Colors.orange),
+              Text(
+                AppLocalizations.of(context, 'edited_label'),
+                style: const TextStyle(fontSize: 11, color: Colors.orange),
               ),
           ],
         ),
@@ -346,9 +347,9 @@ class _SearchPageState extends State<SearchPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '選擇分類',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  Text(
+                    AppLocalizations.of(context, 'select_category'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 16),
                   Wrap(
@@ -387,7 +388,7 @@ class _SearchPageState extends State<SearchPage> {
                             children: [
                               Icon(cat.icon, color: cat.color, size: 18),
                               const SizedBox(width: 6),
-                              Text(cat.name),
+                              Text(AppLocalizations.translateCategory(context, cat.name)),
                             ],
                           ),
                         ),
@@ -405,9 +406,9 @@ class _SearchPageState extends State<SearchPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        '完成',
-                        style: TextStyle(
+                      child: Text(
+                        AppLocalizations.of(context, 'done'),
+                        style: const TextStyle(
                             color: Colors.white, fontWeight: FontWeight.w700),
                       ),
                     ),

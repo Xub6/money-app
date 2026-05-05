@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/localization.dart';
 import '../../data/models/account.dart';
 import '../../core/constants/app_colors.dart';
 import 'account_type_page.dart';
@@ -56,7 +57,7 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
   void _save() {
     if (_selectedType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('請選擇帳戶類型')),
+        SnackBar(content: Text(AppLocalizations.of(context, 'please_select_account_type'))),
       );
       return;
     }
@@ -89,16 +90,16 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
         foregroundColor: cs.onSurface,
         elevation: 0,
         centerTitle: true,
-        title: Text(isEdit ? '編輯帳戶' : '新建帳戶',
+        title: Text(isEdit ? AppLocalizations.of(context, 'edit_account') : AppLocalizations.of(context, 'add_account'),
             style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消', style: TextStyle(color: AppColors.gold)),
+          child: Text(AppLocalizations.of(context, 'cancel'), style: const TextStyle(color: AppColors.gold)),
         ),
         actions: [
           TextButton(
             onPressed: _save,
-            child: Text(isEdit ? '更新' : '儲存',
+            child: Text(isEdit ? AppLocalizations.of(context, 'update') : AppLocalizations.of(context, 'save_label'),
                 style: const TextStyle(
                     color: AppColors.gold,
                     fontWeight: FontWeight.w800,
@@ -113,13 +114,13 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // ── 帳戶設定 ──
-            _SectionHeader('帳戶設定'),
+            _SectionHeader(AppLocalizations.of(context, 'account_settings')),
             _GroupCard(
                 cs: cs,
                 child: Column(children: [
                   // 帳戶類型
                   _RowItem(
-                    label: '帳戶類型',
+                    label: AppLocalizations.of(context, 'account_type'),
                     cs: cs,
                     child: GestureDetector(
                       onTap: _pickType,
@@ -134,7 +135,7 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
                                   color: cs.onSurface,
                                   fontWeight: FontWeight.w600)),
                         ] else
-                          Text('請選擇',
+                          Text(AppLocalizations.of(context, 'please_select'),
                               style: TextStyle(color: cs.onSurfaceVariant)),
                         const SizedBox(width: 4),
                         Icon(Icons.chevron_right,
@@ -145,7 +146,7 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
                   Divider(height: 1, color: cs.outlineVariant),
                   // 自訂名稱
                   _RowItem(
-                    label: '自訂名稱',
+                    label: AppLocalizations.of(context, 'custom_name'),
                     cs: cs,
                     child: TextField(
                       controller: _nameCtrl,
@@ -153,7 +154,7 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
                       style: TextStyle(
                           color: cs.onSurface, fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
-                        hintText: '選填',
+                        hintText: AppLocalizations.of(context, 'optional'),
                         hintStyle: TextStyle(color: cs.onSurfaceVariant),
                         border: InputBorder.none,
                         isDense: true,
@@ -165,12 +166,12 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
             const SizedBox(height: 20),
 
             // ── 餘額 ──
-            _SectionHeader('餘額'),
+            _SectionHeader(AppLocalizations.of(context, 'balance')),
             _GroupCard(
                 cs: cs,
                 child: Column(children: [
                   _RowItem(
-                    label: '當前餘額',
+                    label: AppLocalizations.of(context, 'current_balance'),
                     cs: cs,
                     child: TextField(
                       controller: _balanceCtrl,
@@ -193,7 +194,7 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
                   Divider(height: 1, color: cs.outlineVariant),
                   // 貨幣
                   _RowItem(
-                    label: '貨幣',
+                    label: AppLocalizations.of(context, 'currency'),
                     cs: cs,
                     child: DropdownButton<String>(
                       value: _currency,
@@ -216,19 +217,19 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
             const SizedBox(height: 20),
 
             // ── 其他 ──
-            _SectionHeader('其他'),
+            _SectionHeader(AppLocalizations.of(context, 'other')),
             _GroupCard(
                 cs: cs,
                 child: Column(children: [
                   _RowItem(
-                    label: '備註',
+                    label: AppLocalizations.of(context, 'note'),
                     cs: cs,
                     child: TextField(
                       controller: _noteCtrl,
                       textAlign: TextAlign.right,
                       style: TextStyle(color: cs.onSurface),
                       decoration: InputDecoration(
-                        hintText: '選填',
+                        hintText: AppLocalizations.of(context, 'optional'),
                         hintStyle: TextStyle(color: cs.onSurfaceVariant),
                         border: InputBorder.none,
                         isDense: true,
@@ -238,7 +239,7 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
                   ),
                   Divider(height: 1, color: cs.outlineVariant),
                   _RowItem(
-                    label: '計入總資產',
+                    label: AppLocalizations.of(context, 'count_in_total'),
                     cs: cs,
                     child: Switch(
                       value: _countInTotal,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../config/localization.dart';
 import '../../data/models/expense_item.dart';
 import '../../data/repositories/app_state.dart';
 import '../../core/constants/categories.dart';
@@ -68,12 +69,10 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  String _dateLabel(DateTime d) {
-    if (_isSameDay(d, _today)) return '今天';
-    if (_isSameDay(d, _today.subtract(const Duration(days: 1)))) return '昨天';
-    if (_isSameDay(d, _today.subtract(const Duration(days: 2)))) return '前天';
-    return DateFormat('M/d').format(d);
-  }
+  bool _isNamedDate(DateTime d) =>
+      _isSameDay(d, _today) ||
+      _isSameDay(d, _today.subtract(const Duration(days: 1))) ||
+      _isSameDay(d, _today.subtract(const Duration(days: 2)));
 
   Future<void> _pickOtherDate() async {
     final picked = await showDatePicker(
@@ -148,8 +147,8 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
       appBar: AppBar(
         title: Text(
           isEdit
-              ? '編輯記帳'
-              : (isIncome ? '新增收入' : '新增支出'),
+              ? AppLocalizations.of(context, 'edit_entry')
+              : (isIncome ? AppLocalizations.of(context, 'add_income') : AppLocalizations.of(context, 'add_expense')),
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
         centerTitle: true,
@@ -158,7 +157,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
         elevation: 0,
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消', style: TextStyle(color: AppColors.gold)),
+          child: Text(AppLocalizations.of(context, 'cancel'), style: const TextStyle(color: AppColors.gold)),
         ),
         actions: [
           TextButton(
@@ -170,7 +169,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: AppColors.gold),
                   )
-                : Text(isEdit ? '更新' : '儲存',
+                : Text(isEdit ? AppLocalizations.of(context, 'update') : AppLocalizations.of(context, 'save_label'),
                     style: const TextStyle(
                         color: AppColors.gold,
                         fontWeight: FontWeight.w800,
@@ -183,11 +182,11 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
           // ── 收入/支出 切換 ──
-          _SectionLabel('類型'),
+          _SectionLabel(AppLocalizations.of(context, 'type_label')),
           const SizedBox(height: 10),
           Row(children: [
             _TypeToggle(
-              label: '支出',
+              label: AppLocalizations.of(context, 'expense_type'),
               selected: !isIncome,
               color: AppColors.error,
               onTap: () => setState(() {
@@ -197,7 +196,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             ),
             const SizedBox(width: 12),
             _TypeToggle(
-              label: '收入',
+              label: AppLocalizations.of(context, 'income'),
               selected: isIncome,
               color: AppColors.success,
               onTap: () => setState(() {
@@ -210,7 +209,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
 
           // ── 帳戶選擇 ──
           if (accounts.isNotEmpty) ...[
-            _SectionLabel('帳戶'),
+            _SectionLabel(AppLocalizations.of(context, 'account_label')),
             const SizedBox(height: 10),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -239,7 +238,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('不關聯帳戶',
+                          Text(AppLocalizations.of(context, 'unlinked_account'),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -248,7 +247,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                                     : cs.onSurfaceVariant,
                               )),
                           const SizedBox(height: 2),
-                          Text('不影響餘額',
+                          Text(AppLocalizations.of(context, 'no_balance_effect'),
                               style: TextStyle(
                                   fontSize: 11, color: cs.onSurfaceVariant)),
                         ],
@@ -314,7 +313,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                 Icon(Icons.info_outline_rounded,
                     size: 16, color: cs.onSurfaceVariant),
                 const SizedBox(width: 8),
-                Text('請先在「管理」頁新增帳戶',
+                Text(AppLocalizations.of(context, 'no_accounts_hint'),
                     style:
                         TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
               ]),
@@ -323,18 +322,18 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
           ],
 
           // ── 日期 ──
-          _SectionLabel('日期'),
+          _SectionLabel(AppLocalizations.of(context, 'date')),
           const SizedBox(height: 10),
           Row(children: [
             _DateBtn(
-              label: '今天',
+              label: AppLocalizations.of(context, 'today'),
               sub: DateFormat('d').format(_today),
               selected: _isSameDay(_selectedDate, _today),
               onTap: () => setState(() => _selectedDate = _today),
             ),
             const SizedBox(width: 10),
             _DateBtn(
-              label: '昨天',
+              label: AppLocalizations.of(context, 'yesterday'),
               sub: DateFormat('d')
                   .format(_today.subtract(const Duration(days: 1))),
               selected: _isSameDay(
@@ -344,7 +343,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             ),
             const SizedBox(width: 10),
             _DateBtn(
-              label: '前天',
+              label: AppLocalizations.of(context, 'day_before_yesterday'),
               sub: DateFormat('d')
                   .format(_today.subtract(const Duration(days: 2))),
               selected: _isSameDay(
@@ -362,25 +361,20 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                 color: cs.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: !_isSameDay(_selectedDate, _today) &&
-                          !_isSameDay(_selectedDate,
-                              _today.subtract(const Duration(days: 1))) &&
-                          !_isSameDay(_selectedDate,
-                              _today.subtract(const Duration(days: 2)))
+                  color: !_isNamedDate(_selectedDate)
                       ? AppColors.gold
                       : cs.outlineVariant,
                   width: 1.5,
                 ),
               ),
               child: Row(children: [
-                Text('其他日期',
+                Text(AppLocalizations.of(context, 'other_date'),
                     style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
                 const Spacer(),
                 Text(
                   DateFormat('MMM d, yyyy').format(_selectedDate),
                   style: TextStyle(
-                    color: _dateLabel(_selectedDate) ==
-                            DateFormat('M/d').format(_selectedDate)
+                    color: !_isNamedDate(_selectedDate)
                         ? AppColors.gold
                         : cs.onSurfaceVariant,
                     fontSize: 14,
@@ -392,7 +386,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
           const SizedBox(height: 24),
 
           // ── 類別 ──
-          _SectionLabel(isIncome ? '收入類別' : '支出類別'),
+          _SectionLabel(isIncome ? AppLocalizations.of(context, 'income_category') : AppLocalizations.of(context, 'expense_category')),
           const SizedBox(height: 10),
           GridView.count(
             crossAxisCount: 4,
@@ -424,7 +418,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                             color: sel ? c.color : cs.onSurfaceVariant,
                             size: 26),
                         const SizedBox(height: 6),
-                        Text(c.name,
+                        Text(AppLocalizations.translateCategory(context, c.name),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -439,7 +433,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
 
           // ── 推薦項目 ──
           if (suggestions.isNotEmpty) ...[
-            _SectionLabel('$_selectedCategory 推薦項目'),
+            _SectionLabel(AppLocalizations.ofParam(context, 'recommended_items', {'category': AppLocalizations.translateCategory(context, _selectedCategory)})),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -474,16 +468,16 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
           ],
 
           // ── 明細 ──
-          _SectionLabel(isIncome ? '收入明細' : '支出明細'),
+          _SectionLabel(isIncome ? AppLocalizations.of(context, 'income_detail') : AppLocalizations.of(context, 'expense_detail')),
           const SizedBox(height: 10),
-          _InputField(controller: _titleCtrl, hint: '項目名稱', label: null),
+          _InputField(controller: _titleCtrl, hint: AppLocalizations.of(context, 'name_hint'), label: null),
           const SizedBox(height: 10),
           Row(children: [
             Expanded(
               child: _InputField(
                 controller: _amtCtrl,
                 hint: '0',
-                label: '金額',
+                label: AppLocalizations.of(context, 'amount'),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 suffix:
@@ -493,7 +487,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
           ]),
           const SizedBox(height: 10),
           _InputField(
-              controller: _noteCtrl, hint: '備註（選填）', label: null, maxLines: 2),
+              controller: _noteCtrl, hint: AppLocalizations.of(context, 'note_optional'), label: null, maxLines: 2),
           const SizedBox(height: 32),
 
           // ── 儲存按鈕 ──
@@ -511,8 +505,8 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
               ),
               child: Text(
                 isEdit
-                    ? '更新記帳'
-                    : (isIncome ? '儲存收入' : '儲存支出'),
+                    ? AppLocalizations.of(context, 'update_entry')
+                    : (isIncome ? AppLocalizations.of(context, 'save_income') : AppLocalizations.of(context, 'save_expense')),
                 style:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
               ),

@@ -237,7 +237,7 @@ class _MainShellState extends State<MainShell> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('可隨時在「說明與支援」重新觀看導覽'),
+          content: Text(AppLocalizations.of(context, 'onboarding_rewatch_notice')),
           backgroundColor: kGold,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 3),
@@ -282,13 +282,14 @@ class _MainShellState extends State<MainShell> {
         _ => Icons.add,
       };
 
-  String get _fabTooltip => switch (_tab) {
-        2 => '新增投資',
-        3 => '新增固定開銷',
-        _ => '新增支出',
+  String _fabTooltip(BuildContext context) => switch (_tab) {
+        2 => AppLocalizations.of(context, 'add_investment'),
+        3 => AppLocalizations.of(context, 'add_fixed'),
+        _ => AppLocalizations.of(context, 'add_expense'),
       };
 
-  String get _monthLabel => DateFormat('M月').format(_displayMonth);
+  String _monthLabel(BuildContext context) =>
+      AppLocalizations.ofParam(context, 'month_label', {'month': _displayMonth.month});
 
   void _openSearch() {
     Navigator.push(
@@ -381,7 +382,7 @@ class _MainShellState extends State<MainShell> {
       DashboardPage(
         state: s,
         displayMonth: _displayMonth,
-        monthLabel: _monthLabel,
+        monthLabel: _monthLabel(context),
         onPrev: () => setState(() => _monthOffset--),
         onCur: () => setState(() => _monthOffset = 0),
         onNext: () => setState(() => _monthOffset++),
@@ -429,7 +430,7 @@ class _MainShellState extends State<MainShell> {
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         elevation: 4,
-        tooltip: _fabTooltip,
+        tooltip: _fabTooltip(context),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           transitionBuilder: (child, anim) =>
@@ -545,10 +546,10 @@ class _DashboardPageState extends State<DashboardPage> {
         (i) => DateTime(oldest.year, oldest.month - 1 - i, 1));
   }
 
-  String get _periodLabel => switch (_chartPeriod) {
-        _ChartPeriod.month => '本月',
-        _ChartPeriod.bimonth => '本雙月',
-        _ChartPeriod.halfYear => '本半年',
+  String _periodLabel(BuildContext context) => switch (_chartPeriod) {
+        _ChartPeriod.month => AppLocalizations.of(context, 'this_month'),
+        _ChartPeriod.bimonth => AppLocalizations.of(context, 'this_bimonth'),
+        _ChartPeriod.halfYear => AppLocalizations.of(context, 'this_half_year'),
       };
 
   Widget _buildSummaryText(
@@ -558,15 +559,15 @@ class _DashboardPageState extends State<DashboardPage> {
     final baseStyle = TextStyle(fontSize: 13, color: cs.onSurface, height: 1.5);
     return RichText(
       text: TextSpan(style: baseStyle, children: [
-        TextSpan(text: '$_periodLabel的總消費為 '),
+        TextSpan(text: AppLocalizations.ofParam(context, 'period_spending_prefix', {'period': _periodLabel(context)})),
         TextSpan(
             text: 'NT\$ ${_fmt(total)}',
             style: const TextStyle(
                 fontWeight: FontWeight.w800, color: kGold)),
         if (prevTotal > 0) ...[
-          TextSpan(text: '，較上期'),
+          TextSpan(text: AppLocalizations.of(context, 'vs_last_period')),
           TextSpan(
-            text: diff >= 0 ? '增加' : '減少',
+            text: diff >= 0 ? AppLocalizations.of(context, 'spending_increased') : AppLocalizations.of(context, 'spending_decreased'),
             style: TextStyle(
                 fontWeight: FontWeight.w700,
                 color: diff >= 0 ? kRed : kGreen),
@@ -607,7 +608,7 @@ class _DashboardPageState extends State<DashboardPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(children: [
-                Text('${now.year} 年度總覽',
+                Text(AppLocalizations.ofParam(context, 'annual_overview_title', {'year': now.year}),
                     style: const TextStyle(
                         fontSize: 20, fontWeight: FontWeight.w800)),
                 const Spacer(),
@@ -619,12 +620,12 @@ class _DashboardPageState extends State<DashboardPage> {
               Row(children: [
                 Expanded(
                     child: _AnnualStat(
-                        label: '年度支出',
+                        label: AppLocalizations.of(context, 'annual_expense'),
                         value: 'NT\$ ${_fmt(annualTotal)}',
                         color: annualTotal > annualBudget ? kRed : kGreen)),
                 Expanded(
                     child: _AnnualStat(
-                        label: '年度預算',
+                        label: AppLocalizations.of(context, 'annual_budget'),
                         value: 'NT\$ ${_fmt(annualBudget)}',
                         color: kGold)),
               ]),
@@ -641,8 +642,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text('各月支出',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              Text(AppLocalizations.of(context, 'monthly_expense_chart'),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
               const SizedBox(height: 12),
               ...List.generate(12, (i) {
                 final v = monthlyTotals[i];
@@ -652,7 +653,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   child: Row(children: [
                     SizedBox(
                         width: 36,
-                        child: Text('${i + 1}月',
+                        child: Text(AppLocalizations.ofParam(context, 'month_label', {'month': i + 1}),
                             style: const TextStyle(
                                 color: kGray, fontWeight: FontWeight.w600))),
                     Expanded(
@@ -774,8 +775,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     child: Text(
                       isNow
-                          ? '目前月份'
-                          : '查看：${displayMonth.year}年${displayMonth.month}月',
+                          ? AppLocalizations.of(context, 'current_month_label')
+                          : AppLocalizations.ofParam(context, 'current_month_viewing', {'year': displayMonth.year, 'month': displayMonth.month}),
                       style: const TextStyle(
                         color: kGold,
                         fontSize: 12,
@@ -786,7 +787,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 }),
                 // 連續記帳徽章（右上）
                 Tooltip(
-                  message: '每天記帳可維持連續天數',
+                  message: AppLocalizations.of(context, 'streak_record_daily'),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
@@ -802,8 +803,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       const SizedBox(width: 4),
                       Text(
                         state.recordedToday
-                            ? '連續記帳 ${state.streak} 天'
-                            : '今天還沒記帳（${state.streak} 天）',
+                            ? AppLocalizations.ofParam(context, 'streak_active', {'n': state.streak})
+                            : AppLocalizations.ofParam(context, 'streak_inactive', {'n': state.streak}),
                         style: TextStyle(
                           color: state.recordedToday
                               ? Theme.of(context)
@@ -837,22 +838,20 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     // 左：selectedMonth - 1（純導航，不高亮）
                     _MonthBtn(
-                        label: '上月',
-                        subText: DateFormat('M月').format(prevM),
+                        label: AppLocalizations.of(context, 'prev_month'),
+                        subText: AppLocalizations.ofParam(context, 'month_label', {'month': prevM.month}),
                         selected: false,
                         onTap: onPrev),
                     const SizedBox(width: 10),
-                    // 中：真實本月（僅當 selectedMonth == 本月時高亮）
                     _MonthBtn(
-                        label: '本月',
-                        subText: DateFormat('M月').format(thisM),
+                        label: AppLocalizations.of(context, 'this_month'),
+                        subText: AppLocalizations.ofParam(context, 'month_label', {'month': thisM.month}),
                         selected: sameM(displayMonth, thisM),
                         onTap: onCur),
                     const SizedBox(width: 10),
-                    // 右：selectedMonth + 1（純導航，不高亮）
                     _MonthBtn(
-                        label: '下月',
-                        subText: DateFormat('M月').format(nextM),
+                        label: AppLocalizations.of(context, 'next_month'),
+                        subText: AppLocalizations.ofParam(context, 'month_label', {'month': nextM.month}),
                         selected: false,
                         onTap: onNext),
                   ]);
@@ -872,7 +871,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                              '${DateFormat('yyyy/MM').format(displayMonth)} 預算進度',
+                              AppLocalizations.ofParam(context, 'budget_progress_label', {'date': DateFormat('yyyy/MM').format(displayMonth)}),
                               style: const TextStyle(
                                   color: kGray,
                                   fontSize: 13,
@@ -911,7 +910,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      '含固定開銷',
+                                      AppLocalizations.of(context, 'include_fixed'),
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
@@ -964,16 +963,16 @@ class _DashboardPageState extends State<DashboardPage> {
                 Row(children: [
                   Expanded(
                       child: _BudgetStat(
-                          label: '日均支出', value: 'NT\$ ${_fmt(daily)}')),
+                          label: AppLocalizations.of(context, 'daily_avg'), value: 'NT\$ ${_fmt(daily)}')),
                   Expanded(
                       child: _BudgetStat(
-                          label: '建議日均',
+                          label: AppLocalizations.of(context, 'recommended_daily'),
                           value: 'NT\$ ${_fmt(rec.clamp(0, 9999999))}',
                           valueColor: rec < 0 ? kRed : kGreen,
                           alignEnd: true)),
                 ]),
                 const SizedBox(height: 14),
-                const Text('剩餘預算',
+                Text(AppLocalizations.of(context, 'remaining_budget'),
                     style: TextStyle(
                         color: kGray,
                         fontSize: 13,
@@ -994,8 +993,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                 // ── Header ──────────────────────────────────────────
                 Row(children: [
-                  const Text('支出分析',
-                      style: TextStyle(
+                  Text(AppLocalizations.of(context, 'analysis'),
+                      style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.w800)),
                   const SizedBox(width: 10),
                   GestureDetector(
@@ -1006,14 +1005,14 @@ class _DashboardPageState extends State<DashboardPage> {
                       decoration: BoxDecoration(
                           color: kGold,
                           borderRadius: BorderRadius.circular(16)),
-                      child: const Row(
+                      child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.calendar_month,
+                            const Icon(Icons.calendar_month,
                                 color: Colors.white, size: 14),
-                            SizedBox(width: 4),
-                            Text('年度',
-                                style: TextStyle(
+                            const SizedBox(width: 4),
+                            Text(AppLocalizations.of(context, 'year_annual'),
+                                style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 12)),
@@ -1023,10 +1022,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   const Spacer(),
                   GestureDetector(
                     onTap: onGoDetail,
-                    child: const Row(children: [
-                      Text('查看更多',
-                          style: TextStyle(color: kGray, fontSize: 13)),
-                      Icon(Icons.chevron_right, color: kGray, size: 18),
+                    child: Row(children: [
+                      Text(AppLocalizations.of(context, 'view_more'),
+                          style: const TextStyle(color: kGray, fontSize: 13)),
+                      const Icon(Icons.chevron_right, color: kGray, size: 18),
                     ]),
                   ),
                 ]),
@@ -1035,19 +1034,19 @@ class _DashboardPageState extends State<DashboardPage> {
                 // ── Period selector ─────────────────────────────────
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   _PeriodChip(
-                      label: '本月',
+                      label: AppLocalizations.of(context, 'this_month_short'),
                       selected: _chartPeriod == _ChartPeriod.month,
                       onTap: () => setState(
                           () => _chartPeriod = _ChartPeriod.month)),
                   const SizedBox(width: 8),
                   _PeriodChip(
-                      label: '雙月',
+                      label: AppLocalizations.of(context, 'two_months'),
                       selected: _chartPeriod == _ChartPeriod.bimonth,
                       onTap: () => setState(
                           () => _chartPeriod = _ChartPeriod.bimonth)),
                   const SizedBox(width: 8),
                   _PeriodChip(
-                      label: '半年',
+                      label: AppLocalizations.of(context, 'half_year'),
                       selected: _chartPeriod == _ChartPeriod.halfYear,
                       onTap: () => setState(
                           () => _chartPeriod = _ChartPeriod.halfYear)),
@@ -1061,11 +1060,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
                 // ── Empty state ─────────────────────────────────────
                 if (chartTotal == 0)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 28),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 28),
                     child: Center(
-                      child: Text('本月尚無支出紀錄',
-                          style: TextStyle(
+                      child: Text(AppLocalizations.of(context, 'no_expense_this_month'),
+                          style: const TextStyle(
                               color: Colors.grey, fontSize: 15)),
                     ),
                   )
@@ -1085,7 +1084,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   fontSize: 34,
                                   fontWeight: FontWeight.w800,
                                   color: kGold)),
-                          Text('筆消費',
+                          Text(AppLocalizations.of(context, 'transactions'),
                               style: TextStyle(
                                   fontSize: 12,
                                   color: Theme.of(context)
@@ -1169,7 +1168,7 @@ class _DetailPageState extends State<DetailPage> {
     final originalIndex = widget.state.deleteExpense(item.id);
     ErrorHandler.showUndoSnack(
       context,
-      '已刪除「${item.title}」',
+      AppLocalizations.ofParam(context, 'deleted_item', {'name': item.title}),
       () => widget.state.insertExpenseAt(originalIndex, item),
     );
   }
@@ -1305,7 +1304,10 @@ class _DetailPageState extends State<DetailPage> {
                         : cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(cats[i],
+                  child: Text(
+                      cats[i] == '全部'
+                          ? AppLocalizations.of(context, 'all')
+                          : AppLocalizations.translateCategory(context, cats[i]),
                       style: TextStyle(
                           color: sel ? Colors.white : cs.onSurface,
                           fontWeight: FontWeight.w700,
@@ -1320,8 +1322,8 @@ class _DetailPageState extends State<DetailPage> {
           child: Container(
             key: TourKeys.detailList,
             child: items.isEmpty
-              ? const Center(
-                  child: Text('沒有記錄', style: TextStyle(color: Colors.grey)))
+              ? Center(
+                  child: Text(AppLocalizations.of(context, 'no_records'), style: const TextStyle(color: Colors.grey)))
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(18, 4, 18, 100),
                   itemCount: items.length,
@@ -1364,12 +1366,12 @@ class _DetailPageState extends State<DetailPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                    '${item.category}・${item.note.isEmpty ? "無備註" : item.note}'),
+                                    '${AppLocalizations.translateCategory(context, item.category)}・${item.note.isEmpty ? AppLocalizations.of(context, 'no_note') : item.note}'),
                                 Text(
                                     DateFormat('yyyy/MM/dd').format(item.date)),
                                 if (item.isEdited)
-                                  const Text('已編輯',
-                                      style: TextStyle(
+                                  Text(AppLocalizations.of(context, 'edited_label'),
+                                      style: const TextStyle(
                                           fontSize: 11, color: Colors.orange)),
                               ],
                             ),
@@ -1408,7 +1410,7 @@ class _DetailPageState extends State<DetailPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.edit),
-              title: const Text('編輯'),
+              title: Text(AppLocalizations.of(context, 'edit')),
               onTap: () {
                 Navigator.pop(context);
                 widget.onEdit?.call(item);
@@ -1416,16 +1418,16 @@ class _DetailPageState extends State<DetailPage> {
             ),
             ListTile(
               leading: const Icon(Icons.copy),
-              title: const Text('複製'),
+              title: Text(AppLocalizations.of(context, 'copy')),
               onTap: () {
                 Navigator.pop(context);
                 widget.state
-                    .addExpense(item.copyWith(title: '${item.title}（副本）'));
+                    .addExpense(item.copyWith(title: '${item.title}${AppLocalizations.of(context, 'copy_suffix')}'));
               },
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: kRed),
-              title: const Text('刪除', style: TextStyle(color: kRed)),
+              title: Text(AppLocalizations.of(context, 'delete'), style: const TextStyle(color: kRed)),
               onTap: () {
                 Navigator.pop(context);
                 _deleteWithUndo(item);
@@ -1497,11 +1499,11 @@ class _ManagePageState extends State<ManagePage> {
         budget: widget.state.budget,
       );
       messenger.showSnackBar(
-        SnackBar(content: Text('✓ 備份已儲存：$filename'), backgroundColor: kGreen),
+        SnackBar(content: Text(AppLocalizations.ofParam(context, 'backup_saved', {'filename': filename})), backgroundColor: kGreen),
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('備份失敗：$e'), backgroundColor: kRed),
+        SnackBar(content: Text(AppLocalizations.ofParam(context, 'backup_failed_msg', {'error': e})), backgroundColor: kRed),
       );
     }
   }
@@ -1511,14 +1513,14 @@ class _ManagePageState extends State<ManagePage> {
     try {
       final filename = await _exportService.exportExpensesAsCsv(
         expenses: widget.state.expenses,
-        title: '支出記錄',
+        title: AppLocalizations.of(context, 'expense_records'),
       );
       messenger.showSnackBar(
-        SnackBar(content: Text('✓ CSV 已匯出：$filename'), backgroundColor: kGreen),
+        SnackBar(content: Text(AppLocalizations.ofParam(context, 'csv_exported', {'filename': filename})), backgroundColor: kGreen),
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('匯出失敗：$e'), backgroundColor: kRed),
+        SnackBar(content: Text(AppLocalizations.ofParam(context, 'export_failed_msg', {'error': e})), backgroundColor: kRed),
       );
     }
   }
@@ -1533,12 +1535,11 @@ class _ManagePageState extends State<ManagePage> {
         month: DateTime.now(),
       );
       messenger.showSnackBar(
-        SnackBar(
-            content: Text('✓ Excel 已匯出：$filename'), backgroundColor: kGreen),
+        SnackBar(content: Text(AppLocalizations.ofParam(context, 'excel_exported', {'filename': filename})), backgroundColor: kGreen),
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('匯出失敗：$e'), backgroundColor: kRed),
+        SnackBar(content: Text(AppLocalizations.ofParam(context, 'export_failed_msg', {'error': e})), backgroundColor: kRed),
       );
     }
   }
@@ -1549,7 +1550,7 @@ class _ManagePageState extends State<ManagePage> {
       final backups = await _backupService.getBackupList();
       if (backups.isEmpty) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('尚無備份檔案'), backgroundColor: kGray),
+          SnackBar(content: Text(AppLocalizations.of(context, 'no_backup')), backgroundColor: kGray),
         );
         return;
       }
@@ -1569,18 +1570,18 @@ class _ManagePageState extends State<ManagePage> {
       final ok = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text('確定還原？'),
-          content: const Text('現有所有資料（支出、固定開銷、帳戶、投資）將被備份內容完整取代，此操作無法還原。'),
+          title: Text(AppLocalizations.of(context, 'confirm_restore_title')),
+          content: Text(AppLocalizations.of(context, 'confirm_restore_content')),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('取消')),
+                child: Text(AppLocalizations.of(context, 'cancel'))),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('還原',
-                  style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+              child: Text(AppLocalizations.of(context, 'restore_label'),
+                  style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -1597,29 +1598,27 @@ class _ManagePageState extends State<ManagePage> {
       if (!mounted) return;
       if (backupData.isLegacy) {
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text(
-              '⚠ 舊版備份已還原。此備份不含帳戶與投資資料，帳戶已清空，請重新建立或手動校正餘額。',
-            ),
+          SnackBar(
+            content: Text(AppLocalizations.of(context, 'restore_legacy_warning')),
             backgroundColor: Colors.orange,
-            duration: Duration(seconds: 6),
+            duration: const Duration(seconds: 6),
           ),
         );
       } else {
         messenger.showSnackBar(
           SnackBar(
-            content: Text(
-              '✓ 已還原 ${backupData.expenses.length} 筆支出、'
-              '${backupData.accounts.length} 個帳戶、'
-              '${backupData.holdings.length} 筆持股',
-            ),
+            content: Text(AppLocalizations.ofParam(context, 'restore_success_msg', {
+              'expenses': backupData.expenses.length,
+              'accounts': backupData.accounts.length,
+              'holdings': backupData.holdings.length,
+            })),
             backgroundColor: kGreen,
           ),
         );
       }
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('還原失敗：$e'), backgroundColor: kRed),
+        SnackBar(content: Text(AppLocalizations.ofParam(context, 'restore_failed_msg', {'error': e})), backgroundColor: kRed),
       );
     }
   }
@@ -1657,10 +1656,10 @@ class _ManagePageState extends State<ManagePage> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
-            child: Text('語言 / Language',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            child: Text(AppLocalizations.of(context, 'language'),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
           ),
           ...options.map((o) {
             final isSelected = themeProvider.locale == o.$1;
@@ -1744,7 +1743,7 @@ class _ManagePageState extends State<ManagePage> {
                       ListenableBuilder(
                         listenable: widget.state,
                         builder: (_, __) => Text(
-                          '${widget.state.accounts.length} 個帳戶',
+                          AppLocalizations.ofParam(context, 'accounts_count', {'n': widget.state.accounts.length}),
                           style: TextStyle(
                               fontSize: 12,
                               color: Theme.of(context)
@@ -1897,8 +1896,8 @@ class _ManagePageState extends State<ManagePage> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    const Text('語言 / Language',
-                        style: TextStyle(
+                    Text(AppLocalizations.of(context, 'language'),
+                        style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 15)),
                     Text(_localeDisplayName(themeProvider.locale),
                         style: const TextStyle(color: kGray, fontSize: 12)),
@@ -1978,7 +1977,7 @@ class _ManagePageState extends State<ManagePage> {
                       child: Text(AppLocalizations.of(context, 'fixed_expenses'),
                           style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.w700))),
-                  Text('每月 NT\$ ${_fmt(widget.state.fixedTotal)}',
+                  Text(AppLocalizations.ofParam(context, 'fixed_monthly_total', {'amount': _fmt(widget.state.fixedTotal)}),
                       style: const TextStyle(
                           color: kGold,
                           fontWeight: FontWeight.w700,
@@ -2064,7 +2063,7 @@ class _ManagePageState extends State<ManagePage> {
                                   Row(children: [
                                     const SizedBox(width: 28),
                                     if (completed)
-                                      Text('已完成全部 ${f.totalPeriods} 期',
+                                      Text(AppLocalizations.ofParam(context, 'periods_completed', {'n': f.totalPeriods}),
                                           style: TextStyle(
                                               fontSize: 12,
                                               color: cs.onSurfaceVariant))
@@ -2084,7 +2083,7 @@ class _ManagePageState extends State<ManagePage> {
                                           borderRadius:
                                               BorderRadius.circular(6),
                                         ),
-                                        child: Text('剩 $remaining 期',
+                                        child: Text(AppLocalizations.ofParam(context, 'periods_remaining_label', {'n': remaining}),
                                             style: const TextStyle(
                                                 fontSize: 11,
                                                 color: kGold,
@@ -2126,16 +2125,16 @@ class _ManagePageState extends State<ManagePage> {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                const Text('備份與匯出',
+                Text(AppLocalizations.of(context, 'backup_export'),
                     style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                        const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: _doBackup,
                     icon: const Icon(Icons.backup),
-                    label: const Text('備份資料'),
+                    label: Text(AppLocalizations.of(context, 'backup_data')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kGold,
                       foregroundColor: Colors.white,
@@ -2152,7 +2151,7 @@ class _ManagePageState extends State<ManagePage> {
                   child: OutlinedButton.icon(
                     onPressed: _doExportCsv,
                     icon: const Icon(Icons.download_rounded),
-                    label: const Text('匯出 CSV'),
+                    label: Text(AppLocalizations.of(context, 'export_csv')),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: kGold),
                       foregroundColor: kGold,
@@ -2168,7 +2167,7 @@ class _ManagePageState extends State<ManagePage> {
                   child: OutlinedButton.icon(
                     onPressed: _doExportExcel,
                     icon: const Icon(Icons.table_chart_rounded),
-                    label: const Text('匯出 Excel'),
+                    label: Text(AppLocalizations.of(context, 'export_excel')),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: kGold),
                       foregroundColor: kGold,
@@ -2184,7 +2183,7 @@ class _ManagePageState extends State<ManagePage> {
                   child: OutlinedButton.icon(
                     onPressed: _doRestore,
                     icon: const Icon(Icons.restore_rounded),
-                    label: const Text('恢復備份'),
+                    label: Text(AppLocalizations.of(context, 'restore_backup')),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: kGold),
                       foregroundColor: kGold,
@@ -2202,8 +2201,8 @@ class _ManagePageState extends State<ManagePage> {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                const Text('危險區',
-                    style: TextStyle(
+                Text(AppLocalizations.of(context, 'danger_zone'),
+                    style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: kRed)),
@@ -2216,18 +2215,18 @@ class _ManagePageState extends State<ManagePage> {
                       final ok = await showDialog<bool>(
                         context: context,
                         builder: (_) => AlertDialog(
-                          title: const Text('確定清除？'),
-                          content: const Text('所有支出記錄將被永久刪除，無法還原。'),
+                          title: Text(AppLocalizations.of(context, 'clear_all_confirm_title')),
+                          content: Text(AppLocalizations.of(context, 'clear_all_confirm_content')),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16)),
                           actions: [
                             TextButton(
                                 onPressed: () => Navigator.pop(context, false),
-                                child: const Text('取消')),
+                                child: Text(AppLocalizations.of(context, 'cancel'))),
                             TextButton(
                                 onPressed: () => Navigator.pop(context, true),
-                                child: const Text('清除',
-                                    style: TextStyle(
+                                child: Text(AppLocalizations.of(context, 'delete'),
+                                    style: const TextStyle(
                                         color: kRed,
                                         fontWeight: FontWeight.w700))),
                           ],
@@ -2236,12 +2235,12 @@ class _ManagePageState extends State<ManagePage> {
                       if (ok == true) {
                         widget.state.clearAll();
                         messenger.showSnackBar(
-                            const SnackBar(content: Text('所有記錄已清除')));
+                            SnackBar(content: Text(AppLocalizations.of(context, 'all_cleared'))));
                       }
                     },
                     icon: const Icon(Icons.delete_forever, color: kRed),
                     label:
-                        const Text('清除所有支出記錄', style: TextStyle(color: kRed)),
+                        Text(AppLocalizations.of(context, 'clear_all_expenses'), style: const TextStyle(color: kRed)),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: kRed),
                       shape: RoundedRectangleBorder(
@@ -2258,19 +2257,19 @@ class _ManagePageState extends State<ManagePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('說明與支援',
+                Text(AppLocalizations.of(context, 'help_support'),
                     style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                        const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 ListTile(
                   key: TourKeys.rewatchTile,
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.help_outline_rounded, color: kGold),
-                  title: const Text('重新觀看新手導覽',
+                  title: Text(AppLocalizations.of(context, 'rewatch_tour'),
                       style:
-                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                  subtitle: const Text('再次查看錢錢管家的主要功能與使用方式',
-                      style: TextStyle(fontSize: 12)),
+                          const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  subtitle: Text(AppLocalizations.of(context, 'rewatch_tour_subtitle'),
+                      style: const TextStyle(fontSize: 12)),
                   trailing:
                       const Icon(Icons.chevron_right, color: kGray, size: 18),
                   onTap: widget.onRewatchOnboarding,
@@ -2280,11 +2279,11 @@ class _ManagePageState extends State<ManagePage> {
                   key: TourKeys.feedbackTile,
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.feedback_outlined, color: kGold),
-                  title: const Text('回報問題與建議',
+                  title: Text(AppLocalizations.of(context, 'report_issue'),
                       style:
-                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                  subtitle: const Text('問題回報、功能建議或使用感受',
-                      style: TextStyle(fontSize: 12)),
+                          const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  subtitle: Text(AppLocalizations.of(context, 'report_issue_subtitle'),
+                      style: const TextStyle(fontSize: 12)),
                   trailing:
                       const Icon(Icons.chevron_right, color: kGray, size: 18),
                   onTap: () {
@@ -2406,8 +2405,8 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const Text('選擇月份',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+          Text(AppLocalizations.of(context, 'select_month'),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
           // 年份切換
           Row(
@@ -2420,7 +2419,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
               ),
               SizedBox(
                 width: 90,
-                child: Text('$_year 年',
+                child: Text(AppLocalizations.ofParam(context, 'year_label', {'year': _year}),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w700)),
@@ -2466,7 +2465,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                             width: 1),
                   ),
                   child: Text(
-                    '$month月',
+                    AppLocalizations.ofParam(context, 'month_label', {'month': month}),
                     style: TextStyle(
                       color: isSel ? Colors.white : cs.onSurface,
                       fontWeight: FontWeight.w600,
@@ -2650,7 +2649,7 @@ class _CategoryRow extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-                child: Text(name,
+                child: Text(AppLocalizations.translateCategory(context, name),
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, fontSize: 14))),
             Text('NT\$ ${_fmt(amount)}',
@@ -2795,19 +2794,19 @@ class _BackupPickerSheetState extends State<_BackupPickerSheet> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('刪除備份？'),
-        content: const Text('刪除後無法復原，確定要刪除此備份嗎？'),
+        title: Text(AppLocalizations.of(context, 'delete_backup_title')),
+        content: Text(AppLocalizations.of(context, 'delete_backup_confirm')),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text(AppLocalizations.of(context, 'cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('刪除',
-                style: TextStyle(
+            child: Text(AppLocalizations.of(context, 'delete'),
+                style: const TextStyle(
                     color: Colors.red, fontWeight: FontWeight.w700)),
           ),
         ],
@@ -2828,15 +2827,14 @@ class _BackupPickerSheetState extends State<_BackupPickerSheet> {
         _deleting.remove(b.filename);
       });
       messenger.showSnackBar(
-        const SnackBar(
-            content: Text('備份已刪除'), backgroundColor: kGray),
+        SnackBar(content: Text(AppLocalizations.of(context, 'backup_deleted')), backgroundColor: kGray),
       );
     } catch (_) {
       if (!mounted) return;
       setState(() => _deleting.remove(b.filename));
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('刪除失敗，請稍後再試'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context, 'delete_failed')),
           backgroundColor: Colors.red,
         ),
       );
@@ -2853,8 +2851,8 @@ class _BackupPickerSheetState extends State<_BackupPickerSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            const Text('選擇備份',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            Text(AppLocalizations.of(context, 'select_backup'),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
             const Spacer(),
             IconButton(
                 icon: const Icon(Icons.close),
@@ -2866,7 +2864,7 @@ class _BackupPickerSheetState extends State<_BackupPickerSheet> {
               padding: const EdgeInsets.symmetric(vertical: 28),
               child: Center(
                 child: Text(
-                  '目前沒有備份資料',
+                  AppLocalizations.of(context, 'no_backup_data'),
                   style: TextStyle(
                       color: cs.onSurfaceVariant, fontSize: 14),
                 ),
@@ -2883,8 +2881,7 @@ class _BackupPickerSheetState extends State<_BackupPickerSheet> {
                   DateFormat('yyyy/MM/dd HH:mm').format(b.timestamp),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: Text(
-                    '${b.expenseCount} 筆支出・${b.fixedCount} 項固定開銷'),
+                subtitle: Text(AppLocalizations.ofParam(context, 'backup_list_item', {'expenses': b.expenseCount, 'fixed': b.fixedCount})),
                 onTap:
                     busy ? null : () => Navigator.pop(context, b.filename),
                 trailing: busy
@@ -2898,7 +2895,7 @@ class _BackupPickerSheetState extends State<_BackupPickerSheet> {
                         icon: const Icon(
                             Icons.delete_outline_rounded,
                             color: Colors.red),
-                        tooltip: '刪除此備份',
+                        tooltip: AppLocalizations.of(context, 'delete_this_backup'),
                         onPressed: () => _confirmDelete(b),
                       ),
               );
