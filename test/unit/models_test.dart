@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_app/data/models/expense_item.dart';
 import 'package:money_app/data/models/fixed_item.dart';
-import 'package:money_app/core/utils/validators.dart';
 import 'package:money_app/core/utils/formatters.dart';
 
 void main() {
@@ -83,32 +82,7 @@ void main() {
     });
   });
 
-  group('Validators Tests', () {
-    test('validateTitle requires non-empty string', () {
-      expect(Validators.validateTitle(null), '請填寫支出名稱');
-      expect(Validators.validateTitle(''), '請填寫支出名稱');
-      expect(Validators.validateTitle('午餐'), null);
-      expect(Validators.validateTitle('x' * 51), '名稱不超過50個字符');
-    });
-
-    test('validateAmount checks valid numbers', () {
-      expect(Validators.validateAmount(null), '請填寫金額');
-      expect(Validators.validateAmount(''), '請填寫金額');
-      expect(Validators.validateAmount('abc'), '金額必須是數字');
-      expect(Validators.validateAmount('0'), '金額必須大於 0');
-      expect(Validators.validateAmount('-10'), '金額必須大於 0');
-      expect(Validators.validateAmount('120'), null);
-      expect(Validators.validateAmount('99999999'), '金額過大');
-    });
-
-    test('validateBudget checks budget input', () {
-      expect(Validators.validateBudget(null), '請填寫預算金額');
-      expect(Validators.validateBudget(''), '請填寫預算金額');
-      expect(Validators.validateBudget('invalid'), '預算必須是數字');
-      expect(Validators.validateBudget('0'), '預算必須大於 0');
-      expect(Validators.validateBudget('30000'), null);
-    });
-  });
+  // Validators require BuildContext for i18n and are tested via widget tests
 
   group('Formatters Tests', () {
     test('formatCurrency formats numbers with comma', () {

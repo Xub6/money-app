@@ -105,12 +105,12 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
     final title = _titleCtrl.text.trim();
     final amtStr = _amtCtrl.text.trim();
 
-    final titleError = Validators.validateTitle(title);
+    final titleError = Validators.validateTitle(context, title);
     if (titleError != null) {
       ErrorHandler.showErrorSnack(context, titleError);
       return;
     }
-    final amtError = Validators.validateAmount(amtStr);
+    final amtError = Validators.validateAmount(context, amtStr);
     if (amtError != null) {
       ErrorHandler.showErrorSnack(context, amtError);
       return;

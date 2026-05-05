@@ -213,13 +213,13 @@ class _MainShellState extends State<MainShell> {
   Future<void> _checkOnboarding() async {
     final seen = await OnboardingService.isOnboardingSeen();
     if (!seen && mounted) {
-      context.read<TourController>().start();
+      context.read<TourController>().start(context);
     }
   }
 
   void _onRewatchOnboarding() {
     if (!mounted) return;
-    context.read<TourController>().start();
+    context.read<TourController>().start(context);
   }
 
   Future<void> _onTourSkipped() async {

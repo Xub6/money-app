@@ -5,27 +5,32 @@ import 'logger.dart';
 
 /// Handles errors and provides user-friendly messages
 class ErrorHandler {
-  /// Convert exception to user-friendly message
+  /// Convert exception to user-friendly message (no context; may return Chinese fallback)
   static String getUserMessage(dynamic exception) {
-    if (exception is AppException) {
-      return exception.message;
-    }
-
+    if (exception is String) return exception;
+    if (exception is AppException) return exception.message;
     if (exception is Exception) {
       final msg = exception.toString();
-      if (msg.contains('permission')) {
-        return '沒有權限執行此操作';
-      }
-      if (msg.contains('network') || msg.contains('socket')) {
-        return '網絡連接失敗，請檢查網絡';
-      }
-      if (msg.contains('database')) {
-        return '數據庫錯誤，請稍後重試';
-      }
-      return '發生錯誤，請稍後重試';
+      if (msg.contains('permission')) return 'error_permission';
+      if (msg.contains('network') || msg.contains('socket')) return 'error_network';
+      if (msg.contains('database')) return 'error_database';
+      return 'error_generic';
     }
+    return 'error_unknown';
+  }
 
-    return '未知錯誤';
+  /// Convert exception to localized user-friendly message
+  static String getLocalizedMessage(BuildContext context, dynamic exception) {
+    if (exception is String) return exception;
+    if (exception is AppException) return exception.message;
+    if (exception is Exception) {
+      final msg = exception.toString();
+      if (msg.contains('permission')) return AppLocalizations.of(context, 'error_permission');
+      if (msg.contains('network') || msg.contains('socket')) return AppLocalizations.of(context, 'error_network');
+      if (msg.contains('database')) return AppLocalizations.of(context, 'error_database');
+      return AppLocalizations.of(context, 'error_generic');
+    }
+    return AppLocalizations.of(context, 'error_unknown');
   }
 
   /// Log exception and return AppException
@@ -59,7 +64,7 @@ class ErrorHandler {
 
   /// Show error snackbar
   static void showErrorSnack(BuildContext context, dynamic exception) {
-    final message = getUserMessage(exception);
+    final message = getLocalizedMessage(context, exception);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

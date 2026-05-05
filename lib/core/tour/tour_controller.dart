@@ -46,9 +46,9 @@ class TourController extends ChangeNotifier {
 
   // ── Tour lifecycle ───────────────────────────────────────────
 
-  Future<void> start() async {
+  Future<void> start(BuildContext context) async {
     _onTourStart?.call();
-    _steps = buildTourSteps();
+    _steps = buildTourSteps(context);
     _stepIndex = 0;
     _active = true;
     _hidden = false;

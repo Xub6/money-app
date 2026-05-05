@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../config/localization.dart';
 import '../../core/constants/app_colors.dart';
 import 'tour_controller.dart';
 import 'tour_step.dart';
@@ -263,7 +264,7 @@ class _TourTooltip extends StatelessWidget {
                     child: GestureDetector(
                       onTap: onSkip,
                       child: Text(
-                        '跳過導覽',
+                        AppLocalizations.of(context, 'tour_skip'),
                         style: TextStyle(color: subColor, fontSize: 12),
                       ),
                     ),
@@ -324,7 +325,7 @@ class _TourTooltip extends StatelessWidget {
                       // 上一步
                       if (stepIndex > 0)
                         _NavButton(
-                          label: '上一步',
+                          label: AppLocalizations.of(context, 'tour_prev'),
                           onTap: onPrev,
                           filled: false,
                           textColor: subColor,
@@ -343,7 +344,7 @@ class _TourTooltip extends StatelessWidget {
                       // 下一步 / 完成
                       if (!isWaiting)
                         _NavButton(
-                          label: isLast ? '完成 ✓' : '下一步',
+                          label: isLast ? AppLocalizations.of(context, 'tour_done') : AppLocalizations.of(context, 'tour_next'),
                           onTap: onNext,
                           filled: true,
                           textColor: Colors.white,
