@@ -1,0 +1,49 @@
+{
+  "name": "T-025 M1 Error Notification",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "t025-0001-error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const wf    = $json.workflow  || {};\nconst err   = $json.error     || {};\nconst exec  = $json.execution || {};\n\nconst wfName   = String(wf.name  || 'Unknown Workflow');\nconst wfId     = String(wf.id    || '');\nconst errMsg   = String(err.message || 'No message');\nconst errStack = String(err.stack   || '');\nconst execId   = String(exec.id     || '');\nconst execMode = String(exec.mode   || '');\nconst now      = new Date().toISOString();\n\nconst subject = '[Qoryva 告警] M1 Workflow 錯誤：' + wfName;\n\nconst html = `\n<div style=\"font-family:monospace;font-size:14px;line-height:1.8;color:#222;\">\n  <h2 style=\"color:#c0392b;\">🚨 Qoryva M1 Workflow 發生錯誤</h2>\n  <table style=\"border-collapse:collapse;width:100%;\">\n    <tr><td style=\"padding:4px 12px 4px 0;font-weight:bold;color:#555;\">Workflow</td><td>${wfName}</td></tr>\n    <tr><td style=\"padding:4px 12px 4px 0;font-weight:bold;color:#555;\">Workflow ID</td><td>${wfId}</td></tr>\n    <tr><td style=\"padding:4px 12px 4px 0;font-weight:bold;color:#555;\">Execution ID</td><td>${execId}</td></tr>\n    <tr><td style=\"padding:4px 12px 4px 0;font-weight:bold;color:#555;\">執行模式</td><td>${execMode}</td></tr>\n    <tr><td style=\"padding:4px 12px 4px 0;font-weight:bold;color:#555;\">時間</td><td>${now}</td></tr>\n    <tr><td style=\"padding:4px 12px 4px 0;font-weight:bold;color:#555;\">錯誤訊息</td><td style=\"color:#c0392b;\">${errMsg}</td></tr>\n  </table>\n  <hr style=\"margin:16px 0;border:none;border-top:1px solid #ddd;\"/>\n  <p style=\"font-weight:bold;color:#555;\">Stack Trace：</p>\n  <pre style=\"background:#f5f5f5;padding:12px;border-radius:4px;white-space:pre-wrap;font-size:12px;\">${errStack}</pre>\n  <hr style=\"margin:16px 0;border:none;border-top:1px solid #ddd;\"/>\n  <p style=\"color:#888;font-size:12px;\">Qoryva AI Operations — 自動告警</p>\n</div>\n`;\n\nreturn [{ json: { subject, html } }];"
+      },
+      "id": "t025-0002-format",
+      "name": "Format Alert Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "hello@qoryva.com",
+        "toEmail": "zaq5239@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "t025-0003-send",
+      "name": "Send Alert Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [[{"node": "Format Alert Email", "type": "main", "index": 0}]]
+    },
+    "Format Alert Email": {
+      "main": [[{"node": "Send Alert Email", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "pinData": {}
+}
