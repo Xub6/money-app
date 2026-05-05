@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../config/localization.dart';
 import '../../../core/constants/app_colors.dart';
 
 class Slide1Welcome extends StatelessWidget {
@@ -25,10 +26,10 @@ class Slide1Welcome extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 40),
-          const Text(
-            '歡迎使用\n錢錢管家',
+          Text(
+            AppLocalizations.of(context, 'slide1_title'),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w800,
               height: 1.3,
@@ -36,13 +37,13 @@ class Slide1Welcome extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            '掌握財務，從這裡開始',
+            AppLocalizations.of(context, 'slide1_subtitle'),
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 17, color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 12),
           Text(
-            '讓我們花一分鐘介紹各項功能',
+            AppLocalizations.of(context, 'slide1_intro'),
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant),
           ),

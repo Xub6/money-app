@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../config/localization.dart';
 import '../../../core/constants/app_colors.dart';
 
 class Slide2Expense extends StatelessWidget {
@@ -28,32 +29,32 @@ class Slide2Expense extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
-            '輕鬆記錄每筆支出',
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+          Text(
+            AppLocalizations.of(context, 'slide2_title'),
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 10),
           Text(
-            '分類管理，圓餅圖讓你一目了然消費習慣。',
+            AppLocalizations.of(context, 'slide2_subtitle'),
             style: TextStyle(fontSize: 15, color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 28),
           _FeatureItem(
             icon: Icons.add_circle_outline_rounded,
-            title: '快速新增',
-            desc: '點中央 + 按鈕，秒速記帳',
+            title: AppLocalizations.of(context, 'slide2_f1_title'),
+            desc: AppLocalizations.of(context, 'slide2_f1_desc'),
             cs: cs,
           ),
           _FeatureItem(
             icon: Icons.local_fire_department_rounded,
-            title: '連續記帳',
-            desc: '每天記帳維持連續天數，養成好習慣',
+            title: AppLocalizations.of(context, 'slide2_f2_title'),
+            desc: AppLocalizations.of(context, 'slide2_f2_desc'),
             cs: cs,
           ),
           _FeatureItem(
             icon: Icons.search_rounded,
-            title: '全文搜尋',
-            desc: '快速查找任何支出記錄',
+            title: AppLocalizations.of(context, 'slide2_f3_title'),
+            desc: AppLocalizations.of(context, 'slide2_f3_desc'),
             cs: cs,
           ),
         ],

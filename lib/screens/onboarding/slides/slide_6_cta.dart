@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../config/localization.dart';
 import '../../../core/constants/app_colors.dart';
 
 class Slide6Cta extends StatelessWidget {
@@ -37,13 +38,13 @@ class Slide6Cta extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
-            '你已準備好了！',
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+          Text(
+            AppLocalizations.of(context, 'slide6_title'),
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 10),
           Text(
-            '完成以下步驟，開始掌管你的財務。',
+            AppLocalizations.of(context, 'slide6_subtitle'),
             style: TextStyle(fontSize: 15, color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 24),
@@ -55,14 +56,14 @@ class Slide6Cta extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _CheckItem(label: '了解記帳功能', checked: true, cs: cs),
+                _CheckItem(label: AppLocalizations.of(context, 'slide6_check1'), checked: true, cs: cs),
                 const SizedBox(height: 12),
-                _CheckItem(label: '了解預算管理', checked: true, cs: cs),
+                _CheckItem(label: AppLocalizations.of(context, 'slide6_check2'), checked: true, cs: cs),
                 const SizedBox(height: 12),
-                _CheckItem(label: '了解投資追蹤', checked: true, cs: cs),
+                _CheckItem(label: AppLocalizations.of(context, 'slide6_check3'), checked: true, cs: cs),
                 const SizedBox(height: 12),
                 _CheckItem(
-                  label: '新增第一筆支出',
+                  label: AppLocalizations.of(context, 'slide6_check4'),
                   checked: hasExpenses,
                   cs: cs,
                 ),
@@ -75,9 +76,9 @@ class Slide6Cta extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onAddExpense,
               icon: const Icon(Icons.add_rounded),
-              label: const Text(
-                '新增第一筆支出',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              label: Text(
+                AppLocalizations.of(context, 'slide6_check4'),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.gold,
@@ -95,7 +96,7 @@ class Slide6Cta extends StatelessWidget {
             child: TextButton(
               onPressed: onSkip,
               child: Text(
-                '直接進入 App',
+                AppLocalizations.of(context, 'slide6_cta_enter'),
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
               ),
             ),

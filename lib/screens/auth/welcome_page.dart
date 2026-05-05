@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/firebase_config.dart';
+import '../../config/localization.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/auth_service.dart';
 
@@ -29,7 +30,7 @@ class _WelcomePageState extends State<WelcomePage> {
     if (p != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('歡迎，${p.displayName}！'),
+          content: Text(AppLocalizations.ofParam(context, 'welcome_user', {'name': p.displayName})),
           backgroundColor: AppColors.gold,
           behavior: SnackBarBehavior.floating,
         ),
@@ -69,7 +70,7 @@ class _WelcomePageState extends State<WelcomePage> {
               const SizedBox(height: 24),
 
               Text(
-                '錢錢管家',
+                AppLocalizations.of(context, 'app_name'),
                 style: TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.w800,
@@ -79,7 +80,7 @@ class _WelcomePageState extends State<WelcomePage> {
               ),
               const SizedBox(height: 8),
               Text(
-                '輕鬆管理每一分錢',
+                AppLocalizations.of(context, 'app_tagline'),
                 style: TextStyle(
                   fontSize: 16,
                   color: cs.onSurface.withValues(alpha: 0.45),
@@ -108,14 +109,14 @@ class _WelcomePageState extends State<WelcomePage> {
                             height: 20,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.black))
-                        : const Row(
+                        : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              FaIcon(FontAwesomeIcons.google,
+                              const FaIcon(FontAwesomeIcons.google,
                                   size: 18, color: Colors.black),
-                              SizedBox(width: 10),
-                              Text('使用 Google 登入',
-                                  style: TextStyle(
+                              const SizedBox(width: 10),
+                              Text(AppLocalizations.of(context, 'sign_in_google'),
+                                  style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700)),
                             ],
@@ -138,15 +139,15 @@ class _WelcomePageState extends State<WelcomePage> {
                         borderRadius: BorderRadius.circular(14)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('以訪客身分繼續',
-                      style: TextStyle(
+                  child: Text(AppLocalizations.of(context, 'continue_as_guest'),
+                      style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w600)),
                 ),
               ),
 
               const SizedBox(height: 20),
               Text(
-                'Google 登入為選填，所有財務資料均儲存於本機',
+                AppLocalizations.of(context, 'local_data_note'),
                 style: TextStyle(
                   fontSize: 12,
                   color: cs.onSurface.withValues(alpha: 0.35),

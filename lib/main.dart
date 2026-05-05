@@ -2069,7 +2069,7 @@ class _ManagePageState extends State<ManagePage> {
                                               color: cs.onSurfaceVariant))
                                     else ...[
                                       Text(
-                                        '${DateFormat('yyyy/MM').format(f.startDate)} 起・共 ${f.totalPeriods} 期',
+                                        AppLocalizations.ofParam(context, 'fixed_start_periods', {'date': DateFormat('yyyy/MM').format(f.startDate), 'n': f.totalPeriods}),
                                         style: TextStyle(
                                             fontSize: 12,
                                             color: cs.onSurfaceVariant),

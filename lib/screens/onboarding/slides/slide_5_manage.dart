@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../config/localization.dart';
 import '../../../core/constants/app_colors.dart';
 
 class Slide5Manage extends StatelessWidget {
@@ -28,32 +29,32 @@ class Slide5Manage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
-            '全面管理財務',
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+          Text(
+            AppLocalizations.of(context, 'slide5_title'),
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 10),
           Text(
-            '固定開銷、帳戶管理、備份匯出，一切盡在掌握。',
+            AppLocalizations.of(context, 'slide5_subtitle'),
             style: TextStyle(fontSize: 15, color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 28),
           _FeatureItem(
             icon: Icons.receipt_long_rounded,
-            title: '固定開銷',
-            desc: '房租、訂閱服務等每月固定支出一次設定',
+            title: AppLocalizations.of(context, 'slide5_f1_title'),
+            desc: AppLocalizations.of(context, 'slide5_f1_desc'),
             cs: cs,
           ),
           _FeatureItem(
             icon: Icons.account_balance_wallet_rounded,
-            title: '帳戶管理',
-            desc: '多帳戶、多幣別，即時掌握淨資產',
+            title: AppLocalizations.of(context, 'slide5_f2_title'),
+            desc: AppLocalizations.of(context, 'slide5_f2_desc'),
             cs: cs,
           ),
           _FeatureItem(
             icon: Icons.backup_rounded,
-            title: '備份與匯出',
-            desc: '資料備份、CSV/Excel 匯出，安全無虞',
+            title: AppLocalizations.of(context, 'slide5_f3_title'),
+            desc: AppLocalizations.of(context, 'slide5_f3_desc'),
             cs: cs,
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/localization.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/repositories/app_state.dart';
 import 'onboarding_service.dart';
@@ -101,7 +102,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     TextButton(
                       onPressed: _skipOnboarding,
                       child: Text(
-                        '跳過',
+                        AppLocalizations.of(context, 'onboard_skip'),
                         style: TextStyle(color: cs.onSurfaceVariant),
                       ),
                     ),
@@ -140,9 +141,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          '下一步',
-                          style: TextStyle(
+                        child: Text(
+                          AppLocalizations.of(context, 'onboard_next'),
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.w700),
                         ),
                       ),

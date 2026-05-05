@@ -49,7 +49,7 @@ class ExportService {
         rows.add([
           expense.title,
           expense.category,
-          expense.amount / 100,
+          expense.amount,
           formatDate(expense.date),
           expense.note,
           formatDate(expense.createdAt, pattern: 'yyyy/MM/dd HH:mm'),
@@ -61,7 +61,7 @@ class ExportService {
 
       // Add summary
       rows.add([]);
-      rows.add(['總計', '', expenses.fold(0, (sum, e) => sum + e.amount) / 100]);
+      rows.add(['總計', '', expenses.fold(0, (sum, e) => sum + e.amount)]);
 
       final csv = const ListToCsvConverter().convert(rows);
 

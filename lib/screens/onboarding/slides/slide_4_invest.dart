@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../config/localization.dart';
 import '../../../core/constants/app_colors.dart';
 
 class Slide4Invest extends StatelessWidget {
@@ -28,32 +29,32 @@ class Slide4Invest extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
-            '追蹤投資組合',
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+          Text(
+            AppLocalizations.of(context, 'slide4_title'),
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 10),
           Text(
-            '記錄持股、成本與損益，台股美股通吃。',
+            AppLocalizations.of(context, 'slide4_subtitle'),
             style: TextStyle(fontSize: 15, color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 28),
           _FeatureItem(
             icon: Icons.show_chart_rounded,
-            title: '即時現價',
-            desc: '台股、美股現價一鍵刷新',
+            title: AppLocalizations.of(context, 'slide4_f1_title'),
+            desc: AppLocalizations.of(context, 'slide4_f1_desc'),
             cs: cs,
           ),
           _FeatureItem(
             icon: Icons.currency_exchange_rounded,
-            title: '多幣別換算',
-            desc: '自動換算 TWD/USD 損益',
+            title: AppLocalizations.of(context, 'slide4_f2_title'),
+            desc: AppLocalizations.of(context, 'slide4_f2_desc'),
             cs: cs,
           ),
           _FeatureItem(
             icon: Icons.notes_rounded,
-            title: '買入理由與策略',
-            desc: '記錄買入原因與出場計畫',
+            title: AppLocalizations.of(context, 'slide4_f3_title'),
+            desc: AppLocalizations.of(context, 'slide4_f3_desc'),
             cs: cs,
           ),
           const SizedBox(height: 20),
@@ -71,7 +72,7 @@ class Slide4Invest extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '投資功能僅供個人紀錄與資訊整理使用，不構成投資建議。投資有風險，請自行判斷。',
+                    AppLocalizations.of(context, 'invest_disclaimer'),
                     style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                   ),
                 ),

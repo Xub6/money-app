@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../config/localization.dart';
 import '../../../core/constants/app_colors.dart';
 
 class Slide3Budget extends StatelessWidget {
@@ -28,32 +29,32 @@ class Slide3Budget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
-            '聰明設定月預算',
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+          Text(
+            AppLocalizations.of(context, 'slide3_title'),
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 10),
           Text(
-            '設定月預算，即時追蹤剩餘金額，再也不超支。',
+            AppLocalizations.of(context, 'slide3_subtitle'),
             style: TextStyle(fontSize: 15, color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 28),
           _FeatureItem(
             icon: Icons.trending_down_rounded,
-            title: '預算進度',
-            desc: '即時顯示已用比例與剩餘預算',
+            title: AppLocalizations.of(context, 'slide3_f1_title'),
+            desc: AppLocalizations.of(context, 'slide3_f1_desc'),
             cs: cs,
           ),
           _FeatureItem(
             icon: Icons.calendar_today_rounded,
-            title: '建議日均消費',
-            desc: '自動計算每天可花多少，理性決策',
+            title: AppLocalizations.of(context, 'slide3_f2_title'),
+            desc: AppLocalizations.of(context, 'slide3_f2_desc'),
             cs: cs,
           ),
           _FeatureItem(
             icon: Icons.receipt_long_rounded,
-            title: '含固定開銷',
-            desc: '預算計算可包含每月固定開銷',
+            title: AppLocalizations.of(context, 'slide3_f3_title'),
+            desc: AppLocalizations.of(context, 'slide3_f3_desc'),
             cs: cs,
           ),
         ],
