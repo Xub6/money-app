@@ -6,8 +6,8 @@
 
 ---
 
-## 目前狀態：i18n RC 四大頁修復完成（2026-05-06）✅
-最後完成任務：i18n RC 四大頁中文殘留清除（commit e3b73f4）✅
+## 目前狀態：i18n 次要區域完成（2026-05-06）✅
+最後完成任務：tour/validators/error_handler/formatters i18n（commit 35b17f3）✅
 
 ### i18n RC 四大頁結果（2026-05-06）
 - [x] DashboardPage（Budget）：中文 sentinel 全部已有 translateCategory 處理，無明顯殘留 ✅
@@ -25,14 +25,21 @@
 - lib/screens/onboarding/onboarding_page.dart + slides × 6（i18n 化）
 - lib/services/export_service.dart（CSV/Excel 欄位 i18n 化）
 
-### 下一步（依用戶指示）
-等四大頁通過後，再處理：
-- onboarding dialog/snackbar/validation/search 次要區域
-- tour_step.dart / tour_overlay.dart（中文 tour 文字）
-- validators.dart（中文 validation error messages）
-- error_handler.dart（中文 error messages）
-- formatters.dart（今天/昨天/M月d日）
-- fixed_item.dart RenewalCycle.label（每月/每年）
+### i18n 次要區域完成清單（2026-05-06，commit 35b17f3）
+- [x] tour_step.dart：buildTourSteps(context)，16 步全翻譯
+- [x] tour_controller.dart：start(context) 傳遞 BuildContext
+- [x] tour_overlay.dart：skip/prev/next/done 按鈕用 AppLocalizations
+- [x] localization.dart：tour_s0~s15 title/body/hint，4 語言全補
+- [x] validators.dart：所有方法加 BuildContext，返回 localized message
+- [x] error_handler.dart：getLocalizedMessage(context) + showErrorSnack 使用
+- [x] formatters.dart：formatRelativeDate(context) + locale param
+- [x] 測試檔更新（移除需要 BuildContext 的 validator unit tests）
+
+### 剩餘 i18n 工作（較低優先）
+- RenewalCycle.label '每月'/'每年'（固定開銷頻率，只在 search_page 顯示）
+- export_service.dart CSV/Excel 欄位（已生成中文，改動需穿透 context）
+- backup_service.dart 錯誤訊息（AppException.message，內部 log）
+- account.dart 帳號類型名稱（儲存型資料，需要 migration）
 
 ### i18n P0 RC Blocker 修復記錄（2026-05-05）
 - **問題**：語言切換在真機毫無效果，UI 全程顯示中文
