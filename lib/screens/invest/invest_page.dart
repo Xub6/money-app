@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../services/stock_service.dart';
 import 'add_edit_investment_page.dart';
 import '../../core/tour/tour_keys.dart';
+import '../../config/localization.dart';
 
 const _kGold = AppColors.gold;
 const _kGreen = AppColors.success;
@@ -162,9 +163,9 @@ class _InvestPageState extends State<InvestPage> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 16, 14, 0),
               child: Row(key: TourKeys.investHeader, children: [
-                const Text('投資',
+                Text(AppLocalizations.of(context, 'invest'),
                     style:
-                        TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+                        const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
                 const Spacer(),
                 Opacity(
                   opacity: s.holdings.isNotEmpty ? 1.0 : 0.0,

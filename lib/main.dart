@@ -406,7 +406,7 @@ class _MainShellState extends State<MainShell> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('錢錢管家',
+        title: Text(AppLocalizations.of(context, 'app_name'),
             key: TourKeys.appBarTitle,
             style: const TextStyle(fontWeight: FontWeight.w800)),
         elevation: 0,
@@ -446,24 +446,24 @@ class _MainShellState extends State<MainShell> {
         child: Row(children: [
           _NavItem(
               icon: Icons.pie_chart_rounded,
-              label: '記帳',
+              label: AppLocalizations.of(context, 'dashboard'),
               selected: _tab == 0,
               onTap: () => _goToTab(0)),
           _NavItem(
               icon: Icons.list_alt_rounded,
-              label: '明細',
+              label: AppLocalizations.of(context, 'detail'),
               selected: _tab == 1,
               onTap: () => _goToTab(1)),
           const SizedBox(width: 56),
           _NavItem(
               icon: Icons.candlestick_chart_rounded,
-              label: '投資',
+              label: AppLocalizations.of(context, 'invest'),
               selected: _tab == 2,
               onTap: () => _goToTab(2)),
           _NavItem(
               key: TourKeys.navManage,
               icon: Icons.settings_rounded,
-              label: '管理',
+              label: AppLocalizations.of(context, 'manage'),
               selected: _tab == 3,
               onTap: () => _goToTab(3)),
         ]),
@@ -584,8 +584,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
   void _showAnnualSummary(BuildContext context) {
     final now = DateTime.now();
-    final months = List.generate(12, (i) => DateTime(now.year, i + 1, 1));
-    final monthlyTotals = months.map((m) => state.usedTotal(m)).toList();
+    // Only show months up to and including the current month
+    final months = List.generate(now.month, (i) => DateTime(now.year, i + 1, 1));
+    final monthlyTotals = months.map((m) {
+      final isCurrentMonth = m.year == now.year && m.month == now.month;
+      // Past months: actual recorded expenses only (no future fixed items added)
+      // Current month: include active fixed items
+      return isCurrentMonth ? state.usedTotal(m) : state.dynamicTotal(m);
+    }).toList();
     final annualTotal = monthlyTotals.fold(0, (s, v) => s + v);
     final annualBudget = state.budget * 12;
 
@@ -740,8 +746,8 @@ class _DashboardPageState extends State<DashboardPage> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('記帳',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+          Text(AppLocalizations.of(context, 'dashboard'),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 18),
 
           // 月份切換
@@ -1213,8 +1219,8 @@ class _DetailPageState extends State<DetailPage> {
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
           child: Row(children: [
-            const Text('明細',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+            Text(AppLocalizations.of(context, 'detail'),
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
             const Spacer(),
             Text(
                 '${netShown >= 0 ? "+" : "-"}NT\$ ${_fmt(netShown.abs())}',
@@ -1256,20 +1262,20 @@ class _DetailPageState extends State<DetailPage> {
             ),
             const SizedBox(width: 10),
             _DetailTypeChip(
-              label: '全部',
+              label: AppLocalizations.of(context, 'all'),
               selected: _typeFilter == _DetailTypeFilter.all,
               onTap: () => setState(() { _typeFilter = _DetailTypeFilter.all; _filterCat = '全部'; }),
             ),
             const SizedBox(width: 6),
             _DetailTypeChip(
-              label: '支出',
+              label: AppLocalizations.of(context, 'expense_type'),
               selected: _typeFilter == _DetailTypeFilter.expense,
               color: kRed,
               onTap: () => setState(() { _typeFilter = _DetailTypeFilter.expense; _filterCat = '全部'; }),
             ),
             const SizedBox(width: 6),
             _DetailTypeChip(
-              label: '收入',
+              label: AppLocalizations.of(context, 'income'),
               selected: _typeFilter == _DetailTypeFilter.income,
               color: kGreen,
               onTap: () => setState(() { _typeFilter = _DetailTypeFilter.income; _filterCat = '全部'; }),
@@ -1688,8 +1694,8 @@ class _ManagePageState extends State<ManagePage> {
         controller: widget.scrollController,
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 100),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('管理',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+          Text(AppLocalizations.of(context, 'manage'),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
           const SizedBox(height: 18),
 
           // Gmail 登入卡片
@@ -1732,8 +1738,8 @@ class _ManagePageState extends State<ManagePage> {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      const Text('我的帳戶',
-                          style: TextStyle(
+                      Text(AppLocalizations.of(context, 'my_accounts'),
+                          style: const TextStyle(
                               fontWeight: FontWeight.w800, fontSize: 17)),
                       ListenableBuilder(
                         listenable: widget.state,
@@ -1755,14 +1761,14 @@ class _ManagePageState extends State<ManagePage> {
                       color: kGold.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text('管理',
-                          style: TextStyle(
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text(AppLocalizations.of(context, 'manage'),
+                          style: const TextStyle(
                               color: kGold,
                               fontWeight: FontWeight.w700,
                               fontSize: 13)),
-                      SizedBox(width: 2),
-                      Icon(Icons.chevron_right, color: kGold, size: 15),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.chevron_right, color: kGold, size: 15),
                     ]),
                   ),
                 ]),
@@ -1786,8 +1792,8 @@ class _ManagePageState extends State<ManagePage> {
                           color: isNeg ? kRed : cs.onSurface,
                         ),
                       ),
-                      const Text('淨資產',
-                          style: TextStyle(
+                      Text(AppLocalizations.of(context, 'net_assets'),
+                          style: const TextStyle(
                               color: kGray,
                               fontSize: 12,
                               fontWeight: FontWeight.w600)),
@@ -1804,7 +1810,7 @@ class _ManagePageState extends State<ManagePage> {
                             child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                              Text('資產',
+                              Text(AppLocalizations.of(context, 'assets'),
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: cs.onSurfaceVariant)),
@@ -1831,7 +1837,7 @@ class _ManagePageState extends State<ManagePage> {
                             child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                              Text('負債',
+                              Text(AppLocalizations.of(context, 'liabilities'),
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: cs.onSurfaceVariant)),
@@ -1862,15 +1868,14 @@ class _ManagePageState extends State<ManagePage> {
               child: Row(children: [
             const Icon(Icons.dark_mode_rounded, color: kGold),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text('深色模式',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                  Text('切換深色/淺色介面',
-                      style: TextStyle(color: kGray, fontSize: 12)),
+                  Text(AppLocalizations.of(context, 'dark_mode'),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  Text(AppLocalizations.of(context, 'dark_mode_subtitle'),
+                      style: const TextStyle(color: kGray, fontSize: 12)),
                 ])),
             Switch(
               value: themeProvider.isDarkMode,
@@ -1908,9 +1913,8 @@ class _ManagePageState extends State<ManagePage> {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                const Text('月預算',
-                    style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                Text(AppLocalizations.of(context, 'monthly_budget'),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(
@@ -1941,10 +1945,10 @@ class _ManagePageState extends State<ManagePage> {
                       if (val != null && val > 0) {
                         widget.state.setBudget(val);
                         ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('✓ 預算已更新'),
+                            SnackBar(
+                                content: Text(AppLocalizations.of(context, 'budget_updated')),
                                 backgroundColor: kGreen,
-                                duration: Duration(seconds: 2)));
+                                duration: const Duration(seconds: 2)));
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -1956,8 +1960,8 @@ class _ManagePageState extends State<ManagePage> {
                           horizontal: 20, vertical: 16),
                       elevation: 0,
                     ),
-                    child: const Text('更新',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    child: Text(AppLocalizations.of(context, 'update'),
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ]),
               ])),
@@ -1970,9 +1974,9 @@ class _ManagePageState extends State<ManagePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 Row(children: [
-                  const Expanded(
-                      child: Text('固定開銷',
-                          style: TextStyle(
+                  Expanded(
+                      child: Text(AppLocalizations.of(context, 'fixed_expenses'),
+                          style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.w700))),
                   Text('每月 NT\$ ${_fmt(widget.state.fixedTotal)}',
                       style: const TextStyle(
@@ -1995,7 +1999,7 @@ class _ManagePageState extends State<ManagePage> {
                 if (widget.state.fixedItems.isEmpty)
                   Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Text('點右上角 + 新增固定開銷',
+                      child: Text(AppLocalizations.of(context, 'add_fixed_hint'),
                           style: TextStyle(
                               color: Theme.of(context)
                                   .colorScheme

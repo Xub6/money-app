@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Localization support
 class AppLocalizations {
   static const supportedLocales = [
-    Locale('zh', 'TW'), // Traditional Chinese
-    Locale('zh', 'CN'), // Simplified Chinese
-    Locale('en', 'US'), // English
-    Locale('ja', 'JP'), // Japanese
+    Locale('zh', 'TW'),
+    Locale('zh', 'CN'),
+    Locale('en', 'US'),
+    Locale('ja', 'JP'),
   ];
 
   static const defaultLocale = Locale('zh', 'TW');
 
-  static const Map<String, Map<String, String>> _localizedStrings = {
+  static const Map<String, Map<String, String>> _strings = {
     'zh_TW': {
-      // Common
+      // App
       'app_name': '錢錢管家',
+      // Nav tabs
+      'dashboard': '記帳',
+      'detail': '明細',
+      'invest': '投資',
+      'manage': '管理',
+      // Common
       'yes': '是',
       'no': '否',
       'confirm': '確認',
@@ -27,30 +32,46 @@ class AppLocalizations {
       'search': '搜索',
       'back': '返回',
       'close': '關閉',
-
-      // Dashboard
-      'dashboard': '記帳',
+      'update': '更新',
+      'all': '全部',
+      'loading': '加載中...',
+      'error': '錯誤',
+      'success': '成功',
+      'warning': '警告',
+      'no_data': '暫無數據',
+      // Account card
+      'my_accounts': '我的帳戶',
+      'net_assets': '淨資產',
+      'assets': '資產',
+      'liabilities': '負債',
+      // Appearance
+      'dark_mode': '深色模式',
+      'dark_mode_subtitle': '切換深色/淺色介面',
+      'language': '語言 / Language',
+      // Budget
+      'monthly_budget': '月預算',
+      'budget_updated': '✓ 預算已更新',
       'budget_progress': '預算進度',
       'remaining_budget': '剩餘預算',
       'daily_avg': '日均支出',
       'recommended_daily': '建議日均',
-      'streak': '天連勝',
+      'include_fixed': '含固定開銷',
+      // Month
+      'prev_month': '上月',
       'this_month': '本月',
-      'last_month': '上月',
       'next_month': '下月',
-
-      // Expense
+      'current_month_label': '目前月份',
+      // Expense / Income
       'add_expense': '新增支出',
       'edit_expense': '編輯支出',
+      'expense_type': '支出',
+      'income': '收入',
       'expense_name': '項目名稱',
       'amount': '金額',
       'date': '日期',
       'category': '分類',
       'note': '備註',
       'optional': '選填',
-      'expense_details': '支出明細',
-      'total': '總計',
-
       // Category
       'dining': '餐飲',
       'education': '教育',
@@ -60,87 +81,142 @@ class AppLocalizations {
       'medical': '醫療',
       'living': '住居',
       'other': '其他',
-
-      // Fixed Items
+      // Fixed
       'fixed_expenses': '固定開銷',
       'add_fixed': '新增固定開銷',
+      'add_fixed_hint': '點右上角 + 新增固定開銷',
       'monthly': '每月',
       'yearly': '每年',
       'active': '啟用',
       'inactive': '已停用',
-
-      // Search
-      'search_expenses': '搜索支出',
-      'search_hint': '搜索支出、固定開銷...',
-      'no_results': '沒有找到結果',
-      'date_range': '日期範圍',
-      'clear_filters': '清除篩選',
-
       // Backup & Export
       'backup': '備份',
       'restore': '恢復',
       'export': '導出',
-      'import': '導入',
-      'backup_data': '備份數據',
+      'backup_data': '備份資料',
       'restore_backup': '恢復備份',
       'export_csv': '導出為 CSV',
-      'export_report': '導出報告',
-      'backup_list': '備份列表',
+      'export_excel': '導出 Excel 報告',
       'backup_success': '✓ 備份成功',
       'restore_success': '✓ 恢復成功',
       'export_success': '✓ 導出成功',
-
-      // Statistics
-      'statistics': '統計',
-      'trend': '趨勢',
-      'highest_month': '花最多的月',
-      'lowest_month': '花最少的月',
-      'monthly_details': '月份詳情',
-      'category_breakdown': '分類統計',
-
-      // Settings & Management
-      'manage': '管理',
-      'settings': '設置',
-      'dark_mode': '深色模式',
-      'language': '語言',
-      'about': '關於',
-      'version': '版本',
-      'clear_all': '清除所有數據',
-      'danger_zone': '危險區',
-
-      // Messages
+      // Search
+      'search_hint': '搜索支出、固定開銷...',
+      'no_results': '沒有找到結果',
+      // Support
+      'help_support': '說明與支援',
+      'rewatch_tour': '重新觀看新手導覽',
+      'report_issue': '回報問題與建議',
+      // Validation
       'please_enter_name': '請填寫名稱',
       'please_enter_amount': '請填寫金額',
       'invalid_amount': '金額無效',
       'confirm_delete': '確定要刪除嗎？',
       'confirm_clear_all': '確定要清除所有數據嗎？此操作無法撤銷。',
-      'no_data': '暫無數據',
-      'loading': '加載中...',
-      'error': '錯誤',
-      'success': '成功',
-      'warning': '警告',
+      // Analysis
+      'analysis': '支出分析',
+      'this_month_short': '本月',
+      'two_months': '雙月',
+      'half_year': '半年',
     },
     'zh_CN': {
       'app_name': '钱钱管家',
       'dashboard': '记账',
+      'detail': '明细',
+      'invest': '投资',
+      'manage': '管理',
+      'yes': '是',
+      'no': '否',
+      'confirm': '确认',
+      'cancel': '取消',
+      'save': '保存',
+      'delete': '删除',
+      'edit': '编辑',
+      'add': '新增',
+      'search': '搜索',
+      'back': '返回',
+      'close': '关闭',
+      'update': '更新',
+      'all': '全部',
+      'loading': '加载中...',
+      'error': '错误',
+      'success': '成功',
+      'warning': '警告',
+      'no_data': '暂无数据',
+      'my_accounts': '我的账户',
+      'net_assets': '净资产',
+      'assets': '资产',
+      'liabilities': '负债',
+      'dark_mode': '深色模式',
+      'dark_mode_subtitle': '切换深色/浅色界面',
+      'language': '语言 / Language',
+      'monthly_budget': '月预算',
+      'budget_updated': '✓ 预算已更新',
+      'budget_progress': '预算进度',
+      'remaining_budget': '剩余预算',
+      'daily_avg': '日均支出',
+      'recommended_daily': '建议日均',
+      'include_fixed': '含固定开销',
+      'prev_month': '上月',
+      'this_month': '本月',
+      'next_month': '下月',
+      'current_month_label': '当前月份',
       'add_expense': '新增支出',
       'edit_expense': '编辑支出',
+      'expense_type': '支出',
+      'income': '收入',
       'expense_name': '项目名称',
       'amount': '金额',
       'date': '日期',
       'category': '分类',
       'note': '备注',
       'optional': '选填',
-      'search': '搜索',
+      'dining': '餐饮',
+      'education': '教育',
+      'entertainment': '娱乐',
+      'transport': '交通',
+      'shopping': '购物',
+      'medical': '医疗',
+      'living': '住居',
+      'other': '其他',
+      'fixed_expenses': '固定开销',
+      'add_fixed': '新增固定开销',
+      'add_fixed_hint': '点右上角 + 新增固定开销',
+      'monthly': '每月',
+      'yearly': '每年',
+      'active': '启用',
+      'inactive': '已停用',
       'backup': '备份',
       'restore': '恢复',
       'export': '导出',
-      'settings': '设置',
-      'dark_mode': '深色模式',
-      // ... more Chinese Simplified translations
+      'backup_data': '备份资料',
+      'restore_backup': '恢复备份',
+      'export_csv': '导出为 CSV',
+      'export_excel': '导出 Excel 报告',
+      'backup_success': '✓ 备份成功',
+      'restore_success': '✓ 恢复成功',
+      'export_success': '✓ 导出成功',
+      'search_hint': '搜索支出、固定开销...',
+      'no_results': '没有找到结果',
+      'help_support': '说明与支援',
+      'rewatch_tour': '重新观看新手导览',
+      'report_issue': '回报问题与建议',
+      'please_enter_name': '请填写名称',
+      'please_enter_amount': '请填写金额',
+      'invalid_amount': '金额无效',
+      'confirm_delete': '确定要删除吗？',
+      'confirm_clear_all': '确定要清除所有数据吗？此操作无法撤销。',
+      'analysis': '支出分析',
+      'this_month_short': '本月',
+      'two_months': '双月',
+      'half_year': '半年',
     },
     'en_US': {
       'app_name': 'Money Manager',
+      'dashboard': 'Budget',
+      'detail': 'Details',
+      'invest': 'Invest',
+      'manage': 'Manage',
       'yes': 'Yes',
       'no': 'No',
       'confirm': 'Confirm',
@@ -150,24 +226,89 @@ class AppLocalizations {
       'edit': 'Edit',
       'add': 'Add',
       'search': 'Search',
-      'dashboard': 'Dashboard',
+      'back': 'Back',
+      'close': 'Close',
+      'update': 'Update',
+      'all': 'All',
+      'loading': 'Loading...',
+      'error': 'Error',
+      'success': 'Success',
+      'warning': 'Warning',
+      'no_data': 'No data',
+      'my_accounts': 'My Accounts',
+      'net_assets': 'Net Assets',
+      'assets': 'Assets',
+      'liabilities': 'Liabilities',
+      'dark_mode': 'Dark Mode',
+      'dark_mode_subtitle': 'Toggle dark/light interface',
+      'language': 'Language',
+      'monthly_budget': 'Monthly Budget',
+      'budget_updated': '✓ Budget Updated',
+      'budget_progress': 'Budget Progress',
+      'remaining_budget': 'Remaining',
+      'daily_avg': 'Daily Avg',
+      'recommended_daily': 'Recommended',
+      'include_fixed': 'Inc. Fixed',
+      'prev_month': 'Last',
+      'this_month': 'This Month',
+      'next_month': 'Next',
+      'current_month_label': 'Current Month',
       'add_expense': 'Add Expense',
       'edit_expense': 'Edit Expense',
-      'expense_name': 'Expense Name',
+      'expense_type': 'Expense',
+      'income': 'Income',
+      'expense_name': 'Name',
       'amount': 'Amount',
       'date': 'Date',
       'category': 'Category',
       'note': 'Note',
       'optional': 'Optional',
+      'dining': 'Dining',
+      'education': 'Education',
+      'entertainment': 'Entertainment',
+      'transport': 'Transport',
+      'shopping': 'Shopping',
+      'medical': 'Medical',
+      'living': 'Housing',
+      'other': 'Other',
+      'fixed_expenses': 'Fixed Expenses',
+      'add_fixed': 'Add Fixed Expense',
+      'add_fixed_hint': 'Tap + to add a fixed expense',
+      'monthly': 'Monthly',
+      'yearly': 'Yearly',
+      'active': 'Active',
+      'inactive': 'Inactive',
       'backup': 'Backup',
       'restore': 'Restore',
       'export': 'Export',
-      'settings': 'Settings',
-      'dark_mode': 'Dark Mode',
-      // ... more English translations
+      'backup_data': 'Backup Data',
+      'restore_backup': 'Restore Backup',
+      'export_csv': 'Export as CSV',
+      'export_excel': 'Export Excel Report',
+      'backup_success': '✓ Backup Successful',
+      'restore_success': '✓ Restore Successful',
+      'export_success': '✓ Export Successful',
+      'search_hint': 'Search expenses, fixed items...',
+      'no_results': 'No results found',
+      'help_support': 'Help & Support',
+      'rewatch_tour': 'Rewatch Tutorial',
+      'report_issue': 'Report an Issue',
+      'please_enter_name': 'Please enter a name',
+      'please_enter_amount': 'Please enter an amount',
+      'invalid_amount': 'Invalid amount',
+      'confirm_delete': 'Are you sure you want to delete?',
+      'confirm_clear_all': 'Delete all data? This cannot be undone.',
+      'analysis': 'Spending Analysis',
+      'this_month_short': 'Month',
+      'two_months': '2 Months',
+      'half_year': '6 Months',
     },
     'ja_JP': {
       'app_name': 'マネーマネージャー',
+      'dashboard': '家計簿',
+      'detail': '明細',
+      'invest': '投資',
+      'manage': '管理',
       'yes': 'はい',
       'no': 'いいえ',
       'confirm': '確認',
@@ -177,80 +318,120 @@ class AppLocalizations {
       'edit': '編集',
       'add': '追加',
       'search': '検索',
-      'dashboard': 'ダッシュボード',
+      'back': '戻る',
+      'close': '閉じる',
+      'update': '更新',
+      'all': 'すべて',
+      'loading': '読み込み中...',
+      'error': 'エラー',
+      'success': '成功',
+      'warning': '警告',
+      'no_data': 'データなし',
+      'my_accounts': 'マイアカウント',
+      'net_assets': '純資産',
+      'assets': '資産',
+      'liabilities': '負債',
+      'dark_mode': 'ダークモード',
+      'dark_mode_subtitle': 'ダーク/ライト切替',
+      'language': '言語 / Language',
+      'monthly_budget': '月次予算',
+      'budget_updated': '✓ 予算を更新しました',
+      'budget_progress': '予算進捗',
+      'remaining_budget': '残予算',
+      'daily_avg': '日平均支出',
+      'recommended_daily': '推奨日額',
+      'include_fixed': '固定費含む',
+      'prev_month': '先月',
+      'this_month': '今月',
+      'next_month': '来月',
+      'current_month_label': '今月',
       'add_expense': '支出を追加',
       'edit_expense': '支出を編集',
-      'expense_name': '支出名',
+      'expense_type': '支出',
+      'income': '収入',
+      'expense_name': '項目名',
       'amount': '金額',
       'date': '日付',
       'category': 'カテゴリー',
       'note': 'メモ',
-      'optional': 'オプション',
+      'optional': '任意',
+      'dining': '飲食',
+      'education': '教育',
+      'entertainment': '娯楽',
+      'transport': '交通',
+      'shopping': 'ショッピング',
+      'medical': '医療',
+      'living': '住居',
+      'other': 'その他',
+      'fixed_expenses': '固定費',
+      'add_fixed': '固定費を追加',
+      'add_fixed_hint': '右上の + をタップして固定費を追加',
+      'monthly': '毎月',
+      'yearly': '毎年',
+      'active': '有効',
+      'inactive': '無効',
       'backup': 'バックアップ',
       'restore': '復元',
       'export': 'エクスポート',
-      'settings': '設定',
-      'dark_mode': 'ダークモード',
-      // ... more Japanese translations
+      'backup_data': 'データをバックアップ',
+      'restore_backup': 'バックアップを復元',
+      'export_csv': 'CSVでエクスポート',
+      'export_excel': 'Excelレポートを出力',
+      'backup_success': '✓ バックアップ完了',
+      'restore_success': '✓ 復元完了',
+      'export_success': '✓ エクスポート完了',
+      'search_hint': '支出・固定費を検索...',
+      'no_results': '結果が見つかりません',
+      'help_support': 'ヘルプ＆サポート',
+      'rewatch_tour': 'チュートリアルを再視聴',
+      'report_issue': '問題を報告',
+      'please_enter_name': '名前を入力してください',
+      'please_enter_amount': '金額を入力してください',
+      'invalid_amount': '無効な金額',
+      'confirm_delete': '削除してもよろしいですか？',
+      'confirm_clear_all': 'すべてのデータを削除しますか？元に戻せません。',
+      'analysis': '支出分析',
+      'this_month_short': '今月',
+      'two_months': '2ヶ月',
+      'half_year': '6ヶ月',
     },
   };
 
-  static String getLocaleKey(Locale locale) {
-    return '${locale.languageCode}_${locale.countryCode}';
-  }
+  static String getLocaleKey(Locale locale) =>
+      '${locale.languageCode}_${locale.countryCode}';
 
   static String translate(Locale locale, String key) {
-    final localeKey = getLocaleKey(locale);
-    final translations =
-        _localizedStrings[localeKey] ?? _localizedStrings['zh_TW']!;
-    return translations[key] ?? key;
+    final k = getLocaleKey(locale);
+    final map = _strings[k] ?? _strings['zh_TW']!;
+    return map[key] ?? _strings['zh_TW']![key] ?? key;
   }
 
-  /// Get localized string for current locale
-  static String of(BuildContext context, String key) {
-    final locale = Localizations.localeOf(context);
-    return translate(locale, key);
-  }
+  static String of(BuildContext context, String key) =>
+      translate(Localizations.localeOf(context), key);
 
-  /// Format date based on locale
   static String formatDateForLocale(DateTime date, Locale locale) {
     try {
       Intl.defaultLocale = '${locale.languageCode}_${locale.countryCode}';
-      final format = DateFormat.yMd();
-      return format.format(date);
-    } catch (e) {
+      return DateFormat.yMd().format(date);
+    } catch (_) {
       return date.toString();
-    }
-  }
-
-  /// Format currency based on locale
-  static String formatCurrencyForLocale(int amount, Locale locale) {
-    try {
-      Intl.defaultLocale = '${locale.languageCode}_${locale.countryCode}';
-      final format = NumberFormat.currency(symbol: 'NT\$ ');
-      return format.format(amount / 100);
-    } catch (e) {
-      return 'NT\$ ${(amount / 100).toStringAsFixed(2)}';
     }
   }
 }
 
-// Delegate for Flutter localization
-class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) {
-    return AppLocalizations.supportedLocales.contains(locale);
-  }
+  bool isSupported(Locale locale) => AppLocalizations.supportedLocales
+      .any((l) => l.languageCode == locale.languageCode);
 
   @override
-  Future<AppLocalizations> load(Locale locale) async {
-    return AppLocalizations();
-  }
+  Future<AppLocalizations> load(Locale locale) async =>
+      AppLocalizations();
 
   @override
-  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) {
-    return false;
-  }
+  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) =>
+      false;
 }
