@@ -324,7 +324,7 @@ class _SearchPageState extends State<SearchPage> {
         title: Text(item.title,
             style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text(
-          '${item.renewalCycle.label}・${item.category}',
+          '${AppLocalizations.of(context, item.renewalCycle.value)}・${AppLocalizations.translateCategory(context, item.category)}',
           style: const TextStyle(fontSize: 12),
         ),
         trailing: Text(

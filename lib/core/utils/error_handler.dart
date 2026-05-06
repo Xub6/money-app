@@ -22,7 +22,7 @@ class ErrorHandler {
   /// Convert exception to localized user-friendly message
   static String getLocalizedMessage(BuildContext context, dynamic exception) {
     if (exception is String) return exception;
-    if (exception is AppException) return exception.message;
+    if (exception is AppException) return AppLocalizations.of(context, exception.message);
     if (exception is Exception) {
       final msg = exception.toString();
       if (msg.contains('permission')) return AppLocalizations.of(context, 'error_permission');

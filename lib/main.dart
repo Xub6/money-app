@@ -1514,6 +1514,7 @@ class _ManagePageState extends State<ManagePage> {
       final filename = await _exportService.exportExpensesAsCsv(
         expenses: widget.state.expenses,
         title: AppLocalizations.of(context, 'expense_records'),
+        locale: Localizations.localeOf(context),
       );
       messenger.showSnackBar(
         SnackBar(content: Text(AppLocalizations.ofParam(context, 'csv_exported', {'filename': filename})), backgroundColor: kGreen),
@@ -1533,6 +1534,7 @@ class _ManagePageState extends State<ManagePage> {
         fixedItems: widget.state.fixedItems,
         budget: widget.state.budget,
         month: DateTime.now(),
+        locale: Localizations.localeOf(context),
       );
       messenger.showSnackBar(
         SnackBar(content: Text(AppLocalizations.ofParam(context, 'excel_exported', {'filename': filename})), backgroundColor: kGreen),

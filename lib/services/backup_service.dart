@@ -24,7 +24,7 @@ class BackupService {
       return backupDir;
     } catch (e) {
       throw BackupException(
-        message: '無法獲取備份目錄',
+        message: 'backup_dir_error',
         originalException: e,
       );
     }
@@ -78,7 +78,7 @@ class BackupService {
     } catch (e) {
       AppLogger.error('Backup export failed', error: e);
       throw BackupException(
-        message: '導出備份失敗',
+        message: 'backup_export_error',
         originalException: e,
       );
     }
@@ -93,7 +93,7 @@ class BackupService {
       final backupFile = File('${backupDir.path}/$filename');
 
       if (!await backupFile.exists()) {
-        throw BackupException(message: '備份文件不存在');
+        throw BackupException(message: 'backup_file_not_found');
       }
 
       // Read file
@@ -115,7 +115,7 @@ class BackupService {
     } catch (e) {
       AppLogger.error('Backup import failed', error: e);
       throw BackupException(
-        message: '導入備份失敗: ${e.toString()}',
+        message: 'backup_import_error',
         originalException: e,
       );
     }
@@ -164,7 +164,7 @@ class BackupService {
     } catch (e) {
       AppLogger.error('Failed to delete backup', error: e);
       throw BackupException(
-        message: '刪除備份失敗',
+        message: 'backup_delete_error',
         originalException: e,
       );
     }

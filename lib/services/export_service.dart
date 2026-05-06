@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:csv/csv.dart';
 import 'package:excel/excel.dart';
 import 'package:intl/intl.dart';
+import '../config/localization.dart';
 import '../data/models/expense_item.dart';
 import '../data/models/fixed_item.dart';
 import '../core/utils/formatters.dart';
@@ -13,6 +15,9 @@ import '../core/utils/app_exceptions.dart';
 /// Service for exporting data to CSV and Excel formats
 class ExportService {
   static const String _exportDirName = 'Money_App_Exports';
+
+  static String _t(Locale locale, String key) =>
+      AppLocalizations.translate(locale, key);
 
   Future<Directory> _getExportDirectory() async {
     try {
@@ -24,7 +29,7 @@ class ExportService {
       return exportDir;
     } catch (e) {
       throw FileException(
-        message: '無法獲取導出目錄',
+        message: 'export_dir_error',
         originalException: e,
       );
     }
@@ -34,15 +39,17 @@ class ExportService {
   Future<String> exportExpensesAsCsv({
     required List<ExpenseItem> expenses,
     required String title,
+    Locale locale = const Locale('zh', 'TW'),
   }) async {
     try {
       AppLogger.info('Exporting expenses to CSV...');
+      String t(String key) => _t(locale, key);
 
       // Prepare data
       final List<List<dynamic>> rows = [
-        ['支出記錄 - $title'],
+        ['${t('expense_records')} - $title'],
         [],
-        ['項目名稱', '分類', '金額', '日期', '備註', '創建時間', '編輯時間'],
+        [t('expense_name'), t('category'), t('amount'), t('date'), t('note'), t('created_at'), t('edited_at')],
       ];
 
       for (final expense in expenses) {
@@ -61,7 +68,7 @@ class ExportService {
 
       // Add summary
       rows.add([]);
-      rows.add(['總計', '', expenses.fold(0, (sum, e) => sum + e.amount)]);
+      rows.add([t('grand_total'), '', expenses.fold(0, (sum, e) => sum + e.amount)]);
 
       final csv = const ListToCsvConverter().convert(rows);
 
@@ -78,7 +85,7 @@ class ExportService {
     } catch (e) {
       AppLogger.error('CSV export failed', error: e);
       throw FileException(
-        message: '導出 CSV 失敗',
+        message: 'export_csv_error',
         originalException: e,
       );
     }
@@ -88,14 +95,16 @@ class ExportService {
   Future<String> exportFixedItemsAsCsv({
     required List<FixedItem> fixedItems,
     required String title,
+    Locale locale = const Locale('zh', 'TW'),
   }) async {
     try {
       AppLogger.info('Exporting fixed items to CSV...');
+      String t(String key) => _t(locale, key);
 
       final List<List<dynamic>> rows = [
-        ['固定開銷記錄 - $title'],
+        ['${t('fixed_records')} - $title'],
         [],
-        ['項目名稱', '分類', '金額', '續費周期', '開始日期', '結束日期', '狀態'],
+        [t('expense_name'), t('category'), t('amount'), t('renewal_cycle'), t('start_date'), t('end_date'), t('status')],
       ];
 
       for (final item in fixedItems) {
@@ -103,16 +112,16 @@ class ExportService {
           item.title,
           item.category,
           item.amount / 100,
-          item.renewalCycle.label,
+          t(item.renewalCycle.value),
           formatDate(item.startDate),
-          item.endDate != null ? formatDate(item.endDate!) : '進行中',
-          item.isActive ? '啟用' : '已停用',
+          item.endDate != null ? formatDate(item.endDate!) : t('ongoing'),
+          item.isActive ? t('active') : t('inactive'),
         ]);
       }
 
       rows.add([]);
       rows.add(
-          ['月計', '', fixedItems.fold(0, (sum, i) => sum + i.amount) / 100]);
+          [t('monthly_total'), '', fixedItems.fold(0, (sum, i) => sum + i.amount) / 100]);
 
       final csv = const ListToCsvConverter().convert(rows);
 
@@ -128,7 +137,7 @@ class ExportService {
     } catch (e) {
       AppLogger.error('Fixed items CSV export failed', error: e);
       throw FileException(
-        message: '導出固定開銷 CSV 失敗',
+        message: 'export_csv_error',
         originalException: e,
       );
     }
@@ -140,9 +149,11 @@ class ExportService {
     required List<FixedItem> fixedItems,
     required int budget,
     required DateTime month,
+    Locale locale = const Locale('zh', 'TW'),
   }) async {
     try {
       AppLogger.info('Generating full report...');
+      String t(String key) => _t(locale, key);
 
       // Calculate statistics
       final monthExpenses = expenses
@@ -157,19 +168,19 @@ class ExportService {
       final remaining = budget - total;
 
       final List<List<dynamic>> rows = [
-        ['錢錢管家 - 月度報告'],
+        ['錢錢管家 - ${t('monthly_report')}'],
         [formatFullMonthYear(month)],
         [],
-        ['= 支出統計 ='],
-        ['日常支出', formatCurrency(totalExpenses)],
-        ['固定開銷', formatCurrency(totalFixed)],
-        ['總計', formatCurrency(total)],
-        ['預算', formatCurrency(budget)],
-        ['剩餘', formatCurrency(remaining)],
-        ['使用率', '${((total / budget) * 100).toStringAsFixed(1)}%'],
+        ['= ${t('expense_total')} ='],
+        [t('daily_expense'), formatCurrency(totalExpenses)],
+        [t('fixed_expenses'), formatCurrency(totalFixed)],
+        [t('grand_total'), formatCurrency(total)],
+        [t('monthly_budget'), formatCurrency(budget)],
+        [t('remaining_budget'), formatCurrency(remaining)],
+        [t('usage_rate'), '${((total / budget) * 100).toStringAsFixed(1)}%'],
         [],
-        ['= 分類統計 ='],
-        ['分類', '金額'],
+        ['= ${t('category_stats')} ='],
+        [t('category'), t('amount')],
       ];
 
       // Category breakdown
@@ -182,8 +193,8 @@ class ExportService {
       }
 
       rows.add([]);
-      rows.add(['= 支出明細 =']);
-      rows.add(['項目', '分類', '金額', '日期', '備註']);
+      rows.add(['= ${t('sheet_expense_detail')} =']);
+      rows.add([t('item'), t('category'), t('amount'), t('date'), t('note')]);
       for (final expense in monthExpenses) {
         rows.add([
           expense.title,
@@ -195,19 +206,19 @@ class ExportService {
       }
 
       rows.add([]);
-      rows.add(['= 固定開銷 =']);
-      rows.add(['項目', '金額', '周期']);
+      rows.add(['= ${t('fixed_expenses')} =']);
+      rows.add([t('item'), t('amount'), t('cycle')]);
       for (final item in fixedItems) {
         rows.add([
           item.title,
           formatCurrency(item.amount),
-          item.renewalCycle.label,
+          t(item.renewalCycle.value),
         ]);
       }
 
       rows.add([]);
       rows.add(
-          ['導出時間', DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now())]);
+          [t('export_time'), DateFormat('yyyy/MM/dd HH:mm:ss').format(DateTime.now())]);
 
       final csv = const ListToCsvConverter().convert(rows);
 
@@ -224,7 +235,7 @@ class ExportService {
     } catch (e) {
       AppLogger.error('Report export failed', error: e);
       throw FileException(
-        message: '導出報告失敗',
+        message: 'export_report_error',
         originalException: e,
       );
     }
@@ -236,14 +247,16 @@ class ExportService {
     required List<FixedItem> fixedItems,
     required int budget,
     required DateTime month,
+    Locale locale = const Locale('zh', 'TW'),
   }) async {
     try {
       AppLogger.info('Exporting full report to Excel...');
+      String t(String key) => _t(locale, key);
 
       final workbook = Excel.createExcel();
       workbook.delete('Sheet1'); // remove default sheet
 
-      final monthLabel = DateFormat('yyyy年MM月').format(month);
+      final monthLabel = formatFullMonthYear(month);
       final monthExpenses = expenses
           .where(
               (e) => e.date.year == month.year && e.date.month == month.month)
@@ -254,25 +267,26 @@ class ExportService {
       final remaining = budget - total;
 
       final headerStyle = CellStyle(bold: true);
+      final sheetSummary = t('sheet_summary');
 
-      // ── 月度統計 ──
-      final summary = workbook['月度統計'];
+      // ── Summary sheet ──
+      final summary = workbook[sheetSummary];
       void addSummaryRow(String label, String value) =>
           summary.appendRow([label, value]);
       summary.cell(CellIndex.indexByString('A1')).value =
-          '錢錢管家 — $monthLabel 月度統計';
+          '錢錢管家 — $monthLabel ${t('sheet_summary')}';
       summary.cell(CellIndex.indexByString('A1')).cellStyle =
           CellStyle(bold: true);
       summary.appendRow([]);
-      addSummaryRow('日常支出', formatCurrency(totalExp));
-      addSummaryRow('固定開銷', formatCurrency(totalFixed));
-      addSummaryRow('合計支出', formatCurrency(total));
-      addSummaryRow('月預算', formatCurrency(budget));
-      addSummaryRow('剩餘預算', formatCurrency(remaining));
-      addSummaryRow('預算使用率',
+      addSummaryRow(t('daily_expense'), formatCurrency(totalExp));
+      addSummaryRow(t('fixed_expenses'), formatCurrency(totalFixed));
+      addSummaryRow(t('expense_total'), formatCurrency(total));
+      addSummaryRow(t('monthly_budget'), formatCurrency(budget));
+      addSummaryRow(t('remaining_budget'), formatCurrency(remaining));
+      addSummaryRow(t('budget_usage_rate'),
           budget == 0 ? '—' : '${(total / budget * 100).toStringAsFixed(1)}%');
       summary.appendRow([]);
-      summary.appendRow(['分類統計']);
+      summary.appendRow([t('category_stats')]);
       final catMap = <String, int>{};
       for (final e in monthExpenses) {
         catMap[e.category] = (catMap[e.category] ?? 0) + e.amount;
@@ -282,9 +296,9 @@ class ExportService {
         summary.appendRow([entry.key, formatCurrency(entry.value)]);
       }
 
-      // ── 支出明細 ──
-      final expSheet = workbook['支出明細'];
-      final expHeaders = ['項目名稱', '分類', '金額', '日期', '備註'];
+      // ── Expense detail sheet ──
+      final expSheet = workbook[t('sheet_expense_detail')];
+      final expHeaders = [t('expense_name'), t('category'), t('amount'), t('date'), t('note')];
       for (var i = 0; i < expHeaders.length; i++) {
         final cell = expSheet
             .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
@@ -301,11 +315,11 @@ class ExportService {
         ]);
       }
       expSheet.appendRow([]);
-      expSheet.appendRow(['總計', '', totalExp / 100.0]);
+      expSheet.appendRow([t('grand_total'), '', totalExp / 100.0]);
 
-      // ── 固定開銷 ──
-      final fixedSheet = workbook['固定開銷'];
-      final fixedHeaders = ['項目名稱', '分類', '金額', '周期', '開始日期', '狀態'];
+      // ── Fixed expenses sheet ──
+      final fixedSheet = workbook[t('fixed_expenses')];
+      final fixedHeaders = [t('expense_name'), t('category'), t('amount'), t('cycle'), t('start_date'), t('status')];
       for (var i = 0; i < fixedHeaders.length; i++) {
         final cell = fixedSheet
             .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
@@ -317,19 +331,19 @@ class ExportService {
           f.title,
           f.category,
           f.amount / 100.0,
-          f.renewalCycle.label,
+          t(f.renewalCycle.value),
           formatDate(f.startDate),
-          f.isActive ? '啟用' : '已停用',
+          f.isActive ? t('active') : t('inactive'),
         ]);
       }
       fixedSheet.appendRow([]);
-      fixedSheet.appendRow(['月計', '', totalFixed / 100.0]);
+      fixedSheet.appendRow([t('monthly_total'), '', totalFixed / 100.0]);
 
-      workbook.setDefaultSheet('月度統計');
+      workbook.setDefaultSheet(sheetSummary);
 
       final fileBytes = workbook.save();
       if (fileBytes == null) {
-        throw FileException(message: '無法生成 Excel 文件');
+        throw FileException(message: 'export_excel_error');
       }
 
       final exportDir = await _getExportDirectory();
@@ -344,7 +358,7 @@ class ExportService {
       return filename;
     } catch (e) {
       AppLogger.error('Excel export failed', error: e);
-      throw FileException(message: '導出 Excel 失敗', originalException: e);
+      throw FileException(message: 'export_excel_error', originalException: e);
     }
   }
 
@@ -374,7 +388,7 @@ class ExportService {
     } catch (e) {
       AppLogger.error('Failed to delete exported file', error: e);
       throw FileException(
-        message: '刪除導出文件失敗',
+        message: 'export_delete_error',
         originalException: e,
       );
     }

@@ -57,7 +57,7 @@ class EncryptionService {
       return encrypter.encrypt(plaintext, iv: _iv!).base64;
     } catch (e) {
       AppLogger.error('Encryption failed', error: e);
-      throw DataException(message: '數據加密失敗', originalException: e);
+      throw DataException(message: 'encrypt_error', originalException: e);
     }
   }
 
@@ -93,7 +93,7 @@ class EncryptionService {
       await _storage.write(key: key, value: encrypt(value));
     } catch (e) {
       AppLogger.error('storeSecure failed', error: e);
-      throw DataException(message: '無法存儲敏感數據', originalException: e);
+      throw DataException(message: 'secure_store_error', originalException: e);
     }
   }
 
