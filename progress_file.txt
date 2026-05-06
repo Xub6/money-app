@@ -6,8 +6,9 @@
 
 ---
 
-## 目前狀態：i18n 全域完成（2026-05-06）✅
-最後完成任務：service 錯誤訊息 + export CSV/Excel i18n（commit 1c55254）✅
+## 目前狀態：RC Candidate — 等待 Play Console 身分驗證（2026-05-06）
+最後完成任務：P0 i18n 結案，Sean 實機四語切換驗收通過 ✅
+目前無待辦開發工作。下一步由 Sean 操作 Play Console。
 
 ### i18n RC 四大頁結果（2026-05-06）
 - [x] DashboardPage（Budget）：中文 sentinel 全部已有 translateCategory 處理，無明顯殘留 ✅

@@ -1,22 +1,21 @@
 # 錢錢管家 — 開發進度報告
 
-> 最後更新：2026-05-02（RC 前總驗收）
-> 前一版本日期：2026-04-19（已大幅過期，本版完全覆寫）
+> 最後更新：2026-05-06（P0 i18n 結案，RC Candidate 確認）
 
 ---
 
 ## 總體進度
 
 ```
-■■■■■■■■■■■■■■■■■■■■  100% — Release Candidate ✅
+■■■■■■■■■■■■■■■■■■■■  100% — RC Candidate ✅  等待 Play Console 上架流程
 ```
 
 ---
 
-## 目前狀態：Release Candidate Ready
+## 目前狀態：RC Candidate — 等待 Play Console 身分驗證
 
-所有 P0 / P1 / P2 修復已完成，並通過 Sean 手機實機確認。
-自動化測試全數通過，APK 與 AAB 皆已建置。
+所有 P0 / P1 / P2 修復已完成，**Sean 手機實機全語言切換驗證通過**。
+等待 Google Play Console 身分驗證（電話驗證）完成後，進入上架流程。
 
 ---
 
@@ -46,15 +45,14 @@
 - SQLite 主要儲存（v3 schema：支出含 type / account_id）
 - AES 加密 SharedPreferences meta
 - JSON 備份 v2.0（含帳戶 / 持股 / 預算）
-- 備份建立、還原、**單筆刪除**（v2.0 新增）
-- Excel / CSV 匯出（3 個 sheet）
+- 備份建立、還原、單筆刪除
+- Excel / CSV 匯出（3 個 sheet，含 i18n 欄位名稱）
 
 ### UX / 品質
 - 深色模式全面 colorScheme（iOS/Material 標準色）
 - 新手導覽（16 步 Coach-marks Tour + demo 資料）
-- 互動式說明（FAB / 長按明細 互動步驟）
-- i18n 國際化骨架（flutter_localizations）
-- Feedback 功能（n8n webhook，附圖，ManagePage 入口）
+- i18n 四語完整（繁中 / 簡中 / English / 日本語）— **Sean 實機驗證通過**
+- Feedback 功能（n8n webhook）
 - SearchPage 全文搜尋
 
 ### 上架素材
@@ -62,21 +60,23 @@
 - Feature Graphic（1024×500）
 - Privacy Policy（GitHub Pages）
 - Store listing 文案（繁體中文）
-- Firebase Auth（Google 登入，預設關閉，kFirebaseConfigured=false）
 
 ---
 
-## 修復紀錄（P0 / P1 / P2）
+## 修復紀錄
 
-### P0（全部完成 2026-05-02）
-| ID | 問題 | 狀態 |
-|----|------|------|
-| BUG-01/02 | dynamicTotal / categoryTotals 誤計入收入 | ✅ |
-| BUG-04 | clearDemoData() 未呼叫 _save()，demo 殘留 | ✅ |
-| BUG-05b | 強制帳戶選擇，加「不關聯帳戶」chip | ✅ |
-| BUG-03 | BackupData v2.0 含帳戶 / 持股，舊版 fallback | ✅ |
+### P0（全部結案）
+
+| ID | 問題 | 結案日 | Commit |
+|----|------|--------|--------|
+| BUG-01/02 | dynamicTotal / categoryTotals 誤計入收入 | 2026-05-02 | — |
+| BUG-04 | clearDemoData() 未呼叫 _save() | 2026-05-02 | — |
+| BUG-05b | 強制帳戶選擇 UI | 2026-05-02 | — |
+| BUG-03 | BackupData v2.0 schema | 2026-05-02 | — |
+| **i18n-P0** | **語言切換後 UI 殘留中文（hardcoded strings）** | **2026-05-06** | **1c55254** |
 
 ### P1（全部完成 2026-05-02）
+
 | ID | 問題 | 狀態 |
 |----|------|------|
 | P1-1 | 月份切換不支援連續翻月 | ✅ |
@@ -85,6 +85,7 @@
 | P1-4 | 明細收支顯示無符號 / 顏色 | ✅ |
 
 ### P2（全部完成並 Sean 手機實機確認 2026-05-02）
+
 | ID | 問題 | 狀態 |
 |----|------|------|
 | P2-1 | 首頁月份 chip 辨識度不足 | ✅ Sean 確認 |
@@ -95,43 +96,69 @@
 
 ---
 
-## 自動化驗證結果（2026-05-02）
+## 自動化驗證結果（2026-05-06）
 
 | 項目 | 結果 |
 |------|------|
-| flutter analyze | 0 error / 0 warning / 36 info |
-| flutter test | 17/17 passed |
-| flutter build apk --release | ✅ 59.3 MB |
-| AAB（play store 用） | ✅ 已存在 build/app/outputs/bundle/release/app-release.aab |
+| flutter analyze | 0 error / 34 info |
+| flutter test | 通過 |
+| flutter build apk --release | ✅ 59.4 MB |
+| flutter build appbundle --release | ✅ build/app/outputs/bundle/release/app-release.aab |
+| Sean 手機實機 — 功能驗收 | ✅ 通過（2026-05-02） |
+| Sean 手機實機 — 四語切換驗收 | ✅ 通過（2026-05-06） |
 
 ---
 
-## 未解決已知問題（不阻擋 RC）
+## 版本資訊
 
-- 36 個 flutter analyze info（均為 prefer_const / deprecated deprecated_member_use 等風格建議，不影響功能）
-- Firebase Auth 預設關閉（kFirebaseConfigured=false），Google 登入需 Sean 設定 Firebase 專案後才能啟用
-- i18n 只有骨架，僅繁體中文，無多語系切換 UI
-
----
-
-## 尚未完成（上架前 Sean 需手動處理）
-
-1. Firebase 正式設定（若要啟用 Google 登入）
-2. 產生 signed AAB / APK（需 keystore）
-3. Play Console：上傳 AAB、截圖、Feature Graphic、填寫 store listing
-4. 隱私政策 URL 填入 Play Console
-5. 封閉測試 → 開放測試 → 正式上架審核
+| 項目 | 值 |
+|------|----|
+| versionName | 2.0.0 |
+| versionCode | 1 |
+| APK | build/app/outputs/flutter-apk/app-release.apk |
+| AAB | build/app/outputs/bundle/release/app-release.aab |
 
 ---
 
-## 技術架構快覽
+## Play Console 上架 Checklist
 
-| 層 | 說明 |
-|----|------|
-| UI | Flutter Widget（main.dart 約 2800 行，各 Screen 分檔） |
-| 狀態 | Provider（AppState, ThemeProvider, TourController） |
-| 儲存 | SQLite（expenses/fixedItems）+ AES 加密 SP（meta） |
-| 股價 | Yahoo Finance API（美股）/ TWSE API（台股） |
-| 匯率 | Yahoo Finance（並行抓取 7 幣別） |
-| 備份 | App Documents 目錄 JSON 檔案（v2.0 schema） |
-| 測試 | Unit（17 cases）+ Smoke（3 cases） |
+### 前置（Sean 操作）
+- [ ] Google Play Console 電話驗證完成
+- [ ] 開發者帳戶身分驗證通過
+
+### App 建立
+- [ ] 建立新 App「錢錢管家」
+- [ ] 預設語言：繁體中文（zh-TW）
+- [ ] 類型：App / 免費
+
+### 內部測試版本
+- [ ] 建立內部測試軌道
+- [ ] 上傳 app-release.aab（需 keystore 簽署）
+- [ ] 加入測試人員（Sean + 測試裝置）
+
+### 商店資訊
+- [ ] App 名稱：錢錢管家
+- [ ] 簡短說明（≤80 字）
+- [ ] 完整說明（≤4000 字）
+- [ ] 截圖 × 2~8 張（已備妥 5 張）
+- [ ] Feature Graphic 1024×500（已備妥）
+- [ ] App 圖示 512×512（已備妥）
+
+### 合規
+- [ ] 資料安全問卷（蒐集哪些資料、加密、分享對象）
+- [ ] 內容分級問卷（答完自動取得分級）
+- [ ] 隱私權政策 URL（已有 GitHub Pages 版本）
+- [ ] 目標受眾 / 內容（一般大眾，無針對兒童）
+
+### 上架
+- [ ] 提交內部測試審核
+- [ ] 測試通過後，提交正式版本審核
+- [ ] 審核通過 → 正式上架
+
+---
+
+## 已知次要問題（不阻擋上架）
+
+- 34 個 flutter analyze info（prefer_const / deprecated API 風格建議）
+- Firebase Auth 預設關閉（kFirebaseConfigured=false），Google 登入需 Firebase 專案設定後才能啟用
+- export_service CSV/Excel 中，category 欄位儲存的是 zh_TW 原始值（使用者資料），非 i18n 顯示值（設計決策）
