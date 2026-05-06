@@ -6,8 +6,8 @@
 
 ---
 
-## 目前狀態：i18n 次要區域完成（2026-05-06）✅
-最後完成任務：tour/validators/error_handler/formatters i18n（commit 35b17f3）✅
+## 目前狀態：i18n 全域完成（2026-05-06）✅
+最後完成任務：service 錯誤訊息 + export CSV/Excel i18n（commit 1c55254）✅
 
 ### i18n RC 四大頁結果（2026-05-06）
 - [x] DashboardPage（Budget）：中文 sentinel 全部已有 translateCategory 處理，無明顯殘留 ✅
@@ -35,9 +35,18 @@
 - [x] formatters.dart：formatRelativeDate(context) + locale param
 - [x] 測試檔更新（移除需要 BuildContext 的 validator unit tests）
 
-### 剩餘 i18n 工作（較低優先）
-- RenewalCycle.label '每月'/'每年'（固定開銷頻率，只在 search_page 顯示）
-- export_service.dart CSV/Excel 欄位（已生成中文，改動需穿透 context）
+### i18n 全部完成清單（2026-05-06，commit 1c55254）
+- [x] search_page.dart：renewalCycle.label → AppLocalizations.of(context, item.renewalCycle.value)
+- [x] error_handler.dart：getLocalizedMessage → AppLocalizations.of(context, exception.message) for AppException
+- [x] backup_service.dart：所有 BackupException message 改為 localization keys
+- [x] encryption_service.dart：DataException message 改為 localization keys
+- [x] export_service.dart：所有 FileException + CSV/Excel 欄位/分頁名/標籤全 i18n
+- [x] localization.dart：34 個新 key，4 語言全補（error + export content）
+- [x] flutter analyze：0 error ✅
+- [x] flutter build apk：59.4MB ✅
+
+### 剩餘工作（非 i18n）
+- 無已知待辦
 - backup_service.dart 錯誤訊息（AppException.message，內部 log）
 - account.dart 帳號類型名稱（儲存型資料，需要 migration）
 
