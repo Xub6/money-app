@@ -6,9 +6,25 @@
 
 ---
 
-## 目前狀態：RC Candidate — 等待 Play Console 身分驗證（2026-05-06）
-最後完成任務：P0 i18n 結案，Sean 實機四語切換驗收通過 ✅
-目前無待辦開發工作。下一步由 Sean 操作 Play Console。
+## 目前狀態：財務資料模型完整化 ✅ 完成（2026-05-07）
+最後完成任務：9 項財務功能全實作，APK 59.6MB，commit 8cb49af ✅
+
+### 本次完成（2026-05-07，commit 8cb49af）
+- [x] TransactionType.transfer + TransactionStatus (pending/completed) 模型
+- [x] ExpenseItem 新欄位：status、transferAccountId、currency
+- [x] FixedItem 新欄位：accountId（扣款帳戶）、linkedDebtAccountId、currency
+- [x] AppDatabase v4 migration（_safeAlterColumn 安全升版）
+- [x] AppState: addTransfer、executeFixed、checkPendingTransactions、haptic 方法
+- [x] 帳戶轉帳頁 (TransferPage)：雙帳戶選擇、餘額顯示、底部 Sheet
+- [x] 固定開銷執行按鈕（▶ 綠色）：確認 dialog → 帳戶扣款 + 負債減少
+- [x] 固定開銷設定：扣款帳戶選擇 + 關聯負債帳戶選擇
+- [x] 未來日期支出 → pending，到期自動套用餘額
+- [x] 股票投資組合行顯示在帳戶頁資產卡（僅 stockValue > 0 時顯示）
+- [x] 震動回饋開關（管理頁，setHapticEnabled）
+- [x] 帳戶轉帳快速入口（管理頁帳戶卡下方）
+- [x] 四語系新增所有新 UI 字串（zh_TW/zh_CN/en_US/ja_JP）
+- [x] flutter analyze：0 error ✅
+- [x] flutter build apk：59.6MB ✅
 
 ### i18n RC 四大頁結果（2026-05-06）
 - [x] DashboardPage（Budget）：中文 sentinel 全部已有 translateCategory 處理，無明顯殘留 ✅
