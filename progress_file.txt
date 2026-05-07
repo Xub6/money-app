@@ -6,8 +6,21 @@
 
 ---
 
-## 目前狀態：財務資料模型完整化 ✅ 完成（2026-05-07）
-最後完成任務：9 項財務功能全實作，APK 59.6MB，commit 8cb49af ✅
+## 目前狀態：MP-01 驗收調整完成 ✅（2026-05-07）
+最後完成任務：MP-01 五大調整全實作，APK 59.7MB，commit 3bd3610 ✅
+
+### 本次完成（2026-05-07，commit 3bd3610）
+- [x] 股票帳戶自動建立：addHolding 時依券商名自動建立「{券商} 股票帳戶」，countInTotal=false 避免重複計算
+- [x] _syncBrokerAccounts()：每次持股或價格變動時重算股票帳戶餘額（shares × currentPrice）
+- [x] 固定開銷扣款日：FixedItem 加 debitDay + lastExecutedYearMonth，DB v5 migration
+- [x] checkAutoFixedExecution()：App 啟動時自動執行當月未執行的固定開銷
+- [x] 固定開銷卡片：移至帳戶卡片下方，移除綠色執行按鈕，改顯示扣款日 badge
+- [x] 帳戶轉帳入口：從 ManagePage 移至 AccountPage（我的帳戶頁）
+- [x] FAB tab3：改為選單（新增固定開銷 / 編輯我的帳戶）
+- [x] haptic：AndroidManifest VIBRATE 權限，新增帳戶/持股/轉帳成功時震動
+- [x] i18n：11 個新 key，四語言全補
+- [x] flutter analyze：0 error / 0 warning ✅
+- [x] APK：59.7MB ✅
 
 ### 本次完成（2026-05-07，commit 8cb49af）
 - [x] TransactionType.transfer + TransactionStatus (pending/completed) 模型
