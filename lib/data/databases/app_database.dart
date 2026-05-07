@@ -5,10 +5,9 @@ import '../models/expense_item.dart';
 import '../models/fixed_item.dart';
 import '../../core/utils/logger.dart';
 
-/// SQLite database initialization and schema
 class AppDatabase {
   static const String _databaseName = 'money_app.db';
-  static const int _version = 3;
+  static const int _version = 4;
 
   static const String _expensesTable = 'expenses';
   static const String _fixedItemsTable = 'fixed_items';
@@ -31,9 +30,7 @@ class AppDatabase {
     try {
       final dbPath = await getDatabasesPath();
       final path = join(dbPath, _databaseName);
-
       AppLogger.info('Opening database at: $path');
-
       return await openDatabase(
         path,
         version: _version,
@@ -50,7 +47,6 @@ class AppDatabase {
     try {
       AppLogger.info('Creating database schema v$version');
 
-      // Expenses table
       await db.execute('''
         CREATE TABLE IF NOT EXISTS $_expensesTable (
           id TEXT PRIMARY KEY,
@@ -65,19 +61,22 @@ class AppDatabase {
           attachment_path TEXT,
           metadata TEXT,
           type TEXT DEFAULT 'expense',
-          account_id TEXT
+          account_id TEXT,
+          status TEXT DEFAULT 'completed',
+          transfer_account_id TEXT,
+          currency TEXT DEFAULT 'TWD'
         )
       ''');
 
-      // Create indexes for better performance
-      await db
-          .execute('CREATE INDEX idx_expenses_date ON $_expensesTable(date)');
+      await db.execute(
+          'CREATE INDEX idx_expenses_date ON $_expensesTable(date)');
       await db.execute(
           'CREATE INDEX idx_expenses_category ON $_expensesTable(category)');
       await db.execute(
           'CREATE INDEX idx_expenses_created_at ON $_expensesTable(created_at)');
+      await db.execute(
+          'CREATE INDEX idx_expenses_status ON $_expensesTable(status)');
 
-      // Fixed items table
       await db.execute('''
         CREATE TABLE IF NOT EXISTS $_fixedItemsTable (
           id TEXT PRIMARY KEY,
@@ -92,17 +91,18 @@ class AppDatabase {
           edited_at TEXT,
           is_active INTEGER DEFAULT 1,
           sync_status TEXT DEFAULT 'local',
-          notes TEXT
+          notes TEXT,
+          account_id TEXT,
+          linked_debt_account_id TEXT,
+          currency TEXT DEFAULT 'TWD'
         )
       ''');
 
-      // Create indexes
       await db.execute(
           'CREATE INDEX idx_fixed_is_active ON $_fixedItemsTable(is_active)');
       await db.execute(
           'CREATE INDEX idx_fixed_created_at ON $_fixedItemsTable(created_at)');
 
-      // Metadata table (for app-level data)
       await db.execute('''
         CREATE TABLE IF NOT EXISTS $_metadataTable (
           key TEXT PRIMARY KEY,
@@ -121,12 +121,14 @@ class AppDatabase {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     try {
       AppLogger.info('Upgrading database from v$oldVersion to v$newVersion');
+
       if (oldVersion < 2) {
         await db.execute(
           'ALTER TABLE $_fixedItemsTable ADD COLUMN total_periods INTEGER',
         );
-        AppLogger.info('v2: Added total_periods column to fixed_items');
+        AppLogger.info('v2: Added total_periods to fixed_items');
       }
+
       if (oldVersion < 3) {
         await db.execute(
           "ALTER TABLE $_expensesTable ADD COLUMN type TEXT DEFAULT 'expense'",
@@ -134,11 +136,49 @@ class AppDatabase {
         await db.execute(
           'ALTER TABLE $_expensesTable ADD COLUMN account_id TEXT',
         );
-        AppLogger.info('v3: Added type and account_id columns to expenses');
+        AppLogger.info('v3: Added type and account_id to expenses');
+      }
+
+      if (oldVersion < 4) {
+        // Expenses: status, transfer_account_id, currency
+        await _safeAlterColumn(
+            db, _expensesTable, "status TEXT DEFAULT 'completed'");
+        await _safeAlterColumn(
+            db, _expensesTable, 'transfer_account_id TEXT');
+        await _safeAlterColumn(
+            db, _expensesTable, "currency TEXT DEFAULT 'TWD'");
+
+        // Fixed items: account_id, linked_debt_account_id, currency
+        await _safeAlterColumn(db, _fixedItemsTable, 'account_id TEXT');
+        await _safeAlterColumn(
+            db, _fixedItemsTable, 'linked_debt_account_id TEXT');
+        await _safeAlterColumn(
+            db, _fixedItemsTable, "currency TEXT DEFAULT 'TWD'");
+
+        // Index for status queries
+        try {
+          await db.execute(
+              'CREATE INDEX idx_expenses_status ON $_expensesTable(status)');
+        } catch (_) {}
+
+        AppLogger.info(
+            'v4: Added status/transfer_account_id/currency to expenses; '
+            'account_id/linked_debt_account_id/currency to fixed_items');
       }
     } catch (e) {
       AppLogger.error('Database upgrade failed', error: e);
       rethrow;
+    }
+  }
+
+  /// Adds a column only if it doesn't already exist (safe for re-runs).
+  Future<void> _safeAlterColumn(
+      Database db, String table, String columnDef) async {
+    try {
+      await db.execute('ALTER TABLE $table ADD COLUMN $columnDef');
+    } catch (e) {
+      // Column may already exist — ignore duplicate column errors
+      AppLogger.warning('ALTER COLUMN skipped (may exist): $columnDef — $e');
     }
   }
 
@@ -179,7 +219,6 @@ class AppDatabase {
       final db = await database;
       final firstDay = DateTime(month.year, month.month, 1);
       final lastDay = DateTime(month.year, month.month + 1, 0);
-
       final maps = await db.query(
         _expensesTable,
         where: 'date >= ? AND date <= ?',
@@ -390,7 +429,6 @@ class AppDatabase {
             await db.rawQuery('SELECT COUNT(*) FROM $_fixedItemsTable'),
           ) ??
           0;
-
       return {
         'expenses': expenseCount,
         'fixedItems': fixedCount,
@@ -407,9 +445,7 @@ class AppDatabase {
       final dbPath = await getDatabasesPath();
       final path = join(dbPath, _databaseName);
       final file = File(path);
-      if (await file.exists()) {
-        return await file.length();
-      }
+      if (await file.exists()) return await file.length();
       return 0;
     } catch (e) {
       return 0;

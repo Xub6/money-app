@@ -19,7 +19,8 @@ enum SyncStatus {
 
 enum TransactionType {
   expense('expense'),
-  income('income');
+  income('income'),
+  transfer('transfer');
 
   final String value;
   const TransactionType(this.value);
@@ -28,6 +29,23 @@ enum TransactionType {
     return TransactionType.values.firstWhere(
       (e) => e.value == value,
       orElse: () => TransactionType.expense,
+    );
+  }
+}
+
+/// pending = future-dated, not yet applied to account balance.
+/// completed = applied and counted in statistics.
+enum TransactionStatus {
+  completed('completed'),
+  pending('pending');
+
+  final String value;
+  const TransactionStatus(this.value);
+
+  static TransactionStatus fromString(String value) {
+    return TransactionStatus.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => TransactionStatus.completed,
     );
   }
 }
@@ -46,6 +64,9 @@ class ExpenseItem {
   final Map<String, dynamic>? metadata;
   final TransactionType type;
   final String? accountId;
+  final TransactionStatus status;
+  final String? transferAccountId; // target account for type=transfer
+  final String currency;           // transaction currency, default 'TWD'
 
   ExpenseItem({
     String? id,
@@ -61,12 +82,17 @@ class ExpenseItem {
     this.metadata,
     this.type = TransactionType.expense,
     this.accountId,
+    this.status = TransactionStatus.completed,
+    this.transferAccountId,
+    this.currency = 'TWD',
   })  : id = id ?? const Uuid().v4(),
         note = note,
         createdAt = createdAt ?? DateTime.now();
 
   bool get isEdited => editedAt != null;
-  bool get isPending => syncStatus == SyncStatus.local;
+  bool get isPendingSync => syncStatus == SyncStatus.local;
+  bool get isPending => status == TransactionStatus.pending;
+  bool get isTransfer => type == TransactionType.transfer;
 
   ExpenseItem copyWith({
     String? id,
@@ -82,6 +108,9 @@ class ExpenseItem {
     Map<String, dynamic>? metadata,
     TransactionType? type,
     String? accountId,
+    TransactionStatus? status,
+    String? transferAccountId,
+    String? currency,
   }) {
     return ExpenseItem(
       id: id ?? this.id,
@@ -97,6 +126,9 @@ class ExpenseItem {
       metadata: metadata ?? this.metadata,
       type: type ?? this.type,
       accountId: accountId ?? this.accountId,
+      status: status ?? this.status,
+      transferAccountId: transferAccountId ?? this.transferAccountId,
+      currency: currency ?? this.currency,
     );
   }
 
@@ -114,6 +146,9 @@ class ExpenseItem {
         'metadata': metadata,
         'type': type.value,
         'accountId': accountId,
+        'status': status.value,
+        'transferAccountId': transferAccountId,
+        'currency': currency,
       };
 
   factory ExpenseItem.fromJson(Map<String, dynamic> json) => ExpenseItem(
@@ -137,6 +172,10 @@ class ExpenseItem {
         metadata: json['metadata'] as Map<String, dynamic>?,
         type: TransactionType.fromString(json['type'] as String? ?? 'expense'),
         accountId: json['accountId'] as String?,
+        status: TransactionStatus.fromString(
+            json['status'] as String? ?? 'completed'),
+        transferAccountId: json['transferAccountId'] as String?,
+        currency: json['currency'] as String? ?? 'TWD',
       );
 
   Map<String, dynamic> toDatabaseJson() => {
@@ -153,6 +192,9 @@ class ExpenseItem {
         'metadata': metadata != null ? jsonEncode(metadata) : null,
         'type': type.value,
         'account_id': accountId,
+        'status': status.value,
+        'transfer_account_id': transferAccountId,
+        'currency': currency,
       };
 
   factory ExpenseItem.fromDatabase(Map<String, dynamic> map) => ExpenseItem(
@@ -171,6 +213,10 @@ class ExpenseItem {
         attachmentPath: map['attachment_path'] as String?,
         type: TransactionType.fromString(map['type'] as String? ?? 'expense'),
         accountId: map['account_id'] as String?,
+        status: TransactionStatus.fromString(
+            map['status'] as String? ?? 'completed'),
+        transferAccountId: map['transfer_account_id'] as String?,
+        currency: map['currency'] as String? ?? 'TWD',
       );
 
   @override

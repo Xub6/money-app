@@ -78,6 +78,7 @@ class _AccountPageState extends State<AccountPage> {
           final net = s.netAssets;
           final assets = s.totalAssets;
           final liabilities = s.totalLiabilities;
+          final stockValue = s.totalPortfolioValue;
           final isNegative = net < 0;
           return CustomScrollView(
             slivers: [
@@ -147,6 +148,30 @@ class _AccountPageState extends State<AccountPage> {
                                               : cs.onSurfaceVariant)),
                                 ])),
                           ]),
+                          // ── 股票投資組合行 ──
+                          if (stockValue > 0) ...[
+                            const SizedBox(height: 12),
+                            Divider(color: cs.outlineVariant, height: 1),
+                            const SizedBox(height: 12),
+                            Row(children: [
+                              Icon(Icons.show_chart_rounded,
+                                  size: 16, color: AppColors.gold),
+                              const SizedBox(width: 6),
+                              Text(
+                                AppLocalizations.of(context, 'stock_portfolio'),
+                                style: TextStyle(
+                                    color: cs.onSurfaceVariant, fontSize: 12),
+                              ),
+                              const Spacer(),
+                              Text(
+                                'NT\$ ${_fmt(stockValue)}',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.gold),
+                              ),
+                            ]),
+                          ],
                         ]),
                   ),
                 ),

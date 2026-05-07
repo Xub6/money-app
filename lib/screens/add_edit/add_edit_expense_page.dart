@@ -45,7 +45,9 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
       _noteCtrl = TextEditingController(text: item.note);
       _selectedCategory = item.category;
       _selectedDate = item.date;
-      _type = item.type;
+      _type = item.type == TransactionType.transfer
+          ? TransactionType.expense
+          : item.type;
       _selectedAccountId = item.accountId;
     } else {
       _titleCtrl = TextEditingController();
@@ -57,6 +59,8 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
       _selectedAccountId = null;
     }
   }
+
+  bool get _isFutureDate => _selectedDate.isAfter(_today);
 
   @override
   void dispose() {
@@ -72,14 +76,15 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
   bool _isNamedDate(DateTime d) =>
       _isSameDay(d, _today) ||
       _isSameDay(d, _today.subtract(const Duration(days: 1))) ||
-      _isSameDay(d, _today.subtract(const Duration(days: 2)));
+      _isSameDay(d, _today.subtract(const Duration(days: 2))) ||
+      _isSameDay(d, _today.add(const Duration(days: 1)));
 
   Future<void> _pickOtherDate() async {
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
-      lastDate: _today.add(const Duration(days: 1)),
+      lastDate: DateTime(_today.year + 2, 12, 31), // allow up to 2 years ahead
     );
     if (picked != null) setState(() => _selectedDate = picked);
   }
@@ -118,6 +123,11 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
 
     setState(() => _isLoading = true);
 
+    // Future-dated transactions are pending until the date arrives
+    final status = _selectedDate.isAfter(_today)
+        ? TransactionStatus.pending
+        : TransactionStatus.completed;
+
     final newItem = ExpenseItem(
       id: widget.existingItem?.id,
       title: title,
@@ -128,6 +138,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
       createdAt: widget.existingItem?.createdAt,
       type: _type,
       accountId: _selectedAccountId,
+      status: status,
     );
 
     Navigator.pop(context, newItem);
@@ -326,13 +337,6 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
           const SizedBox(height: 10),
           Row(children: [
             _DateBtn(
-              label: AppLocalizations.of(context, 'today'),
-              sub: DateFormat('d').format(_today),
-              selected: _isSameDay(_selectedDate, _today),
-              onTap: () => setState(() => _selectedDate = _today),
-            ),
-            const SizedBox(width: 10),
-            _DateBtn(
               label: AppLocalizations.of(context, 'yesterday'),
               sub: DateFormat('d')
                   .format(_today.subtract(const Duration(days: 1))),
@@ -343,15 +347,47 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             ),
             const SizedBox(width: 10),
             _DateBtn(
-              label: AppLocalizations.of(context, 'day_before_yesterday'),
+              label: AppLocalizations.of(context, 'today'),
+              sub: DateFormat('d').format(_today),
+              selected: _isSameDay(_selectedDate, _today),
+              onTap: () => setState(() => _selectedDate = _today),
+            ),
+            const SizedBox(width: 10),
+            _DateBtn(
+              label: AppLocalizations.of(context, 'tomorrow'),
               sub: DateFormat('d')
-                  .format(_today.subtract(const Duration(days: 2))),
+                  .format(_today.add(const Duration(days: 1))),
               selected: _isSameDay(
-                  _selectedDate, _today.subtract(const Duration(days: 2))),
+                  _selectedDate, _today.add(const Duration(days: 1))),
+              isPending: true,
               onTap: () => setState(() =>
-                  _selectedDate = _today.subtract(const Duration(days: 2))),
+                  _selectedDate = _today.add(const Duration(days: 1))),
             ),
           ]),
+          if (_isFutureDate) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+              ),
+              child: Row(children: [
+                const Icon(Icons.schedule_rounded,
+                    size: 14, color: AppColors.gold),
+                const SizedBox(width: 6),
+                Text(
+                  AppLocalizations.of(context, 'pending_hint'),
+                  style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.w600),
+                ),
+              ]),
+            ),
+          ],
           const SizedBox(height: 10),
           GestureDetector(
             onTap: _pickOtherDate,
@@ -581,16 +617,21 @@ class _SectionLabel extends StatelessWidget {
 class _DateBtn extends StatelessWidget {
   final String label, sub;
   final bool selected;
+  final bool isPending;
   final VoidCallback onTap;
-  const _DateBtn(
-      {required this.label,
-      required this.sub,
-      required this.selected,
-      required this.onTap});
+  const _DateBtn({
+    required this.label,
+    required this.sub,
+    required this.selected,
+    required this.onTap,
+    this.isPending = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final activeColor =
+        isPending ? AppColors.gold.withValues(alpha: 0.7) : AppColors.gold;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -598,17 +639,22 @@ class _DateBtn extends StatelessWidget {
         width: 72,
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? AppColors.gold : cs.surfaceContainerLow,
+          color: selected ? activeColor : cs.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
-          border:
-              Border.all(color: selected ? AppColors.gold : cs.outlineVariant),
+          border: Border.all(
+              color: selected ? activeColor : cs.outlineVariant,
+              width: selected ? 1.5 : 1),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Text(label,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: selected ? Colors.white : cs.onSurfaceVariant,
+                color: selected
+                    ? Colors.white
+                    : isPending
+                        ? AppColors.gold.withValues(alpha: 0.7)
+                        : cs.onSurfaceVariant,
               )),
           Text(sub,
               style: TextStyle(

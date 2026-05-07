@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import '../models/expense_item.dart';
@@ -33,6 +34,8 @@ class AppState extends ChangeNotifier {
   String _lastDate = '';
   SharedPreferences? _prefs;
   bool loaded = false;
+  bool hapticEnabled = true;
+  List<Map<String, dynamic>> _customCategories = [];
 
   final _db = AppDatabase();
   final _enc = EncryptionService();
@@ -42,11 +45,80 @@ class AppState extends ChangeNotifier {
     _load();
   }
 
+  // ─── Category Management ───
+
+  List<Map<String, dynamic>> get customExpenseCategories =>
+      _customCategories.where((c) => c['type'] == 'expense').toList();
+
+  List<Map<String, dynamic>> get customIncomeCategories =>
+      _customCategories.where((c) => c['type'] == 'income').toList();
+
+  void addCustomCategory(Map<String, dynamic> cat) {
+    _customCategories.add(cat);
+    _saveCustomCategories();
+    notifyListeners();
+  }
+
+  void updateCustomCategory(String name, String type, Map<String, dynamic> updated) {
+    final idx = _customCategories.indexWhere(
+        (c) => c['name'] == name && c['type'] == type);
+    if (idx >= 0) {
+      _customCategories[idx] = updated;
+      _saveCustomCategories();
+      notifyListeners();
+    }
+  }
+
+  void deleteCustomCategory(String name, String type) {
+    _customCategories.removeWhere(
+        (c) => c['name'] == name && c['type'] == type);
+    _saveCustomCategories();
+    notifyListeners();
+  }
+
+  void reorderCustomCategory(String type, int oldIndex, int newIndex) {
+    final filtered = _customCategories
+        .where((c) => c['type'] == type)
+        .toList();
+    final item = filtered.removeAt(oldIndex);
+    filtered.insert(newIndex, item);
+    _customCategories.removeWhere((c) => c['type'] == type);
+    _customCategories.addAll(filtered);
+    _saveCustomCategories();
+    notifyListeners();
+  }
+
+  Future<void> _saveCustomCategories() async {
+    _prefs?.setString('customCategories', jsonEncode(_customCategories));
+  }
+
+  // ─── Haptic Feedback ───
+
+  void setHapticEnabled(bool v) {
+    hapticEnabled = v;
+    _prefs?.setBool('hapticEnabled', v);
+    notifyListeners();
+  }
+
+  void hapticLight() {
+    if (hapticEnabled) HapticFeedback.lightImpact();
+  }
+
+  void hapticMedium() {
+    if (hapticEnabled) HapticFeedback.mediumImpact();
+  }
+
+  void hapticHeavy() {
+    if (hapticEnabled) HapticFeedback.heavyImpact();
+  }
+
+  // ─── Budget / Statistics ───
+
   int get fixedTotal {
     final now = DateTime.now();
     return fixedItems
         .where((i) => i.isActiveAt(now))
-        .fold(0, (s, i) => s + i.amount);
+        .fold(0, (s, i) => s + _toTwd(i.amount, i.currency));
   }
 
   bool get recordedToday {
@@ -60,9 +132,21 @@ class AppState extends ChangeNotifier {
       )
       .toList();
 
-  int dynamicTotal(DateTime m) => monthExpenses(m)
+  /// Completed (non-pending) expenses for the month, excluding transfers.
+  List<ExpenseItem> completedMonthExpenses(DateTime m) => monthExpenses(m)
+      .where((e) =>
+          e.status == TransactionStatus.completed &&
+          e.type != TransactionType.transfer)
+      .toList();
+
+  int dynamicTotal(DateTime m) => completedMonthExpenses(m)
       .where((e) => e.type == TransactionType.expense)
-      .fold(0, (s, e) => s + e.amount);
+      .fold(0, (s, e) => s + _toTwd(e.amount, e.currency));
+
+  int monthIncome(DateTime m) => completedMonthExpenses(m)
+      .where((e) => e.type == TransactionType.income)
+      .fold(0, (s, e) => s + _toTwd(e.amount, e.currency));
+
   int usedTotal(DateTime m) => dynamicTotal(m) + fixedTotal;
   int remaining(DateTime m) => budget - usedTotal(m);
   double usedRate(DateTime m) => (usedTotal(m) / budget).clamp(0.0, 1.0);
@@ -85,22 +169,35 @@ class AppState extends ChangeNotifier {
 
   Map<String, int> categoryTotals(DateTime m) {
     final map = <String, int>{};
-    for (final e in monthExpenses(m)) {
+    for (final e in completedMonthExpenses(m)) {
       if (e.type != TransactionType.expense) continue;
-      map[e.category] = (map[e.category] ?? 0) + e.amount;
+      map[e.category] = (map[e.category] ?? 0) + _toTwd(e.amount, e.currency);
     }
     return map;
   }
 
+  /// Convert an amount in [currency] to TWD integer.
+  int _toTwd(int amount, String currency) {
+    if (currency == 'TWD') return amount;
+    final rate = fxRates[currency] ?? 1.0;
+    return (amount * rate).round();
+  }
+
   // ─── Account Balance Helpers ───
 
-  /// Adjusts the linked account balance for an expense/income item.
-  /// Pass [reverse: true] to undo the effect (e.g. on delete or before update).
   void _applyBalance(ExpenseItem item, {bool reverse = false}) {
+    // Pending transactions do NOT affect balances until they complete.
+    if (item.status == TransactionStatus.pending) return;
+
+    if (item.type == TransactionType.transfer) {
+      _applyTransferBalance(item, reverse: reverse);
+      return;
+    }
+
     if (item.accountId == null) return;
     final idx = accounts.indexWhere((a) => a.id == item.accountId);
     if (idx < 0) return;
-    // income adds to balance; expense subtracts
+
     final delta = item.type == TransactionType.income
         ? item.amount.toDouble()
         : -item.amount.toDouble();
@@ -108,6 +205,31 @@ class AppState extends ChangeNotifier {
     accounts[idx] = accounts[idx].copyWith(
       balance: accounts[idx].balance + actual,
     );
+  }
+
+  void _applyTransferBalance(ExpenseItem item, {bool reverse = false}) {
+    // Deduct from source account
+    if (item.accountId != null) {
+      final fromIdx = accounts.indexWhere((a) => a.id == item.accountId);
+      if (fromIdx >= 0) {
+        final delta = reverse ? item.amount.toDouble() : -item.amount.toDouble();
+        accounts[fromIdx] = accounts[fromIdx].copyWith(
+          balance: accounts[fromIdx].balance + delta,
+        );
+      }
+    }
+    // Credit to target account
+    if (item.transferAccountId != null) {
+      final toIdx =
+          accounts.indexWhere((a) => a.id == item.transferAccountId);
+      if (toIdx >= 0) {
+        final delta =
+            reverse ? -item.amount.toDouble() : item.amount.toDouble();
+        accounts[toIdx] = accounts[toIdx].copyWith(
+          balance: accounts[toIdx].balance + delta,
+        );
+      }
+    }
   }
 
   // ─── CRUD Operations ───
@@ -122,16 +244,17 @@ class AppState extends ChangeNotifier {
     });
     _save();
     notifyListeners();
+    hapticMedium();
     AppLogger.info('Expense added: ${item.title}');
   }
 
   void updateExpense(String id, ExpenseItem newItem) {
     final index = expenses.indexWhere((e) => e.id == id);
     if (index >= 0) {
-      _applyBalance(expenses[index], reverse: true); // undo old effect
+      _applyBalance(expenses[index], reverse: true);
       final updated = newItem.copyWith(editedAt: DateTime.now());
       expenses[index] = updated;
-      _applyBalance(updated); // apply new effect
+      _applyBalance(updated);
       _db.updateExpense(updated).catchError((e) {
         AppLogger.error('DB updateExpense failed', error: e);
       });
@@ -154,6 +277,7 @@ class AppState extends ChangeNotifier {
     });
     _save();
     notifyListeners();
+    hapticHeavy();
     AppLogger.info('Expense deleted: $id');
     return index;
   }
@@ -169,6 +293,42 @@ class AppState extends ChangeNotifier {
     _save();
     notifyListeners();
   }
+
+  // ─── Transfer ───
+
+  void addTransfer({
+    required String fromAccountId,
+    required String toAccountId,
+    required int amount,
+    required DateTime date,
+    String note = '',
+    String currency = 'TWD',
+  }) {
+    final item = ExpenseItem(
+      title: '帳戶轉帳',
+      category: '轉帳',
+      amount: amount,
+      date: date,
+      note: note,
+      type: TransactionType.transfer,
+      accountId: fromAccountId,
+      transferAccountId: toAccountId,
+      status: TransactionStatus.completed,
+      currency: currency,
+    );
+    expenses.insert(0, item);
+    _applyBalance(item);
+    _db.insertExpense(item).catchError((Object e) {
+      AppLogger.error('DB insertExpense (transfer) failed', error: e);
+      return '';
+    });
+    _save();
+    notifyListeners();
+    hapticMedium();
+    AppLogger.info('Transfer: $fromAccountId → $toAccountId, $amount $currency');
+  }
+
+  // ─── Fixed Items ───
 
   void addFixed(FixedItem item) {
     fixedItems.add(item);
@@ -205,15 +365,76 @@ class AppState extends ChangeNotifier {
     AppLogger.info('Fixed item deleted: $id');
   }
 
+  /// Execute a fixed expense: creates an expense record and adjusts balances.
+  /// If the item has a [linkedDebtAccountId], that debt is reduced by the amount.
+  void executeFixed(FixedItem item, {DateTime? date}) {
+    final now = date ?? DateTime.now();
+    final expense = ExpenseItem(
+      title: item.title,
+      category: item.category,
+      amount: item.amount,
+      date: now,
+      note: '固定開銷',
+      type: TransactionType.expense,
+      accountId: item.accountId,
+      status: TransactionStatus.completed,
+      currency: item.currency,
+    );
+    expenses.insert(0, expense);
+    _applyBalance(expense);
+
+    // Reduce linked debt account balance (payment reduces what is owed)
+    if (item.linkedDebtAccountId != null) {
+      final debtIdx =
+          accounts.indexWhere((a) => a.id == item.linkedDebtAccountId);
+      if (debtIdx >= 0) {
+        // Debt balances are negative; adding the payment makes them less negative
+        accounts[debtIdx] = accounts[debtIdx].copyWith(
+          balance: accounts[debtIdx].balance + item.amount.toDouble(),
+        );
+      }
+    }
+
+    _db.insertExpense(expense).catchError((Object e) {
+      AppLogger.error('DB insertExpense (executeFixed) failed', error: e);
+      return '';
+    });
+    _save();
+    notifyListeners();
+    hapticMedium();
+    AppLogger.info('Fixed executed: ${item.title}');
+  }
+
+  // ─── Pending Transaction Auto-Apply ───
+
+  /// Checks for pending (future-dated) transactions that are now due and
+  /// applies their balance effects. Called on app load and when date changes.
+  void checkPendingTransactions() {
+    final now = DateTime.now();
+    bool changed = false;
+    for (int i = 0; i < expenses.length; i++) {
+      final e = expenses[i];
+      if (e.status == TransactionStatus.pending && !e.date.isAfter(now)) {
+        expenses[i] = e.copyWith(status: TransactionStatus.completed);
+        _applyBalance(expenses[i]);
+        _db.updateExpense(expenses[i]).catchError((_) => null);
+        changed = true;
+        AppLogger.info('Pending transaction auto-completed: ${e.title}');
+      }
+    }
+    if (changed) {
+      _save();
+      notifyListeners();
+    }
+  }
+
   // ─── Stock Holdings ───
 
-  /// Adjusts the linked account balance for a stock purchase/removal.
-  /// Buying debits totalCost from the account; [reverse: true] refunds it.
   void _applyHoldingBalance(StockHolding h, {bool reverse = false}) {
     if (h.accountId == null) return;
     final idx = accounts.indexWhere((a) => a.id == h.accountId);
     if (idx < 0) return;
-    final delta = -h.totalCost; // buying reduces account balance
+    final delta = -h.totalCost;
     final actual = reverse ? -delta : delta;
     accounts[idx] = accounts[idx].copyWith(
       balance: accounts[idx].balance + actual,
@@ -230,9 +451,9 @@ class AppState extends ChangeNotifier {
   void updateHolding(String id, StockHolding updated) {
     final i = holdings.indexWhere((h) => h.id == id);
     if (i >= 0) {
-      _applyHoldingBalance(holdings[i], reverse: true); // undo old cost
+      _applyHoldingBalance(holdings[i], reverse: true);
       holdings[i] = updated;
-      _applyHoldingBalance(updated); // apply new cost
+      _applyHoldingBalance(updated);
       _save();
       notifyListeners();
     }
@@ -241,7 +462,7 @@ class AppState extends ChangeNotifier {
   void deleteHolding(String id) {
     final i = holdings.indexWhere((h) => h.id == id);
     if (i >= 0) {
-      _applyHoldingBalance(holdings[i], reverse: true); // refund cost
+      _applyHoldingBalance(holdings[i], reverse: true);
       holdings.removeAt(i);
     }
     _save();
@@ -276,17 +497,10 @@ class AppState extends ChangeNotifier {
 
   void deleteAccount(String id) {
     accounts.removeWhere((a) => a.id == id);
-    // Nullify accountId on any expenses that referenced the deleted account
     final updatedExpenses = <ExpenseItem>[];
     for (final e in expenses) {
       if (e.accountId == id) {
-        final cleared = ExpenseItem(
-          id: e.id, title: e.title, category: e.category,
-          amount: e.amount, date: e.date, note: e.note,
-          createdAt: e.createdAt, editedAt: e.editedAt,
-          syncStatus: e.syncStatus, attachmentPath: e.attachmentPath,
-          metadata: e.metadata, type: e.type, accountId: null,
-        );
+        final cleared = e.copyWith(accountId: null);
         updatedExpenses.add(cleared);
         _db.updateExpense(cleared).catchError((Object err) {
           AppLogger.error('DB updateExpense (deleteAccount) failed', error: err);
@@ -296,20 +510,40 @@ class AppState extends ChangeNotifier {
       }
     }
     expenses = updatedExpenses;
-    // Nullify accountId on any holdings that referenced the deleted account
     holdings = holdings.map((h) {
       if (h.accountId != id) return h;
       return StockHolding(
-        id: h.id, code: h.code, name: h.name, shares: h.shares,
-        totalCost: h.totalCost, currency: h.currency,
-        purchaseDate: h.purchaseDate, currentPrice: h.currentPrice,
-        buyReason: h.buyReason, sellStrategy: h.sellStrategy,
-        createdAt: h.createdAt, feeRate: h.feeRate, accountId: null,
+        id: h.id,
+        code: h.code,
+        name: h.name,
+        shares: h.shares,
+        totalCost: h.totalCost,
+        currency: h.currency,
+        purchaseDate: h.purchaseDate,
+        currentPrice: h.currentPrice,
+        buyReason: h.buyReason,
+        sellStrategy: h.sellStrategy,
+        createdAt: h.createdAt,
+        feeRate: h.feeRate,
+        accountId: null,
       );
+    }).toList();
+    // Clear fixed items linked to deleted account
+    fixedItems = fixedItems.map((f) {
+      if (f.accountId == id || f.linkedDebtAccountId == id) {
+        return f.copyWith(
+          accountId: f.accountId == id ? null : f.accountId,
+          linkedDebtAccountId:
+              f.linkedDebtAccountId == id ? null : f.linkedDebtAccountId,
+        );
+      }
+      return f;
     }).toList();
     _save();
     notifyListeners();
   }
+
+  // ─── Asset Calculations ───
 
   double get totalAssets => accounts
       .where((a) => a.category == AccountCategory.savings && a.countInTotal)
@@ -319,6 +553,7 @@ class AppState extends ChangeNotifier {
       .where((a) => a.category == AccountCategory.credit && a.countInTotal)
       .fold(0.0, (s, a) => s + a.balanceTwd(fxRates).abs());
 
+  /// Net assets = savings accounts - credit accounts + stock portfolio value.
   double get netAssets => totalAssets - totalLiabilities + totalPortfolioValue;
 
   void setUsdTwdRate(double rate) {
@@ -376,10 +611,10 @@ class AppState extends ChangeNotifier {
     final demoHold = buildDemoHoldings();
     final demoFixed = buildDemoFixed();
     final demoAcc = buildDemoAccounts();
-    for (final e in demoExp)  _demoIds.add(e.id);
+    for (final e in demoExp) _demoIds.add(e.id);
     for (final h in demoHold) _demoIds.add(h.id);
     for (final f in demoFixed) _demoIds.add(f.id);
-    for (final a in demoAcc)  _demoIds.add(a.id);
+    for (final a in demoAcc) _demoIds.add(a.id);
     expenses.insertAll(0, demoExp);
     holdings.insertAll(0, demoHold);
     fixedItems.insertAll(0, demoFixed);
@@ -394,7 +629,7 @@ class AppState extends ChangeNotifier {
     fixedItems.removeWhere((f) => _demoIds.contains(f.id));
     accounts.removeWhere((a) => _demoIds.contains(a.id));
     _demoIds.clear();
-    _save(); // 確保 demo 資料不殘留在 SharedPreferences
+    _save();
     notifyListeners();
   }
 
@@ -443,6 +678,7 @@ class AppState extends ChangeNotifier {
     try {
       streak = _prefs?.getInt('streak') ?? 0;
       _lastDate = _prefs?.getString('lastDate') ?? '';
+      hapticEnabled = _prefs?.getBool('hapticEnabled') ?? true;
 
       final budgetEnc = _prefs?.getString('budget_enc');
       if (budgetEnc != null) {
@@ -498,12 +734,20 @@ class AppState extends ChangeNotifier {
           AppLogger.info('✓ Loaded ${accounts.length} accounts (plain)');
         }
       }
+
+      // Custom categories
+      final catRaw = _prefs?.getString('customCategories');
+      if (catRaw != null) {
+        final list = jsonDecode(catRaw) as List;
+        _customCategories =
+            list.map((e) => e as Map<String, dynamic>).toList();
+        AppLogger.info(
+            '✓ Loaded ${_customCategories.length} custom categories');
+      }
     } catch (e) {
       AppLogger.error('✗ Error loading meta from SharedPreferences: $e');
     }
 
-    // Load expenses from SQLite (primary), fall back to SharedPreferences if empty.
-    // No hardcoded defaults — fresh users start with an empty list.
     try {
       expenses = await _db.getAllExpenses();
       AppLogger.info('✓ Loaded ${expenses.length} expenses from SQLite');
@@ -514,7 +758,7 @@ class AppState extends ChangeNotifier {
           final list = jsonDecode(raw) as List;
           expenses = list.map((j) => ExpenseItem.fromJson(j)).toList();
           AppLogger.info(
-              '✓ Fallback: loaded ${expenses.length} expenses from SharedPreferences, syncing to SQLite');
+              '✓ Fallback: loaded ${expenses.length} expenses from SharedPreferences');
           for (final e in expenses) {
             _db.insertExpense(e).catchError((_) => '');
           }
@@ -524,8 +768,6 @@ class AppState extends ChangeNotifier {
       AppLogger.error('✗ Error loading expenses: $e');
     }
 
-    // Load fixed items from SQLite (primary), fall back to SharedPreferences if empty.
-    // No hardcoded defaults — fresh users start with an empty list.
     try {
       fixedItems = await _db.getAllFixedItems();
       AppLogger.info('✓ Loaded ${fixedItems.length} fixed items from SQLite');
@@ -536,7 +778,7 @@ class AppState extends ChangeNotifier {
           final list = jsonDecode(fixedRaw) as List;
           fixedItems = list.map((j) => FixedItem.fromJson(j)).toList();
           AppLogger.info(
-              '✓ Fallback: loaded ${fixedItems.length} fixed items from SharedPreferences, syncing to SQLite');
+              '✓ Fallback: loaded ${fixedItems.length} fixed items from SharedPreferences');
           for (final f in fixedItems) {
             _db.insertFixedItem(f).catchError((_) => '');
           }
@@ -549,6 +791,9 @@ class AppState extends ChangeNotifier {
     loaded = true;
     AppLogger.info('✓ AppState loaded successfully');
     notifyListeners();
+
+    // Auto-apply any pending transactions that are now due
+    checkPendingTransactions();
     refreshUsdTwdRate();
   }
 
@@ -556,7 +801,7 @@ class AppState extends ChangeNotifier {
     try {
       _prefs?.setInt('streak', streak);
       _prefs?.setString('lastDate', _lastDate);
-
+      _prefs?.setBool('hapticEnabled', hapticEnabled);
       _prefs?.setString('budget_enc', _enc.encrypt(budget.toString()));
       _prefs?.setString(
         'fxRates_enc',
@@ -570,33 +815,25 @@ class AppState extends ChangeNotifier {
         'accounts_enc',
         _enc.encryptMap({'data': accounts.map((a) => a.toJson()).toList()}),
       );
-
       _prefs?.remove('budget');
       _prefs?.remove('fxRates');
       _prefs?.remove('usdTwdRate');
       _prefs?.remove('holdings');
       _prefs?.remove('accounts');
-
       AppLogger.debug('Meta saved (encrypted)');
     } catch (e) {
       AppLogger.error('Save failed', error: e);
     }
   }
 
-  /// Clears all expense and fixed-item history.
-  /// Reverses any account balance changes that were made by those transactions.
-  /// Accounts, holdings, budget, and FX rates are preserved.
   void clearAll() {
-    // Restore account balances affected by cleared expenses
     for (final e in expenses) {
       _applyBalance(e, reverse: true);
     }
-
     expenses = [];
     fixedItems = [];
     streak = 0;
     _lastDate = '';
-
     _db.clear().catchError((e) {
       AppLogger.error('DB clear failed', error: e);
     });
@@ -604,8 +841,6 @@ class AppState extends ChangeNotifier {
     _prefs?.remove('fixed');
     _prefs?.setInt('streak', 0);
     _prefs?.setString('lastDate', '');
-
-    // Persist updated account balances
     _save();
     notifyListeners();
     AppLogger.info('All expense/fixed data cleared; account balances restored');

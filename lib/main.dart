@@ -26,6 +26,7 @@ import 'services/backup_service.dart';
 import 'services/export_service.dart';
 import 'data/models/backup_metadata.dart';
 import 'screens/account/account_page.dart';
+import 'screens/transfer/transfer_page.dart';
 import 'screens/feedback/feedback_page.dart';
 import 'screens/onboarding/onboarding_service.dart';
 import 'core/tour/tour_controller.dart';
@@ -1630,6 +1631,43 @@ class _ManagePageState extends State<ManagePage> {
 
   void _addFixed() => _openFixedDialog();
 
+  void _confirmExecuteFixed(FixedItem f) {
+    final cs = Theme.of(context).colorScheme;
+    final hasAccount = f.accountId != null;
+    final msgKey = hasAccount ? 'execute_fixed_confirm' : 'execute_fixed_no_account';
+    final msg = AppLocalizations.ofParam(context, msgKey, {'name': f.title, 'amount': _fmt(f.amount)});
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(AppLocalizations.of(context, 'execute_fixed'),
+            style: const TextStyle(fontWeight: FontWeight.w800)),
+        content: Text(msg),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(context, 'cancel'),
+                style: TextStyle(color: cs.onSurfaceVariant)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(AppLocalizations.of(context, 'execute'),
+                style: const TextStyle(color: kGreen, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    ).then((confirmed) {
+      if (confirmed == true && mounted) {
+        widget.state.executeFixed(f);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${AppLocalizations.of(context, 'executed')} — ${f.title}'),
+          backgroundColor: kGreen,
+          duration: const Duration(seconds: 2),
+        ));
+      }
+    });
+  }
+
   String _localeDisplayName(Locale locale) {
     switch ('${locale.languageCode}_${locale.countryCode}') {
       case 'zh_TW':
@@ -1864,6 +1902,32 @@ class _ManagePageState extends State<ManagePage> {
           ),
           const SizedBox(height: 16),
 
+          // 帳戶轉帳
+          _AppCard(
+              child: InkWell(
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const TransferPage())),
+            borderRadius: BorderRadius.circular(22),
+            child: Row(children: [
+              const Icon(Icons.swap_horiz_rounded, color: kGold),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(AppLocalizations.of(context, 'transfer'),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(AppLocalizations.of(context, 'from_account') +
+                        ' → ' +
+                        AppLocalizations.of(context, 'to_account'),
+                        style: const TextStyle(color: kGray, fontSize: 12)),
+                  ])),
+              const Icon(Icons.chevron_right, color: kGold, size: 18),
+            ]),
+          )),
+          const SizedBox(height: 16),
+
           // 外觀設定
           _AppCard(
               child: Row(children: [
@@ -1884,6 +1948,32 @@ class _ManagePageState extends State<ManagePage> {
               activeColor: kGold,
             ),
           ])),
+          const SizedBox(height: 16),
+
+          // 震動回饋
+          _AppCard(
+              child: ListenableBuilder(
+            listenable: widget.state,
+            builder: (_, __) => Row(children: [
+              const Icon(Icons.vibration_rounded, color: kGold),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(AppLocalizations.of(context, 'haptic_feedback'),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(AppLocalizations.of(context, 'haptic_subtitle'),
+                        style: const TextStyle(color: kGray, fontSize: 12)),
+                  ])),
+              Switch(
+                value: widget.state.hapticEnabled,
+                onChanged: (v) => widget.state.setHapticEnabled(v),
+                activeColor: kGold,
+              ),
+            ]),
+          )),
           const SizedBox(height: 16),
 
           // 語言設定
@@ -2058,6 +2148,14 @@ class _ManagePageState extends State<ManagePage> {
                                     onTap: () => _openFixedDialog(existing: f),
                                     child: const Icon(Icons.edit_outlined,
                                         color: kGold, size: 18),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () => _confirmExecuteFixed(f),
+                                    child: const Icon(
+                                        Icons.play_circle_outline_rounded,
+                                        color: kGreen,
+                                        size: 20),
                                   ),
                                 ]),
                                 if (f.totalPeriods != null) ...[

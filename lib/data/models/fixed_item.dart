@@ -3,7 +3,6 @@ import 'expense_item.dart';
 
 const _sentinel = Object();
 
-/// Renewal cycle for fixed items
 enum RenewalCycle {
   monthly('monthly', '每月'),
   yearly('yearly', '每年');
@@ -20,21 +19,23 @@ enum RenewalCycle {
   }
 }
 
-/// Fixed item model (subscriptions, recurring expenses)
 class FixedItem {
   final String id;
   final String title;
-  final int amount; // Amount in cents
+  final int amount;
   final String category;
-  final DateTime startDate; // When subscription started
-  final DateTime? endDate; // Explicit end (null = ongoing)
-  final int? totalPeriods; // Number of installments (null = no limit)
+  final DateTime startDate;
+  final DateTime? endDate;
+  final int? totalPeriods;
   final RenewalCycle renewalCycle;
   final DateTime createdAt;
   final DateTime? editedAt;
   final bool isActive;
   final SyncStatus syncStatus;
   final String? notes;
+  final String? accountId;           // debit account when executed
+  final String? linkedDebtAccountId; // debt account to reduce on execution
+  final String currency;             // currency of the amount
 
   FixedItem({
     String? id,
@@ -50,12 +51,14 @@ class FixedItem {
     this.isActive = true,
     this.syncStatus = SyncStatus.local,
     this.notes,
+    this.accountId,
+    this.linkedDebtAccountId,
+    this.currency = 'TWD',
   })  : id = id ?? const Uuid().v4(),
         category = category,
         startDate = startDate ?? DateTime.now(),
         createdAt = createdAt ?? DateTime.now();
 
-  /// Computed end date from totalPeriods (overrides endDate when set)
   DateTime? get effectiveEndDate {
     if (totalPeriods != null) {
       final s = startDate;
@@ -64,14 +67,12 @@ class FixedItem {
     return endDate;
   }
 
-  /// How many periods have elapsed (1-based current period)
   int currentPeriod(DateTime now) {
     final diff =
         (now.year - startDate.year) * 12 + (now.month - startDate.month) + 1;
     return diff.clamp(0, totalPeriods ?? diff);
   }
 
-  /// Remaining periods from now
   int? remainingPeriods(DateTime now) {
     if (totalPeriods == null) return null;
     final elapsed =
@@ -79,20 +80,15 @@ class FixedItem {
     return (totalPeriods! - elapsed).clamp(0, totalPeriods!);
   }
 
-  /// Whether all periods are done
   bool get isCompleted {
     if (totalPeriods == null) return false;
     final now = DateTime.now();
     return remainingPeriods(now) == 0;
   }
 
-  /// Whether this item has been edited
   bool get isEdited => editedAt != null;
-
-  /// Whether this item is pending sync
   bool get isPending => syncStatus == SyncStatus.local;
 
-  /// Check if active at a given date
   bool isActiveAt(DateTime date) {
     if (!isActive) return false;
     if (date.isBefore(startDate)) return false;
@@ -101,7 +97,6 @@ class FixedItem {
     return true;
   }
 
-  /// Create a copy with modifications
   FixedItem copyWith({
     String? id,
     String? title,
@@ -116,6 +111,9 @@ class FixedItem {
     bool? isActive,
     SyncStatus? syncStatus,
     String? notes,
+    Object? accountId = _sentinel,
+    Object? linkedDebtAccountId = _sentinel,
+    String? currency,
   }) {
     return FixedItem(
       id: id ?? this.id,
@@ -132,10 +130,15 @@ class FixedItem {
       isActive: isActive ?? this.isActive,
       syncStatus: syncStatus ?? this.syncStatus,
       notes: notes ?? this.notes,
+      accountId:
+          accountId == _sentinel ? this.accountId : accountId as String?,
+      linkedDebtAccountId: linkedDebtAccountId == _sentinel
+          ? this.linkedDebtAccountId
+          : linkedDebtAccountId as String?,
+      currency: currency ?? this.currency,
     );
   }
 
-  /// Convert to JSON
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
@@ -150,9 +153,11 @@ class FixedItem {
         'isActive': isActive,
         'syncStatus': syncStatus.value,
         'notes': notes,
+        'accountId': accountId,
+        'linkedDebtAccountId': linkedDebtAccountId,
+        'currency': currency,
       };
 
-  /// Create from JSON
   factory FixedItem.fromJson(Map<String, dynamic> json) => FixedItem(
         id: json['id'] as String? ?? const Uuid().v4(),
         title: json['title'] as String? ?? '',
@@ -178,9 +183,11 @@ class FixedItem {
         syncStatus:
             SyncStatus.fromString(json['syncStatus'] as String? ?? 'local'),
         notes: json['notes'] as String?,
+        accountId: json['accountId'] as String?,
+        linkedDebtAccountId: json['linkedDebtAccountId'] as String?,
+        currency: json['currency'] as String? ?? 'TWD',
       );
 
-  /// Convert to database JSON
   Map<String, dynamic> toDatabaseJson() => {
         'id': id,
         'title': title,
@@ -195,9 +202,11 @@ class FixedItem {
         'is_active': isActive ? 1 : 0,
         'sync_status': syncStatus.value,
         'notes': notes,
+        'account_id': accountId,
+        'linked_debt_account_id': linkedDebtAccountId,
+        'currency': currency,
       };
 
-  /// Create from database
   factory FixedItem.fromDatabase(Map<String, dynamic> map) => FixedItem(
         id: map['id'] as String,
         title: map['title'] as String,
@@ -218,6 +227,9 @@ class FixedItem {
         syncStatus:
             SyncStatus.fromString(map['sync_status'] as String? ?? 'local'),
         notes: map['notes'] as String?,
+        accountId: map['account_id'] as String?,
+        linkedDebtAccountId: map['linked_debt_account_id'] as String?,
+        currency: map['currency'] as String? ?? 'TWD',
       );
 
   @override
