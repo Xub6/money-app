@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/localization.dart';
@@ -8,6 +9,7 @@ import '../../core/constants/categories.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/validators.dart';
 import '../../core/utils/error_handler.dart';
+import '../../widgets/calculator/amount_calculator_sheet.dart';
 
 class AddEditExpensePage extends StatefulWidget {
   final ExpenseItem? existingItem;
@@ -149,7 +151,10 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
     final isEdit = widget.existingItem != null;
     final suggestions = _suggestions;
     final cs = Theme.of(context).colorScheme;
-    final accounts = Provider.of<AppState>(context, listen: false).accounts;
+    final accounts = Provider.of<AppState>(context, listen: false)
+        .accounts
+        .where((a) => a.typeName != '股票帳戶')
+        .toList();
     final isIncome = _type == TransactionType.income;
     final typeColor = isIncome ? AppColors.success : AppColors.error;
 
@@ -431,10 +436,25 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
             childAspectRatio: 0.95,
-            children: (isIncome ? kIncomeCategories : kCategories).map((c) {
+            children: () {
+              final appState = Provider.of<AppState>(context, listen: false);
+              final customCats = isIncome
+                  ? appState.customIncomeCategories
+                  : appState.customExpenseCategories;
+              final predefined = isIncome ? kIncomeCategories : kCategories;
+              final customConverted = customCats.map((m) => Category(
+                m['name'] as String,
+                IconData(m['iconCode'] as int? ?? Icons.category.codePoint, fontFamily: 'MaterialIcons'),
+                Color(m['color'] as int? ?? 0xFFC59B63),
+              )).toList();
+              return [...predefined, ...customConverted];
+            }().map((c) {
               final sel = _selectedCategory == c.name;
               return GestureDetector(
-                onTap: () => setState(() => _selectedCategory = c.name),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedCategory = c.name);
+                },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   decoration: BoxDecoration(
@@ -510,14 +530,27 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
           const SizedBox(height: 10),
           Row(children: [
             Expanded(
-              child: _InputField(
-                controller: _amtCtrl,
-                hint: '0',
-                label: AppLocalizations.of(context, 'amount'),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                suffix:
-                    Text('NT\$', style: TextStyle(color: cs.onSurfaceVariant)),
+              child: GestureDetector(
+                onTap: () async {
+                  final current = double.tryParse(_amtCtrl.text) ?? 0;
+                  final result = await AmountCalculatorSheet.show(context, initialValue: current);
+                  if (result != null && mounted) {
+                    setState(() {
+                      _amtCtrl.text = result == result.truncateToDouble()
+                          ? result.toInt().toString()
+                          : result.toStringAsFixed(2);
+                    });
+                  }
+                },
+                child: AbsorbPointer(
+                  child: _InputField(
+                    controller: _amtCtrl,
+                    hint: '0',
+                    label: AppLocalizations.of(context, 'amount'),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    suffix: Text('NT\$', style: TextStyle(color: cs.onSurfaceVariant)),
+                  ),
+                ),
               ),
             ),
           ]),

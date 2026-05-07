@@ -661,6 +661,9 @@ class AppState extends ChangeNotifier {
       .where((a) => a.category == AccountCategory.credit && a.countInTotal)
       .fold(0.0, (s, a) => s + a.balanceTwd(fxRates).abs());
 
+  /// Total assets including stock portfolio value for display purposes.
+  double get totalAssetsDisplay => totalAssets + totalPortfolioValue;
+
   /// Net assets = savings accounts - credit accounts + stock portfolio value.
   double get netAssets => totalAssets - totalLiabilities + totalPortfolioValue;
 

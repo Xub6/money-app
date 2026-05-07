@@ -1,0 +1,571 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/categories.dart';
+import '../../data/repositories/app_state.dart';
+
+class CategoryManagementPage extends StatefulWidget {
+  const CategoryManagementPage({super.key});
+
+  @override
+  State<CategoryManagementPage> createState() => _CategoryManagementPageState();
+}
+
+class _CategoryManagementPageState extends State<CategoryManagementPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Scaffold(
+      backgroundColor: cs.surface,
+      appBar: AppBar(
+        backgroundColor: cs.surface,
+        foregroundColor: cs.onSurface,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text('類別管理', style: TextStyle(fontWeight: FontWeight.w800)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+          color: AppColors.gold,
+          onPressed: () => Navigator.pop(context),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.gold,
+          unselectedLabelColor: cs.onSurfaceVariant,
+          indicatorColor: AppColors.gold,
+          tabs: const [
+            Tab(text: '支出類別'),
+            Tab(text: '收入類別'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _CategoryTab(type: 'expense'),
+          _CategoryTab(type: 'income'),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _addCategory,
+        backgroundColor: AppColors.gold,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('新增類別', style: TextStyle(fontWeight: FontWeight.w700)),
+      ),
+    );
+  }
+
+  void _addCategory() {
+    final type = _tabController.index == 0 ? 'expense' : 'income';
+    _showCategoryEditor(context, type: type);
+  }
+
+  void _showCategoryEditor(BuildContext context, {
+    String type = 'expense',
+    Map<String, dynamic>? existing,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CategoryEditor(
+        type: type,
+        existing: existing,
+        onSave: (cat) {
+          final appState = Provider.of<AppState>(context, listen: false);
+          if (existing != null) {
+            appState.updateCustomCategory(
+              existing['name'] as String,
+              existing['type'] as String,
+              cat,
+            );
+          } else {
+            appState.addCustomCategory(cat);
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _CategoryTab extends StatelessWidget {
+  final String type;
+  const _CategoryTab({required this.type});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final appState = Provider.of<AppState>(context);
+    final predefined = type == 'expense' ? kCategories : kIncomeCategories;
+    final custom = type == 'expense'
+        ? appState.customExpenseCategories
+        : appState.customIncomeCategories;
+
+    return CustomScrollView(
+      slivers: [
+        // 預設類別 (read-only)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+            child: Row(children: [
+              Text('預設類別',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurfaceVariant)),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text('無法刪除',
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              ),
+            ]),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 0.9,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, i) {
+                final cat = predefined[i];
+                return Container(
+                  decoration: BoxDecoration(
+                    color: cat.color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: cat.color.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(cat.icon, color: cat.color, size: 26),
+                      const SizedBox(height: 6),
+                      Text(cat.name,
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: cat.color)),
+                    ],
+                  ),
+                );
+              },
+              childCount: predefined.length,
+            ),
+          ),
+        ),
+
+        // 自訂類別
+        if (custom.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
+              child: Text('自訂類別',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurfaceVariant)),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, i) {
+                  final cat = custom[i];
+                  final color = Color(cat['color'] as int? ?? 0xFFC59B63);
+                  final iconCode = cat['iconCode'] as int? ?? Icons.category.codePoint;
+                  return Dismissible(
+                    key: Key('${cat['name']}_${cat['type']}'),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.delete_outline,
+                          color: Colors.white, size: 24),
+                    ),
+                    confirmDismiss: (_) async {
+                      return await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
+                              title: const Text('刪除類別',
+                                  style: TextStyle(fontWeight: FontWeight.w800)),
+                              content:
+                                  Text('確定要刪除「${cat['name']}」？此操作不可復原。'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('取消'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text('刪除',
+                                      style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
+                          ) ??
+                          false;
+                    },
+                    onDismissed: (_) {
+                      Provider.of<AppState>(context, listen: false)
+                          .deleteCustomCategory(
+                              cat['name'] as String, cat['type'] as String);
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            IconData(iconCode, fontFamily: 'MaterialIcons'),
+                            color: color,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(cat['name'] as String,
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: cs.onSurface)),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined,
+                              color: AppColors.gold, size: 20),
+                          onPressed: () {
+                            final page = context
+                                .findAncestorStateOfType<
+                                    _CategoryManagementPageState>();
+                            page?._showCategoryEditor(context,
+                                type: cat['type'] as String, existing: cat);
+                          },
+                        ),
+                      ]),
+                    ),
+                  );
+                },
+                childCount: custom.length,
+              ),
+            ),
+          ),
+        ] else ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
+              child: Text('自訂類別',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurfaceVariant)),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(children: [
+                  Icon(Icons.add_circle_outline,
+                      size: 36, color: cs.onSurfaceVariant),
+                  const SizedBox(height: 10),
+                  Text('尚未建立自訂類別',
+                      style: TextStyle(color: cs.onSurfaceVariant)),
+                  const SizedBox(height: 4),
+                  Text('點擊下方按鈕新增',
+                      style: TextStyle(
+                          fontSize: 12, color: cs.onSurfaceVariant)),
+                ]),
+              ),
+            ),
+          ),
+        ],
+
+        const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+      ],
+    );
+  }
+}
+
+class _CategoryEditor extends StatefulWidget {
+  final String type;
+  final Map<String, dynamic>? existing;
+  final void Function(Map<String, dynamic>) onSave;
+
+  const _CategoryEditor({
+    required this.type,
+    this.existing,
+    required this.onSave,
+  });
+
+  @override
+  State<_CategoryEditor> createState() => _CategoryEditorState();
+}
+
+class _CategoryEditorState extends State<_CategoryEditor> {
+  late final TextEditingController _nameCtrl;
+  late int _selectedIcon;
+  late int _selectedColor;
+
+  static const _iconOptions = [
+    Icons.restaurant, Icons.school, Icons.sports_esports, Icons.directions_bus,
+    Icons.shopping_bag, Icons.local_hospital, Icons.home, Icons.work_rounded,
+    Icons.star_rounded, Icons.trending_up_rounded, Icons.replay_rounded,
+    Icons.attach_money_rounded, Icons.fitness_center, Icons.coffee,
+    Icons.flight, Icons.hotel, Icons.phone, Icons.laptop, Icons.pets,
+    Icons.child_care, Icons.sports, Icons.music_note, Icons.movie,
+    Icons.book, Icons.brush, Icons.build, Icons.car_repair,
+    Icons.local_gas_station, Icons.wifi, Icons.electrical_services,
+    Icons.water_drop, Icons.category,
+  ];
+
+  static const _colorOptions = [
+    0xFFC59B63, 0xFFD7BC74, 0xFF7B9BB5, 0xFF98AF82, 0xFFC48DA0,
+    0xFF88A89A, 0xFFB8956A, 0xFFB4B2A9, 0xFF5B9BD5, 0xFF88C085,
+    0xFFD08080, 0xFF8080D0, 0xFF80C0C0, 0xFFD0A080,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    _nameCtrl = TextEditingController(text: e?['name'] as String? ?? '');
+    _selectedIcon = e?['iconCode'] as int? ?? Icons.category.codePoint;
+    _selectedColor = e?['color'] as int? ?? _colorOptions.first;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('請輸入類別名稱')),
+      );
+      return;
+    }
+    widget.onSave({
+      'name': name,
+      'type': widget.type,
+      'iconCode': _selectedIcon,
+      'color': _selectedColor,
+    });
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isEdit = widget.existing != null;
+    final typeLabel = widget.type == 'expense' ? '支出' : '收入';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20, right: 20, top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        // Handle
+        Center(
+          child: Container(
+            width: 36, height: 4,
+            decoration: BoxDecoration(
+              color: cs.outlineVariant,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(isEdit ? '編輯$typeLabel類別' : '新增$typeLabel類別',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 20),
+
+        // Name input
+        TextField(
+          controller: _nameCtrl,
+          decoration: InputDecoration(
+            labelText: '類別名稱',
+            filled: true,
+            fillColor: cs.surfaceContainerLow,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Preview
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(
+            width: 60, height: 60,
+            decoration: BoxDecoration(
+              color: Color(_selectedColor).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              IconData(_selectedIcon, fontFamily: 'MaterialIcons'),
+              color: Color(_selectedColor),
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 12),
+          ListenableBuilder(
+            listenable: _nameCtrl,
+            builder: (_, __) => Text(
+              _nameCtrl.text.isEmpty ? '類別名稱' : _nameCtrl.text,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(_selectedColor)),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 16),
+
+        // Color picker
+        Align(alignment: Alignment.centerLeft,
+            child: Text('顏色', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: _colorOptions.map((c) {
+            final isSelected = c == _selectedColor;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedColor = c),
+              child: Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: Color(c),
+                  shape: BoxShape.circle,
+                  border: isSelected
+                      ? Border.all(color: cs.onSurface, width: 3)
+                      : null,
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 16),
+
+        // Icon picker
+        Align(alignment: Alignment.centerLeft,
+            child: Text('圖示', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 180,
+          child: GridView.builder(
+            shrinkWrap: true,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 6,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+            ),
+            itemCount: _iconOptions.length,
+            itemBuilder: (_, i) {
+              final icon = _iconOptions[i];
+              final isSelected = icon.codePoint == _selectedIcon;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedIcon = icon.codePoint),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Color(_selectedColor).withValues(alpha: 0.2)
+                        : cs.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(10),
+                    border: isSelected
+                        ? Border.all(color: Color(_selectedColor), width: 1.5)
+                        : null,
+                  ),
+                  child: Icon(icon,
+                      color: isSelected
+                          ? Color(_selectedColor)
+                          : cs.onSurfaceVariant,
+                      size: 22),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton(
+            onPressed: _save,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+            ),
+            child: Text(isEdit ? '儲存變更' : '新增類別',
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w800)),
+          ),
+        ),
+      ]),
+    );
+  }
+}

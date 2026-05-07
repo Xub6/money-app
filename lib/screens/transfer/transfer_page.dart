@@ -6,6 +6,7 @@ import '../../config/localization.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/account.dart';
 import '../../data/repositories/app_state.dart';
+import '../../widgets/calculator/amount_calculator_sheet.dart';
 
 class TransferPage extends StatefulWidget {
   const TransferPage({super.key});
@@ -82,7 +83,10 @@ class _TransferPageState extends State<TransferPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final accounts = Provider.of<AppState>(context, listen: false).accounts;
+    final accounts = Provider.of<AppState>(context, listen: false)
+        .accounts
+        .where((a) => a.typeName != '股票帳戶')
+        .toList();
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -136,35 +140,48 @@ class _TransferPageState extends State<TransferPage> {
 
             _sectionHeader(AppLocalizations.of(context, 'transfer_amount')),
             _card([
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Row(children: [
-                  Text('NT\$',
-                      style: TextStyle(
-                          color: cs.onSurfaceVariant, fontSize: 16)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _amtCtrl,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      style: const TextStyle(
-                          fontSize: 28, fontWeight: FontWeight.w700),
-                      decoration: InputDecoration(
-                        hintText: '0',
-                        hintStyle: TextStyle(
-                            color: cs.onSurfaceVariant,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 14),
+              GestureDetector(
+                onTap: () async {
+                  final current = double.tryParse(_amtCtrl.text) ?? 0;
+                  final result = await AmountCalculatorSheet.show(context, initialValue: current);
+                  if (result != null && mounted) {
+                    setState(() {
+                      _amtCtrl.text = result.toInt().toString();
+                    });
+                  }
+                },
+                child: AbsorbPointer(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Row(children: [
+                      Text('NT\$',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 16)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _amtCtrl,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          style: const TextStyle(
+                              fontSize: 28, fontWeight: FontWeight.w700),
+                          decoration: InputDecoration(
+                            hintText: '0',
+                            hintStyle: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
                       ),
-                    ),
+                    ]),
                   ),
-                ]),
+                ),
               ),
             ]),
 

@@ -26,6 +26,7 @@ import 'services/backup_service.dart';
 import 'services/export_service.dart';
 import 'data/models/backup_metadata.dart';
 import 'screens/account/account_page.dart';
+import 'screens/manage/category_management_page.dart';
 import 'screens/feedback/feedback_page.dart';
 import 'screens/onboarding/onboarding_service.dart';
 import 'core/tour/tour_controller.dart';
@@ -1838,7 +1839,7 @@ class _ManagePageState extends State<ManagePage> {
                   listenable: widget.state,
                   builder: (_, __) {
                     final net = widget.state.netAssets;
-                    final assets = widget.state.totalAssets;
+                    final assets = widget.state.totalAssetsDisplay;
                     final liabilities = widget.state.totalLiabilities;
                     final isNeg = net < 0;
                     final cs = Theme.of(context).colorScheme;
@@ -2094,6 +2095,89 @@ class _ManagePageState extends State<ManagePage> {
               ])),
           const SizedBox(height: 16),
 
+          // 類別管理
+          _AppCard(
+            child: InkWell(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CategoryManagementPage()),
+              ),
+              borderRadius: BorderRadius.circular(22),
+              child: Row(children: [
+                const Icon(Icons.category_rounded, color: kGold),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('類別管理', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text('新增、編輯、刪除支出與收入類別',
+                        style: TextStyle(color: kGray, fontSize: 12)),
+                  ]),
+                ),
+                const Icon(Icons.chevron_right, color: kGray, size: 18),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 月預算
+          _AppCard(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(AppLocalizations.of(context, 'monthly_budget'),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _budgetCtrl,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.w800),
+                      decoration: InputDecoration(
+                        prefixText: 'NT\$ ',
+                        filled: true,
+                        fillColor:
+                            Theme.of(context).colorScheme.primaryContainer,
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                const BorderSide(color: kGold, width: 1.5)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      final val = int.tryParse(_budgetCtrl.text.trim());
+                      if (val != null && val > 0) {
+                        widget.state.setBudget(val);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(AppLocalizations.of(context, 'budget_updated')),
+                                backgroundColor: kGreen,
+                                duration: const Duration(seconds: 2)));
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kGold,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      elevation: 0,
+                    ),
+                    child: Text(AppLocalizations.of(context, 'update'),
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ]),
+              ])),
+          const SizedBox(height: 16),
+
           // 外觀設定
           _AppCard(
               child: Row(children: [
@@ -2163,65 +2247,6 @@ class _ManagePageState extends State<ManagePage> {
               const Icon(Icons.chevron_right, color: kGray, size: 18),
             ]),
           )),
-          const SizedBox(height: 16),
-
-          // 月預算
-          _AppCard(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(AppLocalizations.of(context, 'monthly_budget'),
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _budgetCtrl,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.w800),
-                      decoration: InputDecoration(
-                        prefixText: 'NT\$ ',
-                        filled: true,
-                        fillColor:
-                            Theme.of(context).colorScheme.primaryContainer,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: kGold, width: 1.5)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      final val = int.tryParse(_budgetCtrl.text.trim());
-                      if (val != null && val > 0) {
-                        widget.state.setBudget(val);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(AppLocalizations.of(context, 'budget_updated')),
-                                backgroundColor: kGreen,
-                                duration: const Duration(seconds: 2)));
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kGold,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 16),
-                      elevation: 0,
-                    ),
-                    child: Text(AppLocalizations.of(context, 'update'),
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-                ]),
-              ])),
           const SizedBox(height: 16),
 
           // 備份與匯出

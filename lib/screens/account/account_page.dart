@@ -77,7 +77,7 @@ class _AccountPageState extends State<AccountPage> {
               .where((a) => a.category == AccountCategory.credit)
               .toList();
           final net = s.netAssets;
-          final assets = s.totalAssets;
+          final assets = s.totalAssetsDisplay;
           final liabilities = s.totalLiabilities;
           final stockValue = s.totalPortfolioValue;
           final isNegative = net < 0;

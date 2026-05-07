@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../data/models/fixed_item.dart';
 import '../../data/models/account.dart';
 import '../../data/repositories/app_state.dart';
+import '../../widgets/calculator/amount_calculator_sheet.dart';
 
 class AddEditFixedPage extends StatefulWidget {
   final FixedItem? existing;
@@ -523,21 +524,34 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
               _row(
                 label: AppLocalizations.of(context, 'monthly_amount'),
                 topBorder: true,
-                child: TextField(
-                  controller: _amtCtrl,
-                  textAlign: TextAlign.end,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  style: const TextStyle(fontSize: 15),
-                  decoration: InputDecoration(
-                    hintText: '0',
-                    hintStyle: TextStyle(color: cs.onSurfaceVariant),
-                    prefixText: 'NT\$ ',
-                    prefixStyle:
-                        TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
+                child: GestureDetector(
+                  onTap: () async {
+                    final current = double.tryParse(_amtCtrl.text) ?? 0;
+                    final result = await AmountCalculatorSheet.show(context, initialValue: current);
+                    if (result != null && mounted) {
+                      setState(() {
+                        _amtCtrl.text = result.toInt().toString();
+                      });
+                    }
+                  },
+                  child: AbsorbPointer(
+                    child: TextField(
+                      controller: _amtCtrl,
+                      textAlign: TextAlign.end,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      style: const TextStyle(fontSize: 15),
+                      decoration: InputDecoration(
+                        hintText: '0',
+                        hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                        prefixText: 'NT\$ ',
+                        prefixStyle:
+                            TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
                   ),
                 ),
               ),
