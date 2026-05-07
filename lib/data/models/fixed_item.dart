@@ -36,6 +36,8 @@ class FixedItem {
   final String? accountId;           // debit account when executed
   final String? linkedDebtAccountId; // debt account to reduce on execution
   final String currency;             // currency of the amount
+  final int debitDay;                // 0=manual only, 1-28=auto-debit day of month
+  final String? lastExecutedYearMonth; // "2026-05" format, prevents double-execution
 
   FixedItem({
     String? id,
@@ -54,6 +56,8 @@ class FixedItem {
     this.accountId,
     this.linkedDebtAccountId,
     this.currency = 'TWD',
+    this.debitDay = 0,
+    this.lastExecutedYearMonth,
   })  : id = id ?? const Uuid().v4(),
         category = category,
         startDate = startDate ?? DateTime.now(),
@@ -114,6 +118,8 @@ class FixedItem {
     Object? accountId = _sentinel,
     Object? linkedDebtAccountId = _sentinel,
     String? currency,
+    int? debitDay,
+    Object? lastExecutedYearMonth = _sentinel,
   }) {
     return FixedItem(
       id: id ?? this.id,
@@ -136,6 +142,10 @@ class FixedItem {
           ? this.linkedDebtAccountId
           : linkedDebtAccountId as String?,
       currency: currency ?? this.currency,
+      debitDay: debitDay ?? this.debitDay,
+      lastExecutedYearMonth: lastExecutedYearMonth == _sentinel
+          ? this.lastExecutedYearMonth
+          : lastExecutedYearMonth as String?,
     );
   }
 
@@ -156,6 +166,8 @@ class FixedItem {
         'accountId': accountId,
         'linkedDebtAccountId': linkedDebtAccountId,
         'currency': currency,
+        'debitDay': debitDay,
+        'lastExecutedYearMonth': lastExecutedYearMonth,
       };
 
   factory FixedItem.fromJson(Map<String, dynamic> json) => FixedItem(
@@ -186,6 +198,8 @@ class FixedItem {
         accountId: json['accountId'] as String?,
         linkedDebtAccountId: json['linkedDebtAccountId'] as String?,
         currency: json['currency'] as String? ?? 'TWD',
+        debitDay: json['debitDay'] as int? ?? 0,
+        lastExecutedYearMonth: json['lastExecutedYearMonth'] as String?,
       );
 
   Map<String, dynamic> toDatabaseJson() => {
@@ -205,6 +219,8 @@ class FixedItem {
         'account_id': accountId,
         'linked_debt_account_id': linkedDebtAccountId,
         'currency': currency,
+        'debit_day': debitDay,
+        'last_executed_year_month': lastExecutedYearMonth,
       };
 
   factory FixedItem.fromDatabase(Map<String, dynamic> map) => FixedItem(
@@ -230,6 +246,8 @@ class FixedItem {
         accountId: map['account_id'] as String?,
         linkedDebtAccountId: map['linked_debt_account_id'] as String?,
         currency: map['currency'] as String? ?? 'TWD',
+        debitDay: map['debit_day'] as int? ?? 0,
+        lastExecutedYearMonth: map['last_executed_year_month'] as String?,
       );
 
   @override

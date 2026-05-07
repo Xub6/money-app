@@ -12,6 +12,7 @@ class AccountTypeOption {
 const kAccountTypes = [
   AccountTypeOption('現金', '💵', AccountCategory.savings),
   AccountTypeOption('銀行帳戶', '🏦', AccountCategory.savings),
+  AccountTypeOption('股票帳戶', '📈', AccountCategory.savings),
   AccountTypeOption('Line Pay', '💚', AccountCategory.savings),
   AccountTypeOption('街口支付', '🟠', AccountCategory.savings),
   AccountTypeOption('悠遊卡', '🔵', AccountCategory.savings),

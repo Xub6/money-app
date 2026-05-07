@@ -7,7 +7,7 @@ import '../../core/utils/logger.dart';
 
 class AppDatabase {
   static const String _databaseName = 'money_app.db';
-  static const int _version = 4;
+  static const int _version = 5;
 
   static const String _expensesTable = 'expenses';
   static const String _fixedItemsTable = 'fixed_items';
@@ -94,7 +94,9 @@ class AppDatabase {
           notes TEXT,
           account_id TEXT,
           linked_debt_account_id TEXT,
-          currency TEXT DEFAULT 'TWD'
+          currency TEXT DEFAULT 'TWD',
+          debit_day INTEGER DEFAULT 0,
+          last_executed_year_month TEXT
         )
       ''');
 
@@ -164,6 +166,14 @@ class AppDatabase {
         AppLogger.info(
             'v4: Added status/transfer_account_id/currency to expenses; '
             'account_id/linked_debt_account_id/currency to fixed_items');
+      }
+
+      if (oldVersion < 5) {
+        await _safeAlterColumn(
+            db, _fixedItemsTable, 'debit_day INTEGER DEFAULT 0');
+        await _safeAlterColumn(
+            db, _fixedItemsTable, 'last_executed_year_month TEXT');
+        AppLogger.info('v5: Added debit_day/last_executed_year_month to fixed_items');
       }
     } catch (e) {
       AppLogger.error('Database upgrade failed', error: e);

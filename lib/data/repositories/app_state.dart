@@ -430,10 +430,108 @@ class AppState extends ChangeNotifier {
 
   // ─── Stock Holdings ───
 
+  // ─── Auto Fixed Execution ───
+
+  /// Checks whether any fixed items with a debitDay should be auto-executed today.
+  /// Called on app load. Skips if already executed this month.
+  void checkAutoFixedExecution() {
+    final now = DateTime.now();
+    final thisYM =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}';
+    bool changed = false;
+
+    for (int i = 0; i < fixedItems.length; i++) {
+      final f = fixedItems[i];
+      if (!f.isActiveAt(now)) continue;
+      if (f.debitDay <= 0) continue;
+      if (f.lastExecutedYearMonth == thisYM) continue;
+      final safeDay = f.debitDay.clamp(1, 28);
+      if (now.day < safeDay) continue;
+
+      final execDate = DateTime(now.year, now.month, safeDay);
+      final expense = ExpenseItem(
+        title: f.title,
+        category: f.category,
+        amount: f.amount,
+        date: execDate,
+        note: '自動扣款',
+        type: TransactionType.expense,
+        accountId: f.accountId,
+        status: TransactionStatus.completed,
+        currency: f.currency,
+      );
+      expenses.insert(0, expense);
+      _applyBalance(expense);
+
+      if (f.linkedDebtAccountId != null) {
+        final debtIdx =
+            accounts.indexWhere((a) => a.id == f.linkedDebtAccountId);
+        if (debtIdx >= 0) {
+          accounts[debtIdx] = accounts[debtIdx].copyWith(
+            balance: accounts[debtIdx].balance + f.amount.toDouble(),
+          );
+        }
+      }
+
+      _db.insertExpense(expense).catchError((Object e) {
+        AppLogger.error('DB insertExpense (autoFixed) failed', error: e);
+        return '';
+      });
+
+      fixedItems[i] = f.copyWith(lastExecutedYearMonth: thisYM);
+      _db.updateFixedItem(fixedItems[i]).catchError((_) {});
+      changed = true;
+      AppLogger.info('Auto-executed fixed: ${f.title} for $thisYM');
+    }
+
+    if (changed) {
+      _save();
+      notifyListeners();
+    }
+  }
+
+  // ─── Broker Account Helpers ───
+
+  /// Returns the ID of the broker stock account, creating one if needed.
+  String? _getOrCreateBrokerAccount(String broker, StockCurrency currency) {
+    if (broker.isEmpty) return null;
+    final acctName = '$broker 股票帳戶';
+    final acctCurrency = currency == StockCurrency.usd ? 'USD' : 'TWD';
+    var idx = accounts.indexWhere((a) => a.customName == acctName);
+    if (idx < 0) {
+      final newAcct = Account(
+        typeName: '股票帳戶',
+        customName: acctName,
+        category: AccountCategory.savings,
+        balance: 0,
+        currency: acctCurrency,
+        countInTotal: false, // excluded from totalAssets to avoid double-counting
+      );
+      accounts.add(newAcct);
+      return newAcct.id;
+    }
+    return accounts[idx].id;
+  }
+
+  /// Recomputes all broker stock account balances from current holding prices.
+  void _syncBrokerAccounts() {
+    final brokerAccts = accounts.where((a) => a.typeName == '股票帳戶').toList();
+    for (final acct in brokerAccts) {
+      final related = holdings.where((h) => h.accountId == acct.id).toList();
+      final total = related.fold(0.0, (s, h) => s + h.shares * h.currentPrice);
+      final idx = accounts.indexWhere((a) => a.id == acct.id);
+      if (idx >= 0) {
+        accounts[idx] = accounts[idx].copyWith(balance: total);
+      }
+    }
+  }
+
   void _applyHoldingBalance(StockHolding h, {bool reverse = false}) {
     if (h.accountId == null) return;
     final idx = accounts.indexWhere((a) => a.id == h.accountId);
     if (idx < 0) return;
+    // Broker/stock accounts are managed by _syncBrokerAccounts — skip deduction
+    if (accounts[idx].typeName == '股票帳戶') return;
     final delta = -h.totalCost;
     final actual = reverse ? -delta : delta;
     accounts[idx] = accounts[idx].copyWith(
@@ -442,18 +540,25 @@ class AppState extends ChangeNotifier {
   }
 
   void addHolding(StockHolding h) {
-    holdings.insert(0, h);
-    _applyHoldingBalance(h);
+    // Auto-link to broker account
+    final brokerAcctId = _getOrCreateBrokerAccount(h.broker, h.currency);
+    final linked = brokerAcctId != null ? h.copyWith(accountId: brokerAcctId) : h;
+    holdings.insert(0, linked);
+    _syncBrokerAccounts();
     _save();
     notifyListeners();
+    hapticMedium();
   }
 
   void updateHolding(String id, StockHolding updated) {
     final i = holdings.indexWhere((h) => h.id == id);
     if (i >= 0) {
       _applyHoldingBalance(holdings[i], reverse: true);
-      holdings[i] = updated;
-      _applyHoldingBalance(updated);
+      // Re-link broker account if broker changed
+      final brokerAcctId = _getOrCreateBrokerAccount(updated.broker, updated.currency);
+      final linked = brokerAcctId != null ? updated.copyWith(accountId: brokerAcctId) : updated;
+      holdings[i] = linked;
+      _syncBrokerAccounts();
       _save();
       notifyListeners();
     }
@@ -465,6 +570,7 @@ class AppState extends ChangeNotifier {
       _applyHoldingBalance(holdings[i], reverse: true);
       holdings.removeAt(i);
     }
+    _syncBrokerAccounts();
     _save();
     notifyListeners();
   }
@@ -473,6 +579,7 @@ class AppState extends ChangeNotifier {
     final i = holdings.indexWhere((h) => h.id == id);
     if (i >= 0) {
       holdings[i] = holdings[i].copyWith(currentPrice: price, name: name);
+      _syncBrokerAccounts();
       _save();
       notifyListeners();
     }
@@ -484,6 +591,7 @@ class AppState extends ChangeNotifier {
     accounts.add(a);
     _save();
     notifyListeners();
+    hapticMedium();
   }
 
   void updateAccount(String id, Account updated) {
@@ -794,6 +902,10 @@ class AppState extends ChangeNotifier {
 
     // Auto-apply any pending transactions that are now due
     checkPendingTransactions();
+    // Auto-execute fixed items whose debit day has arrived this month
+    checkAutoFixedExecution();
+    // Sync broker account balances from current holdings
+    _syncBrokerAccounts();
     refreshUsdTwdRate();
   }
 

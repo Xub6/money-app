@@ -26,6 +26,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
   bool _hasPeriods = false;
   String? _selectedAccountId;
   String? _selectedDebtAccountId;
+  int _debitDay = 0; // 0 = not set (manual only)
 
   @override
   void initState() {
@@ -37,6 +38,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
     _notesCtrl = TextEditingController(text: e?.notes ?? '');
     _selectedAccountId = e?.accountId;
     _selectedDebtAccountId = e?.linkedDebtAccountId;
+    _debitDay = e?.debitDay ?? 0;
 
     final now = DateTime.now();
     final sd = e?.startDate ?? now;
@@ -167,6 +169,86 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
     );
   }
 
+  void _pickDebitDay() {
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 36, height: 4,
+            decoration: BoxDecoration(
+                color: cs.outlineVariant,
+                borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(children: [
+              Text(AppLocalizations.of(context, 'debit_day_label'),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w700)),
+              const Spacer(),
+              TextButton(
+                onPressed: () {
+                  setState(() => _debitDay = 0);
+                  Navigator.pop(ctx);
+                },
+                child: Text(AppLocalizations.of(context, 'no_debit_day').split('（').first,
+                    style: TextStyle(color: cs.onSurfaceVariant)),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 8),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 1.1,
+            ),
+            itemCount: 28,
+            itemBuilder: (_, i) {
+              final day = i + 1;
+              final isSelected = _debitDay == day;
+              return GestureDetector(
+                onTap: () {
+                  setState(() => _debitDay = day);
+                  Navigator.pop(ctx);
+                },
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.gold
+                        : cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$day',
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : cs.onSurface,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+        ]),
+      ),
+    );
+  }
+
   void _save() {
     final title = _titleCtrl.text.trim();
     final amt = int.tryParse(_amtCtrl.text.trim());
@@ -204,6 +286,9 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
       editedAt: widget.existing != null ? now : null,
       accountId: _selectedAccountId,
       linkedDebtAccountId: _selectedDebtAccountId,
+      debitDay: _debitDay,
+      // preserve last executed when editing
+      lastExecutedYearMonth: widget.existing?.lastExecutedYearMonth,
     );
 
     Navigator.pop(context, result);
@@ -483,6 +568,52 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                   AppLocalizations.of(context, 'debt_reduction_hint'),
                   style: TextStyle(
                       fontSize: 12, color: cs.onSurfaceVariant),
+                ),
+              ),
+
+            // ── 每月自動扣款日 ──
+            _sectionHeader(AppLocalizations.of(context, 'debit_day_label')),
+            _card([
+              _row(
+                label: AppLocalizations.of(context, 'debit_day_label'),
+                child: GestureDetector(
+                  onTap: _pickDebitDay,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        _debitDay > 0
+                            ? AppLocalizations.ofParam(
+                                context, 'debit_day_value', {'day': _debitDay})
+                            : AppLocalizations.of(context, 'no_debit_day'),
+                        style: TextStyle(
+                          color: _debitDay > 0
+                              ? AppColors.gold
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: _debitDay > 0
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ],
+                  ),
+                ),
+              ),
+            ]),
+            if (_debitDay > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+                child: Text(
+                  AppLocalizations.ofParam(
+                      context, 'auto_debit_note', {'day': _debitDay}),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ),
 

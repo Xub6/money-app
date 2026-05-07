@@ -16,6 +16,7 @@ class StockHolding {
   final DateTime createdAt;
   final double feeRate; // 手續費率，預設 0.1425%
   final String? accountId;
+  final String broker; // 券商名稱，用於自動建立股票帳戶
 
   StockHolding({
     String? id,
@@ -31,6 +32,7 @@ class StockHolding {
     DateTime? createdAt,
     this.feeRate = 0.001425,
     this.accountId,
+    this.broker = '',
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now();
 
@@ -70,6 +72,7 @@ class StockHolding {
         'createdAt': createdAt.toIso8601String(),
         'feeRate': feeRate,
         'accountId': accountId,
+        'broker': broker,
       };
 
   factory StockHolding.fromJson(Map<String, dynamic> j) => StockHolding(
@@ -87,12 +90,14 @@ class StockHolding {
         createdAt: DateTime.parse(j['createdAt'] as String),
         feeRate: (j['feeRate'] as num?)?.toDouble() ?? 0.001425,
         accountId: j['accountId'] as String?,
+        broker: j['broker'] as String? ?? '',
       );
 
   StockHolding copyWith({
     double? currentPrice,
     String? name,
     String? accountId,
+    String? broker,
   }) =>
       StockHolding(
         id: id,
@@ -108,5 +113,6 @@ class StockHolding {
         createdAt: createdAt,
         feeRate: feeRate,
         accountId: accountId ?? this.accountId,
+        broker: broker ?? this.broker,
       );
 }

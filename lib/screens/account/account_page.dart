@@ -6,6 +6,7 @@ import '../../data/repositories/app_state.dart';
 import '../../data/models/account.dart';
 import '../../core/constants/app_colors.dart';
 import 'add_edit_account_page.dart';
+import '../transfer/transfer_page.dart';
 
 String _fmt(double v) => NumberFormat('#,##0', 'en_US').format(v.round());
 
@@ -173,6 +174,66 @@ class _AccountPageState extends State<AccountPage> {
                             ]),
                           ],
                         ]),
+                  ),
+                ),
+              ),
+
+              // ── 帳戶轉帳入口 ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const TransferPage()),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.3),
+                            width: 1),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 13),
+                      child: Row(children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: AppColors.gold.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.swap_horiz_rounded,
+                              color: AppColors.gold, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Text(
+                              AppLocalizations.of(context, 'transfer'),
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700),
+                            ),
+                            Text(
+                              AppLocalizations.of(context, 'from_account') +
+                                  ' → ' +
+                                  AppLocalizations.of(context, 'to_account'),
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.onSurfaceVariant),
+                            ),
+                          ]),
+                        ),
+                        Icon(Icons.chevron_right,
+                            color: AppColors.gold, size: 18),
+                      ]),
+                    ),
                   ),
                 ),
               ),

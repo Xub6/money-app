@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import '../../config/localization.dart';
 import '../../data/models/stock_holding.dart';
-import '../../data/repositories/app_state.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/stock_service.dart';
 
@@ -72,7 +70,6 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
   late final TextEditingController _strategyCtrl;
   late StockCurrency _currency;
   late DateTime _purchaseDate;
-  String? _selectedAccountId;
 
   bool _fetching = false;
   String? _fetchedName;
@@ -82,6 +79,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
   late final TextEditingController _brokerCtrl;
   late final TextEditingController _feeRateCtrl;
   List<_BrokerPreset> _brokerSuggestions = [];
+  String _selectedBroker = '';
 
   @override
   void initState() {
@@ -98,7 +96,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
     _strategyCtrl = TextEditingController(text: e?.sellStrategy ?? '');
     _currency = e?.currency ?? StockCurrency.twd;
     _purchaseDate = e?.purchaseDate ?? DateTime.now();
-    _selectedAccountId = e?.accountId;
+    _selectedBroker = e?.broker ?? '';
     if (e?.name.isNotEmpty == true) _fetchedName = e!.name;
     final existingRate = e?.feeRate ?? 0.001425;
     _brokerCtrl = TextEditingController();
@@ -210,7 +208,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
         sellStrategy: _strategyCtrl.text.trim(),
         createdAt: widget.existing?.createdAt,
         feeRate: feeRate.clamp(0, 0.01),
-        accountId: _selectedAccountId,
+        broker: _selectedBroker,
       ),
     );
   }
@@ -482,6 +480,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                                     const EdgeInsets.symmetric(vertical: 14),
                               ),
                               onChanged: (q) {
+                                _selectedBroker = q;
                                 final list = _isTwd ? _twdBrokers : _usdBrokers;
                                 setState(() {
                                   _brokerSuggestions = q.isEmpty
@@ -514,6 +513,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                                       onTap: () {
                                         setState(() {
                                           _brokerCtrl.text = b.name;
+                                          _selectedBroker = b.name;
                                           _feeRateCtrl.text =
                                               _fmtRate(b.feeRate);
                                           _brokerSuggestions = [];
@@ -685,67 +685,6 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
             ),
             const SizedBox(height: 20),
 
-            // ── 關聯帳戶（選填）──
-            _SectionHeader(AppLocalizations.of(context, 'linked_account_optional')),
-            Builder(builder: (context) {
-              final accounts =
-                  Provider.of<AppState>(context, listen: false).accounts;
-              if (accounts.isEmpty) {
-                return _GroupCard(
-                  cs: cs,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Text(AppLocalizations.of(context, 'no_accounts_invest_hint'),
-                        style: TextStyle(
-                            fontSize: 13, color: cs.onSurfaceVariant)),
-                  ),
-                );
-              }
-              return Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  _AccountChip(
-                    label: AppLocalizations.of(context, 'unlinked'),
-                    selected: _selectedAccountId == null,
-                    cs: cs,
-                    onTap: () => setState(() => _selectedAccountId = null),
-                  ),
-                  ...accounts.map((a) => _AccountChip(
-                        label: a.displayName,
-                        selected: _selectedAccountId == a.id,
-                        cs: cs,
-                        onTap: () =>
-                            setState(() => _selectedAccountId = a.id),
-                      )),
-                ],
-              );
-            }),
-            if (_selectedAccountId != null) ...[
-              const SizedBox(height: 8),
-              Builder(builder: (context) {
-                final cs = Theme.of(context).colorScheme;
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(children: [
-                    Icon(Icons.info_outline, size: 16, color: cs.primary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        AppLocalizations.of(context, 'account_deduct_note'),
-                        style: TextStyle(fontSize: 12, color: cs.primary),
-                      ),
-                    ),
-                  ]),
-                );
-              }),
-            ],
-            const SizedBox(height: 20),
-
             // ── 投資筆記 ──
             _SectionHeader(AppLocalizations.of(context, 'invest_notes_optional')),
             _GroupCard(
@@ -868,48 +807,6 @@ class _NoteRow extends StatelessWidget {
             ),
           ),
         ]),
-      );
-}
-
-class _AccountChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final ColorScheme cs;
-  final VoidCallback onTap;
-
-  const _AccountChip({
-    required this.label,
-    required this.selected,
-    required this.cs,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected
-                ? AppColors.gold.withValues(alpha: 0.12)
-                : cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: selected ? AppColors.gold : cs.outlineVariant,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: selected ? AppColors.gold : cs.onSurface,
-            ),
-          ),
-        ),
       );
 }
 

@@ -26,7 +26,6 @@ import 'services/backup_service.dart';
 import 'services/export_service.dart';
 import 'data/models/backup_metadata.dart';
 import 'screens/account/account_page.dart';
-import 'screens/transfer/transfer_page.dart';
 import 'screens/feedback/feedback_page.dart';
 import 'screens/onboarding/onboarding_service.dart';
 import 'core/tour/tour_controller.dart';
@@ -343,7 +342,7 @@ class _MainShellState extends State<MainShell> {
           _openAddInvestment();
         }
       case 3:
-        _openAddFixed();
+        _showManageFabMenu();
       default:
         if (isInteractiveFab) {
           ctrl.hide();
@@ -354,6 +353,66 @@ class _MainShellState extends State<MainShell> {
           _openAdd();
         }
     }
+  }
+
+  void _showManageFabMenu() {
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 36, height: 4,
+            decoration: BoxDecoration(
+                color: cs.outlineVariant,
+                borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 4),
+          ListTile(
+            leading: Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                color: kGold.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.playlist_add_rounded,
+                  color: kGold, size: 22),
+            ),
+            title: Text(AppLocalizations.of(context, 'add_fixed_expense'),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700, fontSize: 15)),
+            onTap: () {
+              Navigator.pop(context);
+              _openAddFixed();
+            },
+          ),
+          ListTile(
+            leading: Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                color: kGold.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.account_balance_wallet_rounded,
+                  color: kGold, size: 22),
+            ),
+            title: Text(AppLocalizations.of(context, 'edit_my_accounts'),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700, fontSize: 15)),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => AccountPage(state: s)));
+            },
+          ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
   }
 
   Future<void> _editExpense(ExpenseItem expense) async {
@@ -1631,43 +1690,6 @@ class _ManagePageState extends State<ManagePage> {
 
   void _addFixed() => _openFixedDialog();
 
-  void _confirmExecuteFixed(FixedItem f) {
-    final cs = Theme.of(context).colorScheme;
-    final hasAccount = f.accountId != null;
-    final msgKey = hasAccount ? 'execute_fixed_confirm' : 'execute_fixed_no_account';
-    final msg = AppLocalizations.ofParam(context, msgKey, {'name': f.title, 'amount': _fmt(f.amount)});
-    showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(AppLocalizations.of(context, 'execute_fixed'),
-            style: const TextStyle(fontWeight: FontWeight.w800)),
-        content: Text(msg),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(AppLocalizations.of(context, 'cancel'),
-                style: TextStyle(color: cs.onSurfaceVariant)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(AppLocalizations.of(context, 'execute'),
-                style: const TextStyle(color: kGreen, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    ).then((confirmed) {
-      if (confirmed == true && mounted) {
-        widget.state.executeFixed(f);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${AppLocalizations.of(context, 'executed')} — ${f.title}'),
-          backgroundColor: kGreen,
-          duration: const Duration(seconds: 2),
-        ));
-      }
-    });
-  }
-
   String _localeDisplayName(Locale locale) {
     switch ('${locale.languageCode}_${locale.countryCode}') {
       case 'zh_TW':
@@ -1902,30 +1924,174 @@ class _ManagePageState extends State<ManagePage> {
           ),
           const SizedBox(height: 16),
 
-          // 帳戶轉帳
+          // 固定開銷
           _AppCard(
-              child: InkWell(
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const TransferPage())),
-            borderRadius: BorderRadius.circular(22),
-            child: Row(children: [
-              const Icon(Icons.swap_horiz_rounded, color: kGold),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Text(AppLocalizations.of(context, 'transfer'),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15)),
-                    Text(AppLocalizations.of(context, 'from_account') +
-                        ' → ' +
-                        AppLocalizations.of(context, 'to_account'),
-                        style: const TextStyle(color: kGray, fontSize: 12)),
-                  ])),
-              const Icon(Icons.chevron_right, color: kGold, size: 18),
-            ]),
-          )),
+              key: TourKeys.fixedCard,
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Row(children: [
+                  Expanded(
+                      child: Text(AppLocalizations.of(context, 'fixed_expenses'),
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w700))),
+                  Text(AppLocalizations.ofParam(context, 'fixed_monthly_total', {'amount': _fmt(widget.state.fixedTotal)}),
+                      style: const TextStyle(
+                          color: kGold,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12)),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: _addFixed,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.add, color: kGold, size: 18),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 14),
+                if (widget.state.fixedItems.isEmpty)
+                  Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(AppLocalizations.of(context, 'add_fixed_hint'),
+                          style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant))),
+                ...widget.state.fixedItems.map((f) {
+                  final now = DateTime.now();
+                  final completed = f.isCompleted;
+                  final remaining = f.remainingPeriods(now);
+                  final cs = Theme.of(context).colorScheme;
+                  return Dismissible(
+                    key: Key(f.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 16),
+                      decoration: BoxDecoration(
+                          color: kRed, borderRadius: BorderRadius.circular(12)),
+                      child:
+                          const Icon(Icons.delete_outline, color: Colors.white),
+                    ),
+                    onDismissed: (_) => widget.state.deleteFixed(f.id),
+                    child: GestureDetector(
+                      onLongPress: () => _openFixedDialog(existing: f),
+                      child: Opacity(
+                        opacity: completed ? 0.45 : 1.0,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                              color: cs.surfaceContainer,
+                              borderRadius: BorderRadius.circular(12)),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(children: [
+                                  Icon(Icons.receipt_long,
+                                      color: completed
+                                          ? cs.onSurfaceVariant
+                                          : kGold,
+                                      size: 18),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                      child: Text(f.title,
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: completed
+                                                  ? cs.onSurfaceVariant
+                                                  : cs.onSurface))),
+                                  Text('NT\$ ${_fmt(f.amount)}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w800)),
+                                  const SizedBox(width: 8),
+                                  if (f.debitDay > 0) ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: kGold.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        AppLocalizations.ofParam(context, 'debit_day_value', {'day': f.debitDay}),
+                                        style: const TextStyle(
+                                            fontSize: 10,
+                                            color: kGold,
+                                            fontWeight: FontWeight.w700)),
+                                    ),
+                                    const SizedBox(width: 6),
+                                  ],
+                                  GestureDetector(
+                                    onTap: () => _openFixedDialog(existing: f),
+                                    child: const Icon(Icons.edit_outlined,
+                                        color: kGold, size: 18),
+                                  ),
+                                ]),
+                                if (f.totalPeriods != null) ...[
+                                  const SizedBox(height: 6),
+                                  Row(children: [
+                                    const SizedBox(width: 28),
+                                    if (completed)
+                                      Text(AppLocalizations.ofParam(context, 'periods_completed', {'n': f.totalPeriods}),
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: cs.onSurfaceVariant))
+                                    else ...[
+                                      Text(
+                                        AppLocalizations.ofParam(context, 'fixed_start_periods', {'date': DateFormat('yyyy/MM').format(f.startDate), 'n': f.totalPeriods}),
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: cs.onSurfaceVariant),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: kGold.withValues(alpha: 0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Text(AppLocalizations.ofParam(context, 'periods_remaining_label', {'n': remaining}),
+                                            style: const TextStyle(
+                                                fontSize: 11,
+                                                color: kGold,
+                                                fontWeight: FontWeight.w700)),
+                                      ),
+                                    ],
+                                  ]),
+                                  const SizedBox(height: 6),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(99),
+                                    child: LinearProgressIndicator(
+                                      value: completed
+                                          ? 1.0
+                                          : (f.totalPeriods! -
+                                                  (remaining ?? 0)) /
+                                              f.totalPeriods!,
+                                      minHeight: 4,
+                                      backgroundColor:
+                                          cs.surfaceContainerHighest,
+                                      valueColor: AlwaysStoppedAnimation(
+                                          completed
+                                              ? cs.onSurfaceVariant
+                                              : kGold),
+                                    ),
+                                  ),
+                                ],
+                              ]),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ])),
           const SizedBox(height: 16),
 
           // 外觀設定
@@ -2055,167 +2221,6 @@ class _ManagePageState extends State<ManagePage> {
                         style: const TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ]),
-              ])),
-          const SizedBox(height: 16),
-
-          // 固定開銷
-          _AppCard(
-              key: TourKeys.fixedCard,
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Row(children: [
-                  Expanded(
-                      child: Text(AppLocalizations.of(context, 'fixed_expenses'),
-                          style: const TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w700))),
-                  Text(AppLocalizations.ofParam(context, 'fixed_monthly_total', {'amount': _fmt(widget.state.fixedTotal)}),
-                      style: const TextStyle(
-                          color: kGold,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12)),
-                  const SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: _addFixed,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.add, color: kGold, size: 18),
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 14),
-                if (widget.state.fixedItems.isEmpty)
-                  Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Text(AppLocalizations.of(context, 'add_fixed_hint'),
-                          style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant))),
-                ...widget.state.fixedItems.map((f) {
-                  final now = DateTime.now();
-                  final completed = f.isCompleted;
-                  final remaining = f.remainingPeriods(now);
-                  final cs = Theme.of(context).colorScheme;
-                  return Dismissible(
-                    key: Key(f.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 16),
-                      decoration: BoxDecoration(
-                          color: kRed, borderRadius: BorderRadius.circular(12)),
-                      child:
-                          const Icon(Icons.delete_outline, color: Colors.white),
-                    ),
-                    onDismissed: (_) => widget.state.deleteFixed(f.id),
-                    child: GestureDetector(
-                      onLongPress: () => _openFixedDialog(existing: f),
-                      child: Opacity(
-                        opacity: completed ? 0.45 : 1.0,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                              color: cs.surfaceContainer,
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(children: [
-                                  Icon(Icons.receipt_long,
-                                      color: completed
-                                          ? cs.onSurfaceVariant
-                                          : kGold,
-                                      size: 18),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                      child: Text(f.title,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              color: completed
-                                                  ? cs.onSurfaceVariant
-                                                  : cs.onSurface))),
-                                  Text('NT\$ ${_fmt(f.amount)}',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w800)),
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: () => _openFixedDialog(existing: f),
-                                    child: const Icon(Icons.edit_outlined,
-                                        color: kGold, size: 18),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: () => _confirmExecuteFixed(f),
-                                    child: const Icon(
-                                        Icons.play_circle_outline_rounded,
-                                        color: kGreen,
-                                        size: 20),
-                                  ),
-                                ]),
-                                if (f.totalPeriods != null) ...[
-                                  const SizedBox(height: 6),
-                                  Row(children: [
-                                    const SizedBox(width: 28),
-                                    if (completed)
-                                      Text(AppLocalizations.ofParam(context, 'periods_completed', {'n': f.totalPeriods}),
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: cs.onSurfaceVariant))
-                                    else ...[
-                                      Text(
-                                        AppLocalizations.ofParam(context, 'fixed_start_periods', {'date': DateFormat('yyyy/MM').format(f.startDate), 'n': f.totalPeriods}),
-                                        style: TextStyle(
-                                            fontSize: 12,
-                                            color: cs.onSurfaceVariant),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 7, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: kGold.withValues(alpha: 0.15),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                        ),
-                                        child: Text(AppLocalizations.ofParam(context, 'periods_remaining_label', {'n': remaining}),
-                                            style: const TextStyle(
-                                                fontSize: 11,
-                                                color: kGold,
-                                                fontWeight: FontWeight.w700)),
-                                      ),
-                                    ],
-                                  ]),
-                                  const SizedBox(height: 6),
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(99),
-                                    child: LinearProgressIndicator(
-                                      value: completed
-                                          ? 1.0
-                                          : (f.totalPeriods! -
-                                                  (remaining ?? 0)) /
-                                              f.totalPeriods!,
-                                      minHeight: 4,
-                                      backgroundColor:
-                                          cs.surfaceContainerHighest,
-                                      valueColor: AlwaysStoppedAnimation(
-                                          completed
-                                              ? cs.onSurfaceVariant
-                                              : kGold),
-                                    ),
-                                  ),
-                                ],
-                              ]),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
               ])),
           const SizedBox(height: 16),
 
