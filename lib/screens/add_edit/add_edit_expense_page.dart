@@ -143,6 +143,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
       status: status,
     );
 
+    Provider.of<AppState>(context, listen: false).hapticMedium();
     Navigator.pop(context, newItem);
   }
 

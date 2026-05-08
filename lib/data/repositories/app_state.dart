@@ -518,7 +518,7 @@ class AppState extends ChangeNotifier {
     final brokerAccts = accounts.where((a) => a.typeName == '股票帳戶').toList();
     for (final acct in brokerAccts) {
       final related = holdings.where((h) => h.accountId == acct.id).toList();
-      final total = related.fold(0.0, (s, h) => s + h.shares * h.currentPrice);
+      final total = related.fold(0.0, (s, h) => s + h.currentValueTwd(usdTwdRate));
       final idx = accounts.indexWhere((a) => a.id == acct.id);
       if (idx >= 0) {
         accounts[idx] = accounts[idx].copyWith(balance: total);
@@ -683,7 +683,7 @@ class AppState extends ChangeNotifier {
   }
 
   double get totalPortfolioValue =>
-      holdings.fold(0.0, (s, h) => s + h.netCurrentValueTwd(usdTwdRate));
+      holdings.fold(0.0, (s, h) => s + h.currentValueTwd(usdTwdRate));
   double get totalPortfolioCost =>
       holdings.fold(0.0, (s, h) => s + h.totalCost);
   double get totalPortfolioProfit => totalPortfolioValue - totalPortfolioCost;
@@ -695,6 +695,7 @@ class AppState extends ChangeNotifier {
     budget = v;
     _save();
     notifyListeners();
+    hapticMedium();
     AppLogger.info('Budget updated to: $v');
   }
 

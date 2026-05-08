@@ -183,19 +183,33 @@ class _CategoryTab extends StatelessWidget {
         if (custom.isNotEmpty) ...[
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
-              child: Text('自訂類別',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: cs.onSurfaceVariant)),
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 4),
+              child: Row(children: [
+                Text('自訂類別',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurfaceVariant)),
+                const SizedBox(width: 8),
+                Text('長按拖拽排序',
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              ]),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, i) {
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                itemCount: custom.length,
+                onReorder: (oldIndex, newIndex) {
+                  if (newIndex > oldIndex) newIndex--;
+                  Provider.of<AppState>(context, listen: false)
+                      .reorderCustomCategory(type, oldIndex, newIndex);
+                },
+                itemBuilder: (context, i) {
                   final cat = custom[i];
                   final color = Color(cat['color'] as int? ?? 0xFFC59B63);
                   final iconCode = cat['iconCode'] as int? ?? Icons.category.codePoint;
@@ -251,6 +265,12 @@ class _CategoryTab extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(children: [
+                        ReorderableDragStartListener(
+                          index: i,
+                          child: Icon(Icons.drag_handle_rounded,
+                              color: cs.onSurfaceVariant, size: 20),
+                        ),
+                        const SizedBox(width: 10),
                         Container(
                           width: 42,
                           height: 42,
@@ -287,7 +307,6 @@ class _CategoryTab extends StatelessWidget {
                     ),
                   );
                 },
-                childCount: custom.length,
               ),
             ),
           ),

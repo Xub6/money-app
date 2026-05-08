@@ -125,13 +125,14 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   void _confirm() {
     final e = _expr;
     if (e.isEmpty) {
-      Navigator.pop(context);
+      HapticFeedback.mediumImpact();
+      Navigator.pop(context, 0.0);
       return;
     }
     // Try to evaluate first
     final r = _calc(e);
     final v = r ?? double.tryParse(e);
-    if (v != null && v > 0) {
+    if (v != null && v >= 0) {
       HapticFeedback.mediumImpact();
       Navigator.pop(context, v);
     } else {

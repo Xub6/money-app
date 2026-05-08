@@ -1540,6 +1540,7 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   Future<void> _doBackup() async {
+    widget.state.hapticMedium();
     final messenger = ScaffoldMessenger.of(context);
     try {
       // 過濾 demo 資料，不備份進正式備份檔
@@ -1570,6 +1571,7 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   Future<void> _doExportCsv() async {
+    widget.state.hapticMedium();
     final messenger = ScaffoldMessenger.of(context);
     try {
       final filename = await _exportService.exportExpensesAsCsv(
@@ -1588,6 +1590,7 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   Future<void> _doExportExcel() async {
+    widget.state.hapticMedium();
     final messenger = ScaffoldMessenger.of(context);
     try {
       final filename = await _exportService.exportFullReportAsExcel(
@@ -1608,6 +1611,7 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   Future<void> _doRestore() async {
+    widget.state.hapticMedium();
     final messenger = ScaffoldMessenger.of(context);
     try {
       final backups = await _backupService.getBackupList();
@@ -2095,30 +2099,6 @@ class _ManagePageState extends State<ManagePage> {
               ])),
           const SizedBox(height: 16),
 
-          // 類別管理
-          _AppCard(
-            child: InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CategoryManagementPage()),
-              ),
-              borderRadius: BorderRadius.circular(22),
-              child: Row(children: [
-                const Icon(Icons.category_rounded, color: kGold),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('類別管理', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                    Text('新增、編輯、刪除支出與收入類別',
-                        style: TextStyle(color: kGray, fontSize: 12)),
-                  ]),
-                ),
-                const Icon(Icons.chevron_right, color: kGray, size: 18),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 16),
-
           // 月預算
           _AppCard(
               child: Column(
@@ -2178,6 +2158,30 @@ class _ManagePageState extends State<ManagePage> {
               ])),
           const SizedBox(height: 16),
 
+          // 類別管理
+          _AppCard(
+            child: InkWell(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CategoryManagementPage()),
+              ),
+              borderRadius: BorderRadius.circular(22),
+              child: Row(children: [
+                const Icon(Icons.category_rounded, color: kGold),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('類別管理', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text('新增、編輯、刪除支出與收入類別',
+                        style: TextStyle(color: kGray, fontSize: 12)),
+                  ]),
+                ),
+                const Icon(Icons.chevron_right, color: kGray, size: 18),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // 外觀設定
           _AppCard(
               child: Row(children: [
@@ -2194,7 +2198,10 @@ class _ManagePageState extends State<ManagePage> {
                 ])),
             Switch(
               value: themeProvider.isDarkMode,
-              onChanged: (_) => themeProvider.toggleTheme(),
+              onChanged: (_) {
+                widget.state.hapticLight();
+                themeProvider.toggleTheme();
+              },
               activeColor: kGold,
             ),
           ])),
@@ -2219,7 +2226,10 @@ class _ManagePageState extends State<ManagePage> {
                   ])),
               Switch(
                 value: widget.state.hapticEnabled,
-                onChanged: (v) => widget.state.setHapticEnabled(v),
+                onChanged: (v) {
+                  HapticFeedback.lightImpact();
+                  widget.state.setHapticEnabled(v);
+                },
                 activeColor: kGold,
               ),
             ]),
