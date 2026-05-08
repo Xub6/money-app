@@ -206,20 +206,26 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
               label: AppLocalizations.of(context, 'expense_type'),
               selected: !isIncome,
               color: AppColors.error,
-              onTap: () => setState(() {
-                _type = TransactionType.expense;
-                if (isIncomeCategoryName(_selectedCategory)) _selectedCategory = '餐飲';
-              }),
+              onTap: () {
+                Provider.of<AppState>(context, listen: false).hapticLight();
+                setState(() {
+                  _type = TransactionType.expense;
+                  if (isIncomeCategoryName(_selectedCategory)) _selectedCategory = '餐飲';
+                });
+              },
             ),
             const SizedBox(width: 12),
             _TypeToggle(
               label: AppLocalizations.of(context, 'income'),
               selected: isIncome,
               color: AppColors.success,
-              onTap: () => setState(() {
-                _type = TransactionType.income;
-                if (!isIncomeCategoryName(_selectedCategory)) _selectedCategory = '薪資';
-              }),
+              onTap: () {
+                Provider.of<AppState>(context, listen: false).hapticLight();
+                setState(() {
+                  _type = TransactionType.income;
+                  if (!isIncomeCategoryName(_selectedCategory)) _selectedCategory = '薪資';
+                });
+              },
             ),
           ]),
           const SizedBox(height: 24),

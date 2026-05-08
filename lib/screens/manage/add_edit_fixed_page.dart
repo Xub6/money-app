@@ -662,10 +662,13 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                     Switch.adaptive(
                       value: _hasPeriods,
                       activeColor: AppColors.gold,
-                      onChanged: (v) => setState(() {
-                        _hasPeriods = v;
-                        if (!v) _periodsCtrl.clear();
-                      }),
+                      onChanged: (v) {
+                        Provider.of<AppState>(context, listen: false).hapticLight();
+                        setState(() {
+                          _hasPeriods = v;
+                          if (!v) _periodsCtrl.clear();
+                        });
+                      },
                     ),
                   ],
                 ),

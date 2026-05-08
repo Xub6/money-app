@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/categories.dart';
@@ -112,17 +113,19 @@ class _CategoryTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final appState = Provider.of<AppState>(context);
-    final predefined = type == 'expense' ? kCategories : kIncomeCategories;
+    final predefined = type == 'expense'
+        ? appState.orderedExpenseCategories
+        : appState.orderedIncomeCategories;
     final custom = type == 'expense'
         ? appState.customExpenseCategories
         : appState.customIncomeCategories;
 
     return CustomScrollView(
       slivers: [
-        // 預設類別 (read-only)
+        // 預設類別 (可拖拽排序)
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 4),
             child: Row(children: [
               Text('預設類別',
                   style: TextStyle(
@@ -136,45 +139,19 @@ class _CategoryTab extends StatelessWidget {
                   color: cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text('無法刪除',
+                child: Text('無法刪除・長按拖拽排序',
                     style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
               ),
             ]),
           ),
         ),
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 0.9,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, i) {
-                final cat = predefined[i];
-                return Container(
-                  decoration: BoxDecoration(
-                    color: cat.color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: cat.color.withValues(alpha: 0.3)),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(cat.icon, color: cat.color, size: 26),
-                      const SizedBox(height: 6),
-                      Text(cat.name,
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: cat.color)),
-                    ],
-                  ),
-                );
-              },
-              childCount: predefined.length,
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: _DraggableCategoryGrid(
+              categories: predefined,
+              type: type,
+              cs: cs,
             ),
           ),
         ),
@@ -585,6 +562,123 @@ class _CategoryEditorState extends State<_CategoryEditor> {
           ),
         ),
       ]),
+    );
+  }
+}
+
+class _DraggableCategoryGrid extends StatefulWidget {
+  final List<Category> categories;
+  final String type;
+  final ColorScheme cs;
+
+  const _DraggableCategoryGrid({
+    required this.categories,
+    required this.type,
+    required this.cs,
+  });
+
+  @override
+  State<_DraggableCategoryGrid> createState() => _DraggableCategoryGridState();
+}
+
+class _DraggableCategoryGridState extends State<_DraggableCategoryGrid> {
+  int? _hoveredIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    const columns = 4;
+    const spacing = 10.0;
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final cellSize = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+      final rows = (widget.categories.length / columns).ceil();
+
+      return SizedBox(
+        height: rows * (cellSize / 0.9) + (rows - 1) * spacing,
+        child: Stack(
+          children: List.generate(widget.categories.length, (i) {
+            final col = i % columns;
+            final row = i ~/ columns;
+            final left = col * (cellSize + spacing);
+            final top = row * (cellSize / 0.9 + spacing);
+            final cat = widget.categories[i];
+
+            return Positioned(
+              left: left,
+              top: top,
+              width: cellSize,
+              height: cellSize / 0.9,
+              child: LongPressDraggable<int>(
+                data: i,
+                delay: const Duration(milliseconds: 300),
+                onDragStarted: () => HapticFeedback.mediumImpact(),
+                feedback: Material(
+                  color: Colors.transparent,
+                  child: SizedBox(
+                    width: cellSize,
+                    height: cellSize / 0.9,
+                    child: _buildCell(cat, widget.cs, scale: 1.1),
+                  ),
+                ),
+                childWhenDragging: Opacity(
+                  opacity: 0.3,
+                  child: _buildCell(cat, widget.cs),
+                ),
+                child: DragTarget<int>(
+                  onWillAcceptWithDetails: (d) => d.data != i,
+                  onAcceptWithDetails: (d) {
+                    Provider.of<AppState>(context, listen: false)
+                        .reorderPredefinedCategory(widget.type, d.data, i);
+                    setState(() => _hoveredIndex = null);
+                  },
+                  onMove: (_) => setState(() => _hoveredIndex = i),
+                  onLeave: (_) => setState(() => _hoveredIndex = null),
+                  builder: (context, candidates, rejected) {
+                    final isHovered = _hoveredIndex == i && candidates.isNotEmpty;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      transform: isHovered
+                          ? (Matrix4.identity()..scale(1.05))
+                          : Matrix4.identity(),
+                      child: _buildCell(cat, widget.cs, highlighted: isHovered),
+                    );
+                  },
+                ),
+              ),
+            );
+          }),
+        ),
+      );
+    });
+  }
+
+  Widget _buildCell(Category cat, ColorScheme cs, {bool highlighted = false, double scale = 1.0}) {
+    return Transform.scale(
+      scale: scale,
+      child: Container(
+        decoration: BoxDecoration(
+          color: highlighted
+              ? cat.color.withValues(alpha: 0.25)
+              : cat.color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: cat.color.withValues(alpha: highlighted ? 0.6 : 0.3),
+            width: highlighted ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(cat.icon, color: cat.color, size: 26),
+            const SizedBox(height: 6),
+            Text(cat.name,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: cat.color)),
+          ],
+        ),
+      ),
     );
   }
 }

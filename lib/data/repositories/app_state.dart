@@ -14,6 +14,7 @@ import '../databases/app_database.dart';
 import '../../services/encryption_service.dart';
 import '../../services/stock_service.dart';
 import '../../core/tour/tour_demo_data.dart';
+import '../../core/constants/categories.dart';
 
 class AppState extends ChangeNotifier {
   List<ExpenseItem> expenses = [];
@@ -36,6 +37,8 @@ class AppState extends ChangeNotifier {
   bool loaded = false;
   bool hapticEnabled = true;
   List<Map<String, dynamic>> _customCategories = [];
+  List<String> _predefinedExpenseOrder = [];
+  List<String> _predefinedIncomeOrder = [];
 
   final _db = AppDatabase();
   final _enc = EncryptionService();
@@ -46,6 +49,43 @@ class AppState extends ChangeNotifier {
   }
 
   // ─── Category Management ───
+
+  List<Category> get orderedExpenseCategories {
+    if (_predefinedExpenseOrder.isEmpty) return List.of(kCategories);
+    final result = _predefinedExpenseOrder
+        .map((n) => kCategories.firstWhere((c) => c.name == n, orElse: () => kCategories.last))
+        .toList();
+    for (final c in kCategories) {
+      if (!result.contains(c)) result.add(c);
+    }
+    return result;
+  }
+
+  List<Category> get orderedIncomeCategories {
+    if (_predefinedIncomeOrder.isEmpty) return List.of(kIncomeCategories);
+    final result = _predefinedIncomeOrder
+        .map((n) => kIncomeCategories.firstWhere((c) => c.name == n, orElse: () => kIncomeCategories.last))
+        .toList();
+    for (final c in kIncomeCategories) {
+      if (!result.contains(c)) result.add(c);
+    }
+    return result;
+  }
+
+  void reorderPredefinedCategory(String type, int oldIndex, int newIndex) {
+    final isExpense = type == 'expense';
+    if (isExpense && _predefinedExpenseOrder.isEmpty) {
+      _predefinedExpenseOrder = kCategories.map((c) => c.name).toList();
+    } else if (!isExpense && _predefinedIncomeOrder.isEmpty) {
+      _predefinedIncomeOrder = kIncomeCategories.map((c) => c.name).toList();
+    }
+    final list = isExpense ? _predefinedExpenseOrder : _predefinedIncomeOrder;
+    final item = list.removeAt(oldIndex);
+    list.insert(newIndex, item);
+    _prefs?.setStringList(isExpense ? 'predefinedExpenseOrder' : 'predefinedIncomeOrder', list);
+    hapticLight();
+    notifyListeners();
+  }
 
   List<Map<String, dynamic>> get customExpenseCategories =>
       _customCategories.where((c) => c['type'] == 'expense').toList();
@@ -856,6 +896,12 @@ class AppState extends ChangeNotifier {
         AppLogger.info(
             '✓ Loaded ${_customCategories.length} custom categories');
       }
+
+      // Predefined category order
+      final expOrder = _prefs?.getStringList('predefinedExpenseOrder');
+      if (expOrder != null) _predefinedExpenseOrder = expOrder;
+      final incOrder = _prefs?.getStringList('predefinedIncomeOrder');
+      if (incOrder != null) _predefinedIncomeOrder = incOrder;
     } catch (e) {
       AppLogger.error('✗ Error loading meta from SharedPreferences: $e');
     }

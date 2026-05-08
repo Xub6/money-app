@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../config/localization.dart';
 import '../../data/models/account.dart';
 import '../../core/constants/app_colors.dart';
@@ -243,7 +244,10 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
                     cs: cs,
                     child: Switch(
                       value: _countInTotal,
-                      onChanged: (v) => setState(() => _countInTotal = v),
+                      onChanged: (v) {
+                        HapticFeedback.lightImpact();
+                        setState(() => _countInTotal = v);
+                      },
                       activeColor: AppColors.gold,
                     ),
                   ),

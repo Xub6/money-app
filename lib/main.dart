@@ -577,6 +577,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _setIncludeFixed(bool value) async {
+    widget.state.hapticLight();
     setState(() => _includeFixed = value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kIncludeFixedKey, value);
