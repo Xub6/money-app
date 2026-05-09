@@ -32,6 +32,7 @@ import 'services/export_service.dart';
 import 'data/models/backup_metadata.dart';
 import 'screens/account/account_page.dart';
 import 'screens/manage/category_management_page.dart';
+import 'screens/loan/loan_page.dart';
 import 'screens/feedback/feedback_page.dart';
 import 'screens/onboarding/onboarding_service.dart';
 import 'core/tour/tour_controller.dart';
@@ -333,6 +334,7 @@ class _MainShellState extends State<MainShell> {
   void _openAddFixed() => _showFixedItemDialog(context, s);
 
   void _fabTap() {
+    s.hapticLight();
     final ctrl = context.read<TourController>();
     final isInteractiveFab = ctrl.isActive &&
         ctrl.isWaitingForInteraction &&
@@ -2091,7 +2093,8 @@ class _ManagePageState extends State<ManagePage> {
                             label: '復原',
                             onPressed: () => widget.state.addFixed(f),
                           ),
-                          duration: const Duration(seconds: 4),
+                          duration: const Duration(seconds: 3),
+                          showCloseIcon: true,
                         ),
                       );
                     },
@@ -2286,6 +2289,39 @@ class _ManagePageState extends State<ManagePage> {
                     const Text('類別管理', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                     Text('新增、編輯、刪除支出與收入類別',
                         style: TextStyle(color: kGray, fontSize: 12)),
+                  ]),
+                ),
+                const Icon(Icons.chevron_right, color: kGray, size: 18),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 借款紀錄
+          _AppCard(
+            child: InkWell(
+              onTap: () {
+                widget.state.hapticLight();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => LoanPage(state: widget.state)),
+                );
+              },
+              borderRadius: BorderRadius.circular(22),
+              child: Row(children: [
+                const Icon(Icons.handshake_rounded, color: kGold),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('借款紀錄', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    ListenableBuilder(
+                      listenable: widget.state,
+                      builder: (_, __) {
+                        final active = widget.state.loans.where((l) => !l.isCompleted).length;
+                        return Text(active > 0 ? '進行中 $active 筆' : '無進行中借款',
+                            style: TextStyle(color: kGray, fontSize: 12));
+                      },
+                    ),
                   ]),
                 ),
                 const Icon(Icons.chevron_right, color: kGray, size: 18),

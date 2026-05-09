@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/categories.dart';
@@ -120,7 +119,7 @@ class _CategoryManagementPageState extends State<CategoryManagementPage>
   }
 }
 
-// ── 類別分頁 ──
+// ── 類別分頁（統一列表）──
 class _CategoryTab extends StatelessWidget {
   final String type;
   const _CategoryTab({required this.type});
@@ -136,382 +135,217 @@ class _CategoryTab extends StatelessWidget {
         ? appState.customExpenseCategories
         : appState.customIncomeCategories;
 
-    return CustomScrollView(
-      slivers: [
-        // 預設類別
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 4),
-            child: Row(children: [
-              Text('預設類別',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: cs.onSurfaceVariant)),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text('長按拖拽排序・點擊編輯・眼睛隱藏',
-                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              ),
-            ]),
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: _DraggableCategoryGrid(
-              categories: predefined,
-              type: type,
-              cs: cs,
-              onEditTap: (cat) {
-                final page = context.findAncestorStateOfType<_CategoryManagementPageState>();
-                page?._showPredefinedEditor(context, cat);
-              },
-              onToggleHidden: (cat) {
-                Provider.of<AppState>(context, listen: false)
-                    .togglePredefinedCategoryHidden(cat.name);
-                HapticFeedback.lightImpact();
-              },
-            ),
-          ),
-        ),
+    // Unified list: predefined first, then custom
+    final items = <_CatItem>[
+      ...predefined.map((c) => _CatItem.predefined(c, hidden: appState.isPredefinedHidden(c.name))),
+      ...custom.map((m) => _CatItem.custom(m)),
+    ];
 
-        // 自訂類別
-        if (custom.isNotEmpty) ...[
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 20, 18, 4),
-              child: Row(children: [
-                Text('自訂類別',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurfaceVariant)),
-                const SizedBox(width: 8),
-                Text('長按拖拽排序',
-                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              ]),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: ReorderableListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                buildDefaultDragHandles: false,
-                itemCount: custom.length,
-                onReorder: (oldIndex, newIndex) {
-                  if (newIndex > oldIndex) newIndex--;
-                  Provider.of<AppState>(context, listen: false)
-                      .reorderCustomCategory(type, oldIndex, newIndex);
-                },
-                itemBuilder: (context, i) {
-                  final cat = custom[i];
-                  final color = Color(cat['color'] as int? ?? 0xFFC59B63);
-                  final iconCode = cat['iconCode'] as int? ?? Icons.category.codePoint;
-                  return Dismissible(
-                    key: Key('${cat['name']}_${cat['type']}'),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
-                    ),
-                    confirmDismiss: (_) async {
-                      final appState = Provider.of<AppState>(context, listen: false);
-                      final catName = cat['name'] as String;
-                      // 檢查此類別是否有交易使用
-                      final usedCount = appState.expenses
-                          .where((e) => e.category == catName)
-                          .length;
-                      final ok = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          title: Text('刪除類別「$catName」',
-                              style: const TextStyle(fontWeight: FontWeight.w800)),
-                          content: usedCount > 0
-                              ? Text('此類別已有 $usedCount 筆交易。刪除後交易記錄仍保留，但類別顯示為原名稱。\n\n確定刪除？')
-                              : const Text('確定要刪除此類別？此操作不可復原。'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('取消'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, true),
-                              child: const Text('刪除',
-                                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
-                            ),
-                          ],
-                        ),
-                      ) ?? false;
-                      return ok;
-                    },
-                    onDismissed: (_) {
-                      Provider.of<AppState>(context, listen: false)
-                          .deleteCustomCategory(cat['name'] as String, cat['type'] as String);
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: cs.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(children: [
-                        ReorderableDragStartListener(
-                          index: i,
-                          child: Icon(Icons.drag_handle_rounded, color: cs.onSurfaceVariant, size: 20),
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          width: 42, height: 42,
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            IconData(iconCode, fontFamily: 'MaterialIcons'),
-                            color: color, size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(cat['name'] as String,
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: cs.onSurface)),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined, color: AppColors.gold, size: 20),
-                          onPressed: () {
-                            final page = context.findAncestorStateOfType<_CategoryManagementPageState>();
-                            page?._showCategoryEditor(context,
-                                type: cat['type'] as String, existing: cat);
-                          },
-                        ),
-                      ]),
-                    ),
-                  );
-                },
+    if (items.isEmpty) {
+      return Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.category_outlined, size: 48, color: cs.onSurfaceVariant),
+          const SizedBox(height: 12),
+          Text('尚無類別', style: TextStyle(color: cs.onSurfaceVariant)),
+        ]),
+      );
+    }
+
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 100),
+      buildDefaultDragHandles: false,
+      itemCount: items.length,
+      onReorder: (oldIndex, newIndex) {
+        if (newIndex > oldIndex) newIndex--;
+        final moved = items.removeAt(oldIndex);
+        items.insert(newIndex, moved);
+        final predNames = items
+            .where((it) => it.isPredefined)
+            .map((it) => it.predefined!.name)
+            .toList();
+        final customList = items
+            .where((it) => !it.isPredefined)
+            .map((it) => it.map!)
+            .toList();
+        appState.setUnifiedCategoryOrder(type, predNames, customList);
+      },
+      itemBuilder: (context, i) {
+        final item = items[i];
+        return _UnifiedCategoryRow(
+          key: ValueKey(item.key),
+          item: item,
+          index: i,
+          type: type,
+          onEditPredefined: (cat) {
+            final page = context.findAncestorStateOfType<_CategoryManagementPageState>();
+            page?._showPredefinedEditor(context, cat);
+          },
+          onEditCustom: (m) {
+            final page = context.findAncestorStateOfType<_CategoryManagementPageState>();
+            page?._showCategoryEditor(context, type: m['type'] as String, existing: m);
+          },
+          onTogglePredefinedHidden: (cat) {
+            appState.togglePredefinedCategoryHidden(cat.name);
+            appState.hapticLight();
+          },
+          onToggleCustomHidden: (m) {
+            appState.toggleCustomCategoryHidden(m['name'] as String, m['type'] as String);
+            appState.hapticLight();
+          },
+          onDeleteCustom: (m) async {
+            final catName = m['name'] as String;
+            final usedCount = appState.expenses.where((e) => e.category == catName).length;
+            final ok = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Text('刪除類別「$catName」', style: const TextStyle(fontWeight: FontWeight.w800)),
+                content: usedCount > 0
+                    ? Text('此類別已有 $usedCount 筆交易。刪除後交易記錄仍保留，但類別顯示為原名稱。\n\n確定刪除？')
+                    : const Text('確定要刪除此類別？此操作不可復原。'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('刪除', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+                  ),
+                ],
               ),
-            ),
-          ),
-        ] else ...[
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 20, 18, 8),
-              child: Text('自訂類別',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Column(children: [
-                  Icon(Icons.add_circle_outline, size: 36, color: cs.onSurfaceVariant),
-                  const SizedBox(height: 10),
-                  Text('尚未建立自訂類別', style: TextStyle(color: cs.onSurfaceVariant)),
-                  const SizedBox(height: 4),
-                  Text('點擊下方按鈕新增', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                ]),
-              ),
-            ),
-          ),
-        ],
-        const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
-      ],
+            ) ?? false;
+            if (ok && context.mounted) {
+              appState.deleteCustomCategory(catName, m['type'] as String);
+            }
+          },
+        );
+      },
     );
   }
 }
 
-// ── 預設類別拖拽格子 ──
-class _DraggableCategoryGrid extends StatefulWidget {
-  final List<Category> categories;
-  final String type;
-  final ColorScheme cs;
-  final void Function(Category cat) onEditTap;
-  final void Function(Category cat) onToggleHidden;
+class _CatItem {
+  final bool isPredefined;
+  final Category? predefined;
+  final Map<String, dynamic>? map;
+  final bool _hidden;
 
-  const _DraggableCategoryGrid({
-    required this.categories,
+  _CatItem.predefined(Category cat, {bool hidden = false})
+      : isPredefined = true, predefined = cat, map = null, _hidden = hidden;
+  _CatItem.custom(Map<String, dynamic> m)
+      : isPredefined = false, predefined = null, map = m, _hidden = m['hidden'] == true;
+
+  String get key => isPredefined ? 'pre_${predefined!.name}' : 'cus_${map!['name']}_${map!['type']}';
+  String get name => isPredefined ? predefined!.name : map!['name'] as String;
+  Color get color => isPredefined ? predefined!.color : Color(map!['color'] as int? ?? 0xFFC59B63);
+  IconData get icon => isPredefined
+      ? predefined!.icon
+      : IconData(map!['iconCode'] as int? ?? Icons.category.codePoint, fontFamily: 'MaterialIcons');
+  bool get isHidden => _hidden;
+}
+
+class _UnifiedCategoryRow extends StatelessWidget {
+  final _CatItem item;
+  final int index;
+  final String type;
+  final void Function(Category) onEditPredefined;
+  final void Function(Map<String, dynamic>) onEditCustom;
+  final void Function(Category) onTogglePredefinedHidden;
+  final void Function(Map<String, dynamic>) onToggleCustomHidden;
+  final Future<void> Function(Map<String, dynamic>) onDeleteCustom;
+
+  const _UnifiedCategoryRow({
+    super.key,
+    required this.item,
+    required this.index,
     required this.type,
-    required this.cs,
-    required this.onEditTap,
-    required this.onToggleHidden,
+    required this.onEditPredefined,
+    required this.onEditCustom,
+    required this.onTogglePredefinedHidden,
+    required this.onToggleCustomHidden,
+    required this.onDeleteCustom,
   });
 
   @override
-  State<_DraggableCategoryGrid> createState() => _DraggableCategoryGridState();
-}
-
-class _DraggableCategoryGridState extends State<_DraggableCategoryGrid> {
-  int? _hoveredIndex;
-
-  @override
   Widget build(BuildContext context) {
-    const columns = 4;
-    const spacing = 10.0;
-    final appState = Provider.of<AppState>(context, listen: false);
+    final cs = Theme.of(context).colorScheme;
+    final color = item.color;
+    final isHidden = item.isHidden;
 
-    return LayoutBuilder(builder: (context, constraints) {
-      final cellSize = (constraints.maxWidth - spacing * (columns - 1)) / columns;
-      final rows = (widget.categories.length / columns).ceil();
-
-      return SizedBox(
-        height: rows * (cellSize / 0.9) + (rows - 1) * spacing,
-        child: Stack(
-          children: List.generate(widget.categories.length, (i) {
-            final col = i % columns;
-            final row = i ~/ columns;
-            final left = col * (cellSize + spacing);
-            final top = row * (cellSize / 0.9 + spacing);
-            final cat = widget.categories[i];
-            final isHidden = appState.orderedExpenseCategories
-                .firstWhere((c) => c.name == cat.name, orElse: () => cat)
-                .name == cat.name
-                && Provider.of<AppState>(context).filteredExpenseCategories
-                    .every((c) => c.name != cat.name)
-                && widget.type == 'expense'
-                || widget.type == 'income' && Provider.of<AppState>(context)
-                    .filteredIncomeCategories.every((c) => c.name != cat.name)
-                    && Provider.of<AppState>(context).orderedIncomeCategories
-                        .any((c) => c.name == cat.name);
-
-            return Positioned(
-              left: left,
-              top: top,
-              width: cellSize,
-              height: cellSize / 0.9,
-              child: LongPressDraggable<int>(
-                data: i,
-                delay: const Duration(milliseconds: 300),
-                onDragStarted: () => HapticFeedback.mediumImpact(),
-                feedback: Material(
-                  color: Colors.transparent,
-                  child: SizedBox(
-                    width: cellSize,
-                    height: cellSize / 0.9,
-                    child: _buildCell(cat, widget.cs, scale: 1.1, isHidden: isHidden),
-                  ),
-                ),
-                childWhenDragging: Opacity(
-                  opacity: 0.3,
-                  child: _buildCell(cat, widget.cs, isHidden: isHidden),
-                ),
-                child: DragTarget<int>(
-                  onWillAcceptWithDetails: (d) => d.data != i,
-                  onAcceptWithDetails: (d) {
-                    Provider.of<AppState>(context, listen: false)
-                        .reorderPredefinedCategory(widget.type, d.data, i);
-                    setState(() => _hoveredIndex = null);
-                  },
-                  onMove: (_) => setState(() => _hoveredIndex = i),
-                  onLeave: (_) => setState(() => _hoveredIndex = null),
-                  builder: (context, candidates, rejected) {
-                    final isHov = _hoveredIndex == i && candidates.isNotEmpty;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      transform: isHov ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
-                      child: Stack(
-                        children: [
-                          _buildCell(cat, widget.cs, highlighted: isHov, isHidden: isHidden),
-                          // 編輯按鈕（左上角）
-                          Positioned(
-                            top: 2, left: 2,
-                            child: GestureDetector(
-                              onTap: () => widget.onEditTap(cat),
-                              child: Container(
-                                width: 20, height: 20,
-                                decoration: BoxDecoration(
-                                  color: widget.cs.surface.withValues(alpha: 0.85),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.edit, size: 11, color: AppColors.gold),
-                              ),
-                            ),
-                          ),
-                          // 隱藏/顯示按鈕（右上角）
-                          Positioned(
-                            top: 2, right: 2,
-                            child: GestureDetector(
-                              onTap: () => widget.onToggleHidden(cat),
-                              child: Container(
-                                width: 20, height: 20,
-                                decoration: BoxDecoration(
-                                  color: widget.cs.surface.withValues(alpha: 0.85),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  isHidden ? Icons.visibility_off : Icons.visibility,
-                                  size: 11,
-                                  color: isHidden ? Colors.red : widget.cs.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            );
-          }),
-        ),
-      );
-    });
-  }
-
-  Widget _buildCell(Category cat, ColorScheme cs, {bool highlighted = false, double scale = 1.0, bool isHidden = false}) {
-    return Transform.scale(
-      scale: scale,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: isHidden
+            ? Border.all(color: cs.outlineVariant.withValues(alpha: 0.5), width: 1)
+            : null,
+      ),
       child: Opacity(
-        opacity: isHidden ? 0.45 : 1.0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: highlighted
-                ? cat.color.withValues(alpha: 0.25)
-                : cat.color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: cat.color.withValues(alpha: highlighted ? 0.6 : 0.3),
-              width: highlighted ? 2 : 1,
+        opacity: isHidden ? 0.55 : 1.0,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Row(children: [
+            ReorderableDragStartListener(
+              index: index,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Icon(Icons.drag_handle_rounded, color: cs.onSurfaceVariant, size: 20),
+              ),
             ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(cat.icon, color: cat.color, size: 26),
-              const SizedBox(height: 6),
-              Text(cat.name,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: cat.color)),
-              if (isHidden)
-                Text('已隱藏', style: TextStyle(fontSize: 9, color: Colors.red)),
-            ],
-          ),
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(item.icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(item.name,
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface)),
+                if (!item.isPredefined)
+                  Text('自訂', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                if (isHidden)
+                  Text('已隱藏', style: TextStyle(fontSize: 11, color: Colors.orange)),
+              ]),
+            ),
+            // 眼睛（隱藏/顯示）
+            IconButton(
+              icon: Icon(
+                isHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                size: 20,
+                color: isHidden ? Colors.orange : cs.onSurfaceVariant,
+              ),
+              onPressed: () {
+                if (item.isPredefined) {
+                  onTogglePredefinedHidden(item.predefined!);
+                } else {
+                  onToggleCustomHidden(item.map!);
+                }
+              },
+            ),
+            // 編輯
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.gold),
+              onPressed: () {
+                if (item.isPredefined) {
+                  onEditPredefined(item.predefined!);
+                } else {
+                  onEditCustom(item.map!);
+                }
+              },
+            ),
+            // 刪除（僅自訂）
+            if (!item.isPredefined)
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                onPressed: () => onDeleteCustom(item.map!),
+              ),
+          ]),
         ),
       ),
     );

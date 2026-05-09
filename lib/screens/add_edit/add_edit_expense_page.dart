@@ -459,8 +459,8 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             children: () {
               final appState = Provider.of<AppState>(context, listen: false);
               final customCats = isIncome
-                  ? appState.customIncomeCategories
-                  : appState.customExpenseCategories;
+                  ? appState.visibleCustomIncomeCategories
+                  : appState.visibleCustomExpenseCategories;
               final predefined = isIncome ? appState.filteredIncomeCategories : appState.filteredExpenseCategories;
               final customConverted = customCats.map((m) => Category(
                 m['name'] as String,

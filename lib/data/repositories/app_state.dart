@@ -8,6 +8,8 @@ import '../models/expense_item.dart';
 import '../models/fixed_item.dart';
 import '../models/stock_holding.dart';
 import '../models/account.dart';
+import '../models/loan_record.dart';
+import '../models/loan_payment.dart';
 import '../../core/utils/logger.dart';
 import '../databases/migration_helper.dart';
 import '../databases/app_database.dart';
@@ -21,6 +23,8 @@ class AppState extends ChangeNotifier {
   List<FixedItem> fixedItems = [];
   List<StockHolding> holdings = [];
   List<Account> accounts = [];
+  List<LoanRecord> loans = [];
+  List<LoanPayment> loanPayments = [];
   Map<String, double> fxRates = {
     'USD': 32.0,
     'JPY': 0.22,
@@ -67,6 +71,8 @@ class AppState extends ChangeNotifier {
 
   bool _isPredefinedHidden(String name) =>
       _predefinedCategorySettings[name]?['isHidden'] == true;
+
+  bool isPredefinedHidden(String name) => _isPredefinedHidden(name);
 
   // 全部（含隱藏），供類別管理頁使用
   List<Category> get orderedExpenseCategories {
@@ -124,6 +130,12 @@ class AppState extends ChangeNotifier {
   List<Map<String, dynamic>> get customIncomeCategories =>
       _customCategories.where((c) => c['type'] == 'income').toList();
 
+  List<Map<String, dynamic>> get visibleCustomExpenseCategories =>
+      _customCategories.where((c) => c['type'] == 'expense' && c['hidden'] != true).toList();
+
+  List<Map<String, dynamic>> get visibleCustomIncomeCategories =>
+      _customCategories.where((c) => c['type'] == 'income' && c['hidden'] != true).toList();
+
   void addCustomCategory(Map<String, dynamic> cat) {
     _customCategories.add(cat);
     _saveCustomCategories();
@@ -156,6 +168,34 @@ class AppState extends ChangeNotifier {
     _customCategories.removeWhere((c) => c['type'] == type);
     _customCategories.addAll(filtered);
     _saveCustomCategories();
+    notifyListeners();
+  }
+
+  void toggleCustomCategoryHidden(String name, String type) {
+    final idx = _customCategories.indexWhere(
+        (c) => c['name'] == name && c['type'] == type);
+    if (idx >= 0) {
+      _customCategories[idx] = {
+        ..._customCategories[idx],
+        'hidden': !(_customCategories[idx]['hidden'] == true),
+      };
+      _saveCustomCategories();
+      notifyListeners();
+    }
+  }
+
+  void setUnifiedCategoryOrder(String type, List<String> predefinedNames, List<Map<String, dynamic>> orderedCustom) {
+    final isExpense = type == 'expense';
+    if (isExpense) {
+      _predefinedExpenseOrder = predefinedNames;
+    } else {
+      _predefinedIncomeOrder = predefinedNames;
+    }
+    _prefs?.setStringList(isExpense ? 'predefinedExpenseOrder' : 'predefinedIncomeOrder', predefinedNames);
+    _customCategories.removeWhere((c) => c['type'] == type);
+    _customCategories.addAll(orderedCustom);
+    _saveCustomCategories();
+    hapticLight();
     notifyListeners();
   }
 
@@ -432,6 +472,7 @@ class AppState extends ChangeNotifier {
     });
     _save();
     notifyListeners();
+    hapticMedium();
     AppLogger.info('Fixed item added: ${item.title}');
   }
 
@@ -445,6 +486,7 @@ class AppState extends ChangeNotifier {
       });
       _save();
       notifyListeners();
+      hapticMedium();
       AppLogger.info('Fixed item updated: ${newItem.title}');
     }
   }
@@ -772,6 +814,96 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ─── Loans ───
+
+  void addLoan(LoanRecord loan) {
+    loans.add(loan);
+    if (loan.accountId != null) {
+      final idx = accounts.indexWhere((a) => a.id == loan.accountId);
+      if (idx >= 0) {
+        accounts[idx] = accounts[idx].copyWith(
+            balance: accounts[idx].balance - loan.amount);
+      }
+    }
+    _saveLoans();
+    _save();
+    notifyListeners();
+    hapticMedium();
+  }
+
+  void deleteLoan(String id) {
+    final loan = loans.firstWhere((l) => l.id == id, orElse: () => throw StateError('not found'));
+    if (loan.accountId != null) {
+      final idx = accounts.indexWhere((a) => a.id == loan.accountId);
+      if (idx >= 0) {
+        accounts[idx] = accounts[idx].copyWith(
+            balance: accounts[idx].balance + loan.amount);
+      }
+    }
+    loans.removeWhere((l) => l.id == id);
+    loanPayments.removeWhere((p) => p.loanId == id);
+    _saveLoans();
+    _save();
+    notifyListeners();
+  }
+
+  void addLoanPayment(LoanPayment payment) {
+    loanPayments.add(payment);
+    final lIdx = loans.indexWhere((l) => l.id == payment.loanId);
+    if (lIdx >= 0) {
+      final loan = loans[lIdx];
+      final newRemaining = (loan.remaining - payment.principal).clamp(0.0, loan.amount);
+      final newPaid = loan.paid + payment.principal;
+      loans[lIdx] = loan.copyWith(
+        remaining: newRemaining,
+        paid: newPaid,
+        status: newRemaining <= 0 ? LoanStatus.completed : LoanStatus.active,
+      );
+    }
+    if (payment.accountId != null) {
+      final aIdx = accounts.indexWhere((a) => a.id == payment.accountId);
+      if (aIdx >= 0) {
+        accounts[aIdx] = accounts[aIdx].copyWith(
+            balance: accounts[aIdx].balance + payment.total);
+      }
+    }
+    _saveLoans();
+    _save();
+    notifyListeners();
+    hapticMedium();
+  }
+
+  void deleteLoanPayment(String id) {
+    final payment = loanPayments.firstWhere((p) => p.id == id, orElse: () => throw StateError('not found'));
+    loanPayments.removeWhere((p) => p.id == id);
+    final lIdx = loans.indexWhere((l) => l.id == payment.loanId);
+    if (lIdx >= 0) {
+      final loan = loans[lIdx];
+      final newRemaining = (loan.remaining + payment.principal).clamp(0.0, loan.amount);
+      final newPaid = (loan.paid - payment.principal).clamp(0.0, loan.amount);
+      loans[lIdx] = loan.copyWith(
+        remaining: newRemaining,
+        paid: newPaid,
+        status: LoanStatus.active,
+      );
+    }
+    if (payment.accountId != null) {
+      final aIdx = accounts.indexWhere((a) => a.id == payment.accountId);
+      if (aIdx >= 0) {
+        accounts[aIdx] = accounts[aIdx].copyWith(
+            balance: accounts[aIdx].balance - payment.total);
+      }
+    }
+    _saveLoans();
+    _save();
+    notifyListeners();
+  }
+
+  Future<void> _saveLoans() async {
+    _prefs?.setString('loans', jsonEncode(loans.map((l) => l.toJson()).toList()));
+    _prefs?.setString('loanPayments', jsonEncode(loanPayments.map((p) => p.toJson()).toList()));
+  }
+
   // ─── Asset Calculations ───
 
   double get totalAssets => accounts
@@ -966,6 +1098,18 @@ class AppState extends ChangeNotifier {
           accounts = list.map((j) => Account.fromJson(j)).toList();
           AppLogger.info('✓ Loaded ${accounts.length} accounts (plain)');
         }
+      }
+
+      // Loans
+      final loansRaw = _prefs?.getString('loans');
+      if (loansRaw != null) {
+        final list = jsonDecode(loansRaw) as List;
+        loans = list.map((j) => LoanRecord.fromJson(j as Map<String, dynamic>)).toList();
+      }
+      final paymentsRaw = _prefs?.getString('loanPayments');
+      if (paymentsRaw != null) {
+        final list = jsonDecode(paymentsRaw) as List;
+        loanPayments = list.map((j) => LoanPayment.fromJson(j as Map<String, dynamic>)).toList();
       }
 
       // Custom categories
