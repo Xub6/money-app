@@ -109,6 +109,12 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     _longPressTimer = null;
   }
 
+  Color _pressedBg(String k, Color bg, ColorScheme cs) {
+    if ('+-×÷'.contains(k)) return AppColors.gold.withValues(alpha: 0.30);
+    if (k == '=') return AppColors.gold.withValues(alpha: 0.42);
+    return Color.alphaBlend(cs.onSurface.withValues(alpha: 0.14), bg);
+  }
+
   String _fmt(double v) {
     if (v == v.truncateToDouble()) return v.toInt().toString();
     return v.toStringAsFixed(2);
@@ -294,7 +300,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
         duration: const Duration(milliseconds: 80),
         height: 64,
         decoration: BoxDecoration(
-          color: isPressed ? (bg == cs.surfaceContainerLow ? cs.surfaceContainerHighest : bg.withValues(alpha: (bg.a * 1.4).clamp(0.0, 1.0))) : bg,
+          color: isPressed ? _pressedBg(k, bg, cs) : bg,
           borderRadius: BorderRadius.circular(14),
         ),
         transform: isPressed ? (Matrix4.identity()..scale(0.95)) : Matrix4.identity(),
@@ -320,7 +326,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
         duration: const Duration(milliseconds: 80),
         height: 64,
         decoration: BoxDecoration(
-          color: isPressed ? AppColors.gold.withValues(alpha: 0.8) : AppColors.gold,
+          color: isPressed ? Color.alphaBlend(const Color(0x33000000), AppColors.gold) : AppColors.gold,
           borderRadius: BorderRadius.circular(14),
         ),
         transform: isPressed ? (Matrix4.identity()..scale(0.95)) : Matrix4.identity(),
