@@ -29,6 +29,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   bool _justConfirmed = false;
   String? _pressedKey; // 目前被按下的按鍵
   Timer? _longPressTimer; // 長按連續刪除計時器
+  Timer? _releaseTimer; // 確保 pressed 狀態至少顯示 100ms
 
   AppState? get _as {
     try { return context.read<AppState>(); } catch (_) { return null; }
@@ -46,7 +47,15 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   @override
   void dispose() {
     _longPressTimer?.cancel();
+    _releaseTimer?.cancel();
     super.dispose();
+  }
+
+  void _scheduleRelease() {
+    _releaseTimer?.cancel();
+    _releaseTimer = Timer(const Duration(milliseconds: 100), () {
+      if (mounted) setState(() => _pressedKey = null);
+    });
   }
 
   void _doHaptic(String key) {
@@ -278,26 +287,35 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _pressedKey = k),
-      onTapUp: (_) {
-        setState(() => _pressedKey = null);
-        _press(k);
+      onTapDown: (_) {
+        _releaseTimer?.cancel();
+        setState(() => _pressedKey = k);
       },
-      onTapCancel: () => setState(() => _pressedKey = null),
+      onTapUp: (_) {
+        _press(k);
+        _scheduleRelease();
+      },
+      onTapCancel: () {
+        _releaseTimer?.cancel();
+        setState(() => _pressedKey = null);
+      },
       onLongPressStart: isDeleteKey ? (_) {
+        _releaseTimer?.cancel();
         setState(() => _pressedKey = k);
         _startLongPressDelete();
       } : null,
       onLongPressEnd: isDeleteKey ? (_) {
+        _releaseTimer?.cancel();
         setState(() => _pressedKey = null);
         _stopLongPressDelete();
       } : null,
       onLongPressCancel: isDeleteKey ? () {
+        _releaseTimer?.cancel();
         setState(() => _pressedKey = null);
         _stopLongPressDelete();
       } : null,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: isPressed ? Duration.zero : const Duration(milliseconds: 100),
         height: 64,
         decoration: BoxDecoration(
           color: isPressed ? _pressedBg(k, bg, cs) : bg,
@@ -316,14 +334,20 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     final isPressed = _pressedKey == '✓';
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _pressedKey = '✓'),
-      onTapUp: (_) {
-        setState(() => _pressedKey = null);
-        _confirm();
+      onTapDown: (_) {
+        _releaseTimer?.cancel();
+        setState(() => _pressedKey = '✓');
       },
-      onTapCancel: () => setState(() => _pressedKey = null),
+      onTapUp: (_) {
+        _confirm();
+        _scheduleRelease();
+      },
+      onTapCancel: () {
+        _releaseTimer?.cancel();
+        setState(() => _pressedKey = null);
+      },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 80),
+        duration: isPressed ? Duration.zero : const Duration(milliseconds: 100),
         height: 64,
         decoration: BoxDecoration(
           color: isPressed ? Color.alphaBlend(const Color(0x33000000), AppColors.gold) : AppColors.gold,
