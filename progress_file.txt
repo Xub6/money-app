@@ -1,24 +1,24 @@
 # 進度追蹤文件
 
-## 目前狀態：13項大改善完成 ✅（2026-05-09）
-最後完成任務：13項功能改善，APK 61.5MB，commit 927a77b ✅
+## 目前狀態：MP-01 驗收修復完成 ✅（2026-05-09）
+最後完成任務：MP-01 4項修復，APK 61.7MB，commit f1af4bf ✅
 
-### 本次完成（2026-05-09，commit 927a77b）
-- [x] 【1】計算機手感：長按退格連續刪除（80ms Timer.periodic）、視覺縮放 0.95、震動連動 hapticEnabled 開關
-- [x] 【2】震動覆蓋：類別/帳戶/日期選擇全部改用 appState.hapticLight()，不再直接呼叫 HapticFeedback
-- [x] 【3】類別管理：predefined 可隱藏/改icon色（_predefinedCategorySettings），filteredExpenseCategories 排除隱藏，新增支出頁不再顯示已隱藏類別
-- [x] 【4】股票扣款帳戶：add_edit_investment_page 加帳戶chip UI + 幣別不符警示，AppState._applyDeductBalance 自動扣/退餘額
-- [x] 【5】持股合併顯示：同代碼+幣別+券商合併為一張卡（_GroupCard），tap 展開 _GroupDetailSheet 各批明細，每批可單獨刪除（含確認對話框）
-- [x] 【6】備份分享：「分享備份」按鈕（share_plus 10.1.4），「從檔案還原」按鈕（file_picker 8.3.7）
-- [x] 【7】固定開銷扣款日預設1日（_debitDay = 1）
-- [x] 【8】刪除確認：固定開銷 confirmDismiss + Snackbar 4秒復原；股票刪除 AlertDialog 確認；帳戶已有 confirmDismiss
-- [x] 【9】0 error flutter analyze，APK 61.5MB
+### 本次完成（2026-05-09，commit f1af4bf）
+- [x] 【1】震動回饋全覆蓋：FAB press 加 hapticLight，addFixed/updateFixed 加 hapticMedium，category_management_page 改用 appState.hapticLight()（不再繞過 hapticEnabled 開關）
+- [x] 【2】類別管理統一列表：移除「預設/自訂」分區，全部統一列格式 [☰][icon] 名稱 [眼睛][編輯]，自訂多刪除按鈕；隱藏功能延伸至自訂類別（toggleCustomCategoryHidden）；新增支出頁同步過濾隱藏自訂類別（visibleCustomExpenseCategories）
+- [x] 【3】固定開銷刪除 Snackbar：改為 3 秒 + showCloseIcon: true
+- [x] 【4】借款紀錄功能：LoanRecord / LoanPayment 模型，AppState CRUD（addLoan/deleteLoan/addLoanPayment/deleteLoanPayment）+ 帳戶餘額自動同步，借款清單 / 詳情 / 新增借款 / 新增收款 完整頁面，進度條顯示還款比例
 
-### 未完成 / 說明
-- 【6】Google Drive OAuth 直接備份：google_sign_in 已在 pubspec，但未實作 Drive API 上傳。目前透過「分享」讓用戶自選 Drive，不需帳號即可用本機分享。
-- 【11/12】頁面卡片順序、不破壞既有功能：未發現問題，_syncBrokerAccounts 已驗證正確，股票帳戶過濾已在新增支出頁
+### 技術細節
+- 新增 lib/data/models/loan_record.dart, loan_payment.dart
+- 新增 lib/screens/loan/loan_page.dart（LoanPage, LoanDetailPage, AddLoanPage, AddPaymentPage）
+- app_state.dart 新增：isPredefinedHidden()、toggleCustomCategoryHidden()、setUnifiedCategoryOrder()、visibleCustomExpenseCategories、visibleCustomIncomeCategories
+- 借款資料存於 SharedPreferences（loans / loanPayments JSON）
+
+### 未完成
+- 借款利息未自動寫入支出/收入帳（規格說「不算正常收支」，目前僅更新帳戶餘額）
 
 ### 下一步
-1. 手機測試驗收 13 項
-2. 重建 AAB + Play Console 上傳（如需要）
+1. 手機測試 MP-01 4 項
+2. 如需要，重建 AAB + Play Console
 3. 填資料安全表單 + 提交審核
