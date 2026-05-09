@@ -1,23 +1,24 @@
 # 進度追蹤文件
 
-## 目前狀態：5大 Bug 修復完成 ✅（2026-05-08）
-最後完成任務：Bug 修復 5 項，APK 61.0MB，commit a2a213f ✅
+## 目前狀態：13項大改善完成 ✅（2026-05-09）
+最後完成任務：13項功能改善，APK 61.5MB，commit 927a77b ✅
 
-### 本次完成（2026-05-08，commit a2a213f）
-- [x] Bug1 金額不同步：_syncBrokerAccounts 改用 currentValueTwd(usdTwdRate)，totalPortfolioValue 同步改 currentValueTwd → 股票投資組合與永豐金證券股票帳戶數字一致
-- [x] Bug2 月預算位置：ManagePage 月預算卡片移至固定開銷下方（類別管理上方）
-- [x] Bug3 震動不足：深色模式 toggle、震動 toggle、備份、匯出 CSV/Excel、恢復備份、儲存支出 全部加 haptic
-- [x] Bug4 類別無法排序：自訂類別改 ReorderableListView，左側顯示拖拽把手，長按拖拽可重新排序，持久化至 SP
-- [x] Bug5 計算機歸零：清零後按 ✓ 正確回傳 0.0，表單金額欄位同步歸零
-- [x] flutter analyze：0 error / 0 warning（51 info，pre-existing）
-- [x] APK：61.0MB（--no-tree-shake-icons 因 IconData 動態呼叫）✅
+### 本次完成（2026-05-09，commit 927a77b）
+- [x] 【1】計算機手感：長按退格連續刪除（80ms Timer.periodic）、視覺縮放 0.95、震動連動 hapticEnabled 開關
+- [x] 【2】震動覆蓋：類別/帳戶/日期選擇全部改用 appState.hapticLight()，不再直接呼叫 HapticFeedback
+- [x] 【3】類別管理：predefined 可隱藏/改icon色（_predefinedCategorySettings），filteredExpenseCategories 排除隱藏，新增支出頁不再顯示已隱藏類別
+- [x] 【4】股票扣款帳戶：add_edit_investment_page 加帳戶chip UI + 幣別不符警示，AppState._applyDeductBalance 自動扣/退餘額
+- [x] 【5】持股合併顯示：同代碼+幣別+券商合併為一張卡（_GroupCard），tap 展開 _GroupDetailSheet 各批明細，每批可單獨刪除（含確認對話框）
+- [x] 【6】備份分享：「分享備份」按鈕（share_plus 10.1.4），「從檔案還原」按鈕（file_picker 8.3.7）
+- [x] 【7】固定開銷扣款日預設1日（_debitDay = 1）
+- [x] 【8】刪除確認：固定開銷 confirmDismiss + Snackbar 4秒復原；股票刪除 AlertDialog 確認；帳戶已有 confirmDismiss
+- [x] 【9】0 error flutter analyze，APK 61.5MB
 
-### 剩餘工作
-- Play Console：電話驗證 ✅ 完成 → 待建立 App → 上傳 AAB
-- AAB 需重建（含 2026-05-07 + 2026-05-08 最新功能）
-- Sean 確認這批 Bug 修復無誤後，重建 AAB 上傳
+### 未完成 / 說明
+- 【6】Google Drive OAuth 直接備份：google_sign_in 已在 pubspec，但未實作 Drive API 上傳。目前透過「分享」讓用戶自選 Drive，不需帳號即可用本機分享。
+- 【11/12】頁面卡片順序、不破壞既有功能：未發現問題，_syncBrokerAccounts 已驗證正確，股票帳戶過濾已在新增支出頁
 
-### 下一步（優先順序）
-1. Sean 確認手機測試 5 個 Bug 都修好
-2. 重建 AAB + 建立 App listing + 上傳
-3. 填資料安全表單 + 設定內容分級 + 提交審核
+### 下一步
+1. 手機測試驗收 13 項
+2. 重建 AAB + Play Console 上傳（如需要）
+3. 填資料安全表單 + 提交審核
