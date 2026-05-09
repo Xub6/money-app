@@ -2845,19 +2845,39 @@ class _NavItem extends StatelessWidget {
       required this.onTap});
   @override
   Widget build(BuildContext context) {
-    final color = selected ? const Color(0xFF4D8ED8) : Colors.grey;
+    final activeColor = AppColors.gold;
+    final inactiveColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final color = selected ? activeColor : inactiveColor;
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 3),
-          Text(label,
-              style: TextStyle(
-                  color: color,
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
-        ]),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          splashColor: AppColors.gold.withValues(alpha: 0.18),
+          highlightColor: AppColors.gold.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.gold.withValues(alpha: 0.15) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 2),
+              Text(label,
+                  style: TextStyle(
+                      color: color,
+                      fontSize: 11,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+            ]),
+          ),
+        ),
       ),
     );
   }
