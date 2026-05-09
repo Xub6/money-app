@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import '../models/expense_item.dart';
@@ -235,15 +236,15 @@ class AppState extends ChangeNotifier {
   }
 
   void hapticLight() {
-    if (hapticEnabled) HapticFeedback.lightImpact();
+    if (hapticEnabled) Vibration.vibrate(duration: 40, amplitude: 80);
   }
 
   void hapticMedium() {
-    if (hapticEnabled) HapticFeedback.mediumImpact();
+    if (hapticEnabled) Vibration.vibrate(duration: 70, amplitude: 160);
   }
 
   void hapticHeavy() {
-    if (hapticEnabled) HapticFeedback.heavyImpact();
+    if (hapticEnabled) Vibration.vibrate(duration: 100, amplitude: 255);
   }
 
   // ─── Budget / Statistics ───

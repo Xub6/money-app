@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 import '../../config/localization.dart';
 import '../../data/models/account.dart';
 import '../../core/constants/app_colors.dart';
@@ -245,7 +246,7 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
                     child: Switch(
                       value: _countInTotal,
                       onChanged: (v) {
-                        HapticFeedback.lightImpact();
+                        Vibration.vibrate(duration: 40, amplitude: 80);
                         setState(() => _countInTotal = v);
                       },
                       activeColor: AppColors.gold,

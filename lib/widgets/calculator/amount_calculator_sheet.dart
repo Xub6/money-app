@@ -30,12 +30,8 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   String? _pressedKey; // 目前被按下的按鍵
   Timer? _longPressTimer; // 長按連續刪除計時器
 
-  bool get _hapticEnabled {
-    try {
-      return context.read<AppState>().hapticEnabled;
-    } catch (_) {
-      return true;
-    }
+  AppState? get _as {
+    try { return context.read<AppState>(); } catch (_) { return null; }
   }
 
   @override
@@ -54,14 +50,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   }
 
   void _doHaptic(String key) {
-    if (!_hapticEnabled) return;
-    if (key == '⌫' || key == 'C') {
-      HapticFeedback.lightImpact();
-    } else if ('+-×÷='.contains(key)) {
-      HapticFeedback.lightImpact();
-    } else {
-      HapticFeedback.selectionClick();
-    }
+    _as?.hapticLight();
   }
 
   void _press(String key) {
@@ -83,7 +72,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
             _expr = _fmt(r);
             _justConfirmed = true;
           } else if (_expr.isNotEmpty) {
-            if (_hapticEnabled) HapticFeedback.heavyImpact();
+            _as?.hapticHeavy();
           }
         default:
           if ('+-×÷'.contains(key) && _expr.isNotEmpty && '+-×÷'.contains(_expr[_expr.length - 1])) {
@@ -111,7 +100,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       setState(() {
         _expr = _expr.substring(0, _expr.length - 1);
       });
-      if (_hapticEnabled) HapticFeedback.selectionClick();
+      _as?.hapticLight();
     });
   }
 
@@ -173,17 +162,17 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   void _confirm() {
     final e = _expr;
     if (e.isEmpty) {
-      if (_hapticEnabled) HapticFeedback.mediumImpact();
+      _as?.hapticMedium();
       Navigator.pop(context, 0.0);
       return;
     }
     final r = _calc(e);
     final v = r ?? double.tryParse(e);
     if (v != null && v >= 0) {
-      if (_hapticEnabled) HapticFeedback.mediumImpact();
+      _as?.hapticMedium();
       Navigator.pop(context, v);
     } else {
-      if (_hapticEnabled) HapticFeedback.heavyImpact();
+      _as?.hapticHeavy();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('請輸入有效金額'), duration: Duration(seconds: 1)),
       );
