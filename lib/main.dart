@@ -2855,28 +2855,34 @@ class _NavItem extends StatelessWidget {
           onTap: onTap,
           splashColor: AppColors.gold.withValues(alpha: 0.18),
           highlightColor: AppColors.gold.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                decoration: BoxDecoration(
-                  color: selected ? AppColors.gold.withValues(alpha: 0.15) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 22),
+          borderRadius: BorderRadius.circular(12),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            // 頂部細線指示器
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              height: 2.5,
+              width: selected ? 24.0 : 0.0,
+              decoration: BoxDecoration(
+                color: AppColors.gold,
+                borderRadius: BorderRadius.circular(2),
               ),
-              const SizedBox(height: 2),
-              Text(label,
-                  style: TextStyle(
-                      color: color,
-                      fontSize: 11,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
-            ]),
-          ),
+            ),
+            const SizedBox(height: 6),
+            AnimatedScale(
+              scale: selected ? 1.12 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 2),
+            Text(label,
+                style: TextStyle(
+                    color: color,
+                    fontSize: 11,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+            const SizedBox(height: 4),
+          ]),
         ),
       ),
     );
