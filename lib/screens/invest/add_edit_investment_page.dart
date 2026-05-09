@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../config/localization.dart';
 import '../../data/models/stock_holding.dart';
+import '../../data/repositories/app_state.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/stock_service.dart';
 
@@ -80,6 +82,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
   late final TextEditingController _feeRateCtrl;
   List<_BrokerPreset> _brokerSuggestions = [];
   String _selectedBroker = '';
+  String? _selectedDeductAccountId;
 
   @override
   void initState() {
@@ -97,6 +100,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
     _currency = e?.currency ?? StockCurrency.twd;
     _purchaseDate = e?.purchaseDate ?? DateTime.now();
     _selectedBroker = e?.broker ?? '';
+    _selectedDeductAccountId = e?.deductAccountId;
     if (e?.name.isNotEmpty == true) _fetchedName = e!.name;
     final existingRate = e?.feeRate ?? 0.001425;
     _brokerCtrl = TextEditingController();
@@ -209,6 +213,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
         createdAt: widget.existing?.createdAt,
         feeRate: feeRate.clamp(0, 0.01),
         broker: _selectedBroker,
+        deductAccountId: _selectedDeductAccountId,
       ),
     );
   }
@@ -220,6 +225,11 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
     final cs = Theme.of(context).colorScheme;
+
+    final appState = context.read<AppState>();
+    final nonStockAccounts = appState.accounts
+        .where((a) => a.typeName != '股票帳戶')
+        .toList();
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -444,6 +454,62 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                   ]),
             ),
             const SizedBox(height: 20),
+
+            // ── 扣款帳戶 ──
+            if (nonStockAccounts.isNotEmpty) ...[
+              _SectionHeader('扣款帳戶（選填）'),
+              _GroupCard(
+                cs: cs,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, bottom: 4),
+                    child: Text('購買股票時從哪個帳戶扣款', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  ),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: [
+                      _DeductChip(
+                        label: '不連結',
+                        selected: _selectedDeductAccountId == null,
+                        onTap: () => setState(() => _selectedDeductAccountId = null),
+                        cs: cs,
+                      ),
+                      ...nonStockAccounts.map((a) {
+                        final sel = _selectedDeductAccountId == a.id;
+                        // 幣別不符警示
+                        final acctIsUsd = a.currency == 'USD';
+                        final mismatch = (_currency == StockCurrency.usd) != acctIsUsd;
+                        return _DeductChip(
+                          label: a.displayName,
+                          selected: sel,
+                          mismatch: sel && mismatch,
+                          onTap: () => setState(() => _selectedDeductAccountId = a.id),
+                          cs: cs,
+                        );
+                      }),
+                    ]),
+                  ),
+                  if (_selectedDeductAccountId != null) ...[
+                    Builder(builder: (ctx) {
+                      final acct = nonStockAccounts.firstWhere((a) => a.id == _selectedDeductAccountId, orElse: () => nonStockAccounts.first);
+                      final acctIsUsd = acct.currency == 'USD';
+                      final mismatch = (_currency == StockCurrency.usd) != acctIsUsd;
+                      if (!mismatch) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8, bottom: 4),
+                        child: Row(children: [
+                          const Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.gold),
+                          const SizedBox(width: 6),
+                          Expanded(child: Text('幣別不符：股票幣別與帳戶幣別不同，系統將依匯率換算', style: const TextStyle(fontSize: 11, color: AppColors.gold))),
+                        ]),
+                      );
+                    }),
+                  ],
+                  const SizedBox(height: 4),
+                ]),
+              ),
+              const SizedBox(height: 20),
+            ],
 
             // ── 券商 & 手續費 ──
             _SectionHeader(_isTwd ? AppLocalizations.of(context, 'broker_fee_section_tw') : AppLocalizations.of(context, 'broker_fee_section_us')),
@@ -839,6 +905,49 @@ class _CurrencyChip extends StatelessWidget {
                       color: selected ? Colors.white : cs.onSurfaceVariant)),
             ),
           ),
+        ),
+      );
+}
+
+class _DeductChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool mismatch;
+  final VoidCallback onTap;
+  final ColorScheme cs;
+  const _DeductChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    required this.cs,
+    this.mismatch = false,
+  });
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          margin: const EdgeInsets.only(right: 8, bottom: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.gold.withValues(alpha: 0.12)
+                : cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected
+                  ? (mismatch ? Colors.orange : AppColors.gold)
+                  : cs.outlineVariant,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Text(label,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected
+                      ? (mismatch ? Colors.orange : AppColors.gold)
+                      : cs.onSurfaceVariant)),
         ),
       );
 }

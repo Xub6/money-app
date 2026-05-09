@@ -1,10 +1,15 @@
+import 'dart:io';
 import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'config/localization.dart';
 import 'screens/auth/welcome_page.dart';
@@ -258,6 +263,7 @@ class _MainShellState extends State<MainShell> {
 
   void _goToTab(int tab) {
     if (_tab == tab) return;
+    s.hapticLight(); // 底部導覽震動
     setState(() => _tab = tab);
     _pageController.animateToPage(
       tab,
@@ -1691,6 +1697,82 @@ class _ManagePageState extends State<ManagePage> {
     }
   }
 
+  Future<void> _doShareBackup() async {
+    widget.state.hapticMedium();
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      const demoPrefix = 'tour_demo_';
+      final filename = await _backupService.exportBackup(
+        expenses: widget.state.expenses.where((e) => !e.id.startsWith(demoPrefix)).toList(),
+        fixedItems: widget.state.fixedItems.where((f) => !f.id.startsWith(demoPrefix)).toList(),
+        accounts: widget.state.accounts.where((a) => !a.id.startsWith(demoPrefix)).toList(),
+        holdings: widget.state.holdings.where((h) => !h.id.startsWith(demoPrefix)).toList(),
+        budget: widget.state.budget,
+      );
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final filePath = '${documentsDir.path}/Money_App_Backups/$filename';
+      await Share.shareXFiles([XFile(filePath)], subject: '錢錢管家備份 $filename');
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('分享失敗：$e'), backgroundColor: kRed),
+      );
+    }
+  }
+
+  Future<void> _doRestoreFromFile() async {
+    widget.state.hapticMedium();
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+      if (result == null || result.files.isEmpty) return;
+      final path = result.files.single.path;
+      if (path == null) return;
+      final jsonString = await File(path).readAsString();
+      final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+      final backupData = BackupData.fromJson(jsonData);
+      if (!mounted) return;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('確認還原'),
+          content: Text('從選取的檔案還原 ${backupData.expenses.length} 筆記錄、${backupData.accounts.length} 個帳戶、${backupData.holdings.length} 筆持股？\n\n現有資料將會被覆蓋。'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('還原', style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+      widget.state.restoreFromBackup(
+        newExpenses: backupData.expenses,
+        newFixedItems: backupData.fixedItems,
+        newAccounts: backupData.accounts,
+        newHoldings: backupData.holdings,
+        newBudget: backupData.settings?['budget'] as int?,
+      );
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('已從檔案還原 ${backupData.expenses.length} 筆記錄'),
+          backgroundColor: kGreen,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('從檔案還原失敗：$e'), backgroundColor: kRed),
+      );
+    }
+  }
+
+
   void _openFixedDialog({FixedItem? existing}) =>
       _showFixedItemDialog(context, widget.state, existing: existing);
 
@@ -1983,7 +2065,36 @@ class _ManagePageState extends State<ManagePage> {
                       child:
                           const Icon(Icons.delete_outline, color: Colors.white),
                     ),
-                    onDismissed: (_) => widget.state.deleteFixed(f.id),
+                    confirmDismiss: (_) async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: const Text('刪除固定開銷', style: TextStyle(fontWeight: FontWeight.w800)),
+                          content: Text('確定要刪除「${f.title}」嗎？\n刪除後不會再自動扣款。'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+                            TextButton(onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('刪除', style: TextStyle(color: kRed, fontWeight: FontWeight.w700))),
+                          ],
+                        ),
+                      );
+                      return confirm ?? false;
+                    },
+                    onDismissed: (_) {
+                      widget.state.deleteFixed(f.id);
+                      widget.state.hapticHeavy();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('已刪除固定開銷「${f.title}」'),
+                          action: SnackBarAction(
+                            label: '復原',
+                            onPressed: () => widget.state.addFixed(f),
+                          ),
+                          duration: const Duration(seconds: 4),
+                        ),
+                      );
+                    },
                     child: GestureDetector(
                       onLongPress: () => _openFixedDialog(existing: f),
                       child: Opacity(
@@ -2290,6 +2401,22 @@ class _ManagePageState extends State<ManagePage> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
+                    onPressed: _doShareBackup,
+                    icon: const Icon(Icons.share_rounded),
+                    label: const Text('分享備份（傳至 Drive / 本機）'),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: kGold),
+                      foregroundColor: kGold,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
                     onPressed: _doExportCsv,
                     icon: const Icon(Icons.download_rounded),
                     label: Text(AppLocalizations.of(context, 'export_csv')),
@@ -2325,6 +2452,22 @@ class _ManagePageState extends State<ManagePage> {
                     onPressed: _doRestore,
                     icon: const Icon(Icons.restore_rounded),
                     label: Text(AppLocalizations.of(context, 'restore_backup')),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: kGold),
+                      foregroundColor: kGold,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _doRestoreFromFile,
+                    icon: const Icon(Icons.file_open_rounded),
+                    label: const Text('從檔案還原'),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: kGold),
                       foregroundColor: kGold,

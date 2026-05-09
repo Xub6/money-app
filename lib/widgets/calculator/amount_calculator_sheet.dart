@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../data/repositories/app_state.dart';
 
 /// 顯示金額計算機，返回計算結果。
-/// 用法: final v = await AmountCalculatorSheet.show(context);
 class AmountCalculatorSheet extends StatefulWidget {
   final double initialValue;
 
@@ -14,7 +16,7 @@ class AmountCalculatorSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AmountCalculatorSheet(initialValue: initialValue),
+      builder: (ctx) => AmountCalculatorSheet(initialValue: initialValue),
     );
   }
 
@@ -25,6 +27,16 @@ class AmountCalculatorSheet extends StatefulWidget {
 class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   String _expr = '';
   bool _justConfirmed = false;
+  String? _pressedKey; // 目前被按下的按鍵
+  Timer? _longPressTimer; // 長按連續刪除計時器
+
+  bool get _hapticEnabled {
+    try {
+      return context.read<AppState>().hapticEnabled;
+    } catch (_) {
+      return true;
+    }
+  }
 
   @override
   void initState() {
@@ -35,8 +47,25 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     }
   }
 
+  @override
+  void dispose() {
+    _longPressTimer?.cancel();
+    super.dispose();
+  }
+
+  void _doHaptic(String key) {
+    if (!_hapticEnabled) return;
+    if (key == '⌫' || key == 'C') {
+      HapticFeedback.lightImpact();
+    } else if ('+-×÷='.contains(key)) {
+      HapticFeedback.lightImpact();
+    } else {
+      HapticFeedback.selectionClick();
+    }
+  }
+
   void _press(String key) {
-    HapticFeedback.selectionClick();
+    _doHaptic(key);
     setState(() {
       if (_justConfirmed && !'+-×÷'.contains(key)) {
         _expr = '';
@@ -53,13 +82,13 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
           if (r != null && r >= 0) {
             _expr = _fmt(r);
             _justConfirmed = true;
+          } else if (_expr.isNotEmpty) {
+            if (_hapticEnabled) HapticFeedback.heavyImpact();
           }
         default:
-          // Prevent double operators
           if ('+-×÷'.contains(key) && _expr.isNotEmpty && '+-×÷'.contains(_expr[_expr.length - 1])) {
             _expr = _expr.substring(0, _expr.length - 1) + key;
           } else if (key == '.' && _expr.contains('.')) {
-            // Allow . only if no decimal in current number segment
             final seg = _expr.split(RegExp(r'[+\-×÷]')).last;
             if (!seg.contains('.')) _expr += key;
           } else {
@@ -67,6 +96,28 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
           }
       }
     });
+  }
+
+  void _startLongPressDelete() {
+    _longPressTimer?.cancel();
+    // 立即刪一個
+    _press('⌫');
+    // 80ms 間隔連續刪
+    _longPressTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
+      if (_expr.isEmpty) {
+        _longPressTimer?.cancel();
+        return;
+      }
+      setState(() {
+        _expr = _expr.substring(0, _expr.length - 1);
+      });
+      if (_hapticEnabled) HapticFeedback.selectionClick();
+    });
+  }
+
+  void _stopLongPressDelete() {
+    _longPressTimer?.cancel();
+    _longPressTimer = null;
   }
 
   String _fmt(double v) {
@@ -84,7 +135,6 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     }
   }
 
-  // Recursive descent: additive level
   (double, int) _evalExpr(String s, int i) {
     var (val, j) = _evalTerm(s, i);
     while (j < s.length && (s[j] == '+' || s[j] == '-')) {
@@ -96,7 +146,6 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     return (val, j);
   }
 
-  // Term level: multiplicative
   (double, int) _evalTerm(String s, int i) {
     var (val, j) = _evalNum(s, i);
     while (j < s.length && (s[j] == '*' || s[j] == '/')) {
@@ -109,7 +158,6 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     return (val, j);
   }
 
-  // Number parsing
   (double, int) _evalNum(String s, int i) {
     if (i >= s.length) throw Exception('end');
     int j = i;
@@ -125,18 +173,17 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   void _confirm() {
     final e = _expr;
     if (e.isEmpty) {
-      HapticFeedback.mediumImpact();
+      if (_hapticEnabled) HapticFeedback.mediumImpact();
       Navigator.pop(context, 0.0);
       return;
     }
-    // Try to evaluate first
     final r = _calc(e);
     final v = r ?? double.tryParse(e);
     if (v != null && v >= 0) {
-      HapticFeedback.mediumImpact();
+      if (_hapticEnabled) HapticFeedback.mediumImpact();
       Navigator.pop(context, v);
     } else {
-      HapticFeedback.heavyImpact();
+      if (_hapticEnabled) HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('請輸入有效金額'), duration: Duration(seconds: 1)),
       );
@@ -148,7 +195,6 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     final cs = Theme.of(context).colorScheme;
     final previewValue = _calc(_expr);
     final showPreview = previewValue != null && _expr != _fmt(previewValue) && !_justConfirmed;
-    final preview = previewValue;
 
     return Container(
       decoration: BoxDecoration(
@@ -160,7 +206,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
           const SizedBox(height: 8),
           Container(width: 36, height: 4, decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 16),
-          // Display
+          // 顯示區
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -174,12 +220,12 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
                 style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: cs.onSurface),
               ),
               if (showPreview)
-                Text('= ${_fmt(preview ?? 0)}',
+                Text('= ${_fmt(previewValue ?? 0)}',
                     style: const TextStyle(fontSize: 16, color: AppColors.gold, fontWeight: FontWeight.w600)),
             ]),
           ),
           const SizedBox(height: 12),
-          // Keys
+          // 按鍵區
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(children: [
@@ -196,21 +242,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
                 const SizedBox(width: 8),
                 Expanded(child: _key('.', cs)),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _confirm,
-                    child: Container(
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: AppColors.gold,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.check_rounded, color: Colors.white, size: 28),
-                      ),
-                    ),
-                  ),
-                ),
+                Expanded(child: _confirmKey(cs)),
               ]),
             ]),
           ),
@@ -245,13 +277,67 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       bg = cs.surfaceContainerLow;
       fg = cs.onSurface;
     }
+
+    final isPressed = _pressedKey == k;
+    final isDeleteKey = k == '⌫';
+
     return GestureDetector(
-      onTap: () => _press(k),
-      child: Container(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressedKey = k),
+      onTapUp: (_) {
+        setState(() => _pressedKey = null);
+        _press(k);
+      },
+      onTapCancel: () => setState(() => _pressedKey = null),
+      onLongPressStart: isDeleteKey ? (_) {
+        setState(() => _pressedKey = k);
+        _startLongPressDelete();
+      } : null,
+      onLongPressEnd: isDeleteKey ? (_) {
+        setState(() => _pressedKey = null);
+        _stopLongPressDelete();
+      } : null,
+      onLongPressCancel: isDeleteKey ? () {
+        setState(() => _pressedKey = null);
+        _stopLongPressDelete();
+      } : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 80),
         height: 64,
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(
+          color: isPressed ? (bg == cs.surfaceContainerLow ? cs.surfaceContainerHighest : bg.withValues(alpha: (bg.a * 1.4).clamp(0.0, 1.0))) : bg,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        transform: isPressed ? (Matrix4.identity()..scale(0.95)) : Matrix4.identity(),
+        transformAlignment: Alignment.center,
         child: Center(
           child: Text(k, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: fg)),
+        ),
+      ),
+    );
+  }
+
+  Widget _confirmKey(ColorScheme cs) {
+    final isPressed = _pressedKey == '✓';
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressedKey = '✓'),
+      onTapUp: (_) {
+        setState(() => _pressedKey = null);
+        _confirm();
+      },
+      onTapCancel: () => setState(() => _pressedKey = null),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 80),
+        height: 64,
+        decoration: BoxDecoration(
+          color: isPressed ? AppColors.gold.withValues(alpha: 0.8) : AppColors.gold,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        transform: isPressed ? (Matrix4.identity()..scale(0.95)) : Matrix4.identity(),
+        transformAlignment: Alignment.center,
+        child: const Center(
+          child: Icon(Icons.check_rounded, color: Colors.white, size: 28),
         ),
       ),
     );

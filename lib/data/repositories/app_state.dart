@@ -39,6 +39,8 @@ class AppState extends ChangeNotifier {
   List<Map<String, dynamic>> _customCategories = [];
   List<String> _predefinedExpenseOrder = [];
   List<String> _predefinedIncomeOrder = [];
+  // 預設類別覆寫設定: {name: {iconCode, color, isHidden}}
+  Map<String, Map<String, dynamic>> _predefinedCategorySettings = {};
 
   final _db = AppDatabase();
   final _enc = EncryptionService();
@@ -50,27 +52,56 @@ class AppState extends ChangeNotifier {
 
   // ─── Category Management ───
 
+  // 套用覆寫設定（icon/color）到單一 Category
+  Category _applyOverride(Category c) {
+    final settings = _predefinedCategorySettings[c.name];
+    if (settings == null) return c;
+    final iconCode = settings['iconCode'] as int?;
+    final colorValue = settings['color'] as int?;
+    return Category(
+      c.name,
+      iconCode != null ? IconData(iconCode, fontFamily: 'MaterialIcons') : c.icon,
+      colorValue != null ? Color(colorValue) : c.color,
+    );
+  }
+
+  bool _isPredefinedHidden(String name) =>
+      _predefinedCategorySettings[name]?['isHidden'] == true;
+
+  // 全部（含隱藏），供類別管理頁使用
   List<Category> get orderedExpenseCategories {
-    if (_predefinedExpenseOrder.isEmpty) return List.of(kCategories);
-    final result = _predefinedExpenseOrder
+    List<String> order = _predefinedExpenseOrder;
+    if (order.isEmpty) order = kCategories.map((c) => c.name).toList();
+    final result = order
         .map((n) => kCategories.firstWhere((c) => c.name == n, orElse: () => kCategories.last))
+        .map(_applyOverride)
         .toList();
     for (final c in kCategories) {
-      if (!result.contains(c)) result.add(c);
+      if (!result.any((r) => r.name == c.name)) result.add(_applyOverride(c));
     }
     return result;
   }
 
+  // 不含隱藏，供新增支出頁使用
+  List<Category> get filteredExpenseCategories =>
+      orderedExpenseCategories.where((c) => !_isPredefinedHidden(c.name)).toList();
+
   List<Category> get orderedIncomeCategories {
-    if (_predefinedIncomeOrder.isEmpty) return List.of(kIncomeCategories);
-    final result = _predefinedIncomeOrder
+    List<String> order = _predefinedIncomeOrder;
+    if (order.isEmpty) order = kIncomeCategories.map((c) => c.name).toList();
+    final result = order
         .map((n) => kIncomeCategories.firstWhere((c) => c.name == n, orElse: () => kIncomeCategories.last))
+        .map(_applyOverride)
         .toList();
     for (final c in kIncomeCategories) {
-      if (!result.contains(c)) result.add(c);
+      if (!result.any((r) => r.name == c.name)) result.add(_applyOverride(c));
     }
     return result;
   }
+
+  // 不含隱藏，供新增收入頁使用
+  List<Category> get filteredIncomeCategories =>
+      orderedIncomeCategories.where((c) => !_isPredefinedHidden(c.name)).toList();
 
   void reorderPredefinedCategory(String type, int oldIndex, int newIndex) {
     final isExpense = type == 'expense';
@@ -130,6 +161,29 @@ class AppState extends ChangeNotifier {
 
   Future<void> _saveCustomCategories() async {
     _prefs?.setString('customCategories', jsonEncode(_customCategories));
+  }
+
+  // 預設類別：隱藏/顯示
+  void togglePredefinedCategoryHidden(String name) {
+    final current = _predefinedCategorySettings[name] ?? {};
+    final isHidden = current['isHidden'] == true;
+    _predefinedCategorySettings[name] = {...current, 'isHidden': !isHidden};
+    _savePredefinedCategorySettings();
+    notifyListeners();
+  }
+
+  // 預設類別：修改 icon/color
+  void updatePredefinedCategoryStyle(String name, {int? iconCode, int? color}) {
+    final current = _predefinedCategorySettings[name] ?? {};
+    if (iconCode != null) current['iconCode'] = iconCode;
+    if (color != null) current['color'] = color;
+    _predefinedCategorySettings[name] = current;
+    _savePredefinedCategorySettings();
+    notifyListeners();
+  }
+
+  Future<void> _savePredefinedCategorySettings() async {
+    _prefs?.setString('predefinedCategorySettings', jsonEncode(_predefinedCategorySettings));
   }
 
   // ─── Haptic Feedback ───
@@ -579,11 +633,32 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  /// 扣款帳戶餘額處理（非股票帳戶，購買股票時扣錢）
+  void _applyDeductBalance(StockHolding h, {bool reverse = false}) {
+    if (h.deductAccountId == null) return;
+    final idx = accounts.indexWhere((a) => a.id == h.deductAccountId);
+    if (idx < 0) return;
+    // 計算扣款金額（以帳戶幣別為準）
+    double deductAmount;
+    if (h.currency == StockCurrency.usd) {
+      // 美股：totalCost 為 TWD 等值，換算成 USD
+      deductAmount = usdTwdRate > 0 ? h.totalCost / usdTwdRate : 0;
+    } else {
+      deductAmount = h.totalCost; // 台股：直接扣 TWD
+    }
+    final delta = reverse ? deductAmount : -deductAmount;
+    accounts[idx] = accounts[idx].copyWith(
+      balance: accounts[idx].balance + delta,
+    );
+  }
+
   void addHolding(StockHolding h) {
     // Auto-link to broker account
     final brokerAcctId = _getOrCreateBrokerAccount(h.broker, h.currency);
     final linked = brokerAcctId != null ? h.copyWith(accountId: brokerAcctId) : h;
     holdings.insert(0, linked);
+    // 扣除購買成本
+    _applyDeductBalance(linked);
     _syncBrokerAccounts();
     _save();
     notifyListeners();
@@ -594,10 +669,14 @@ class AppState extends ChangeNotifier {
     final i = holdings.indexWhere((h) => h.id == id);
     if (i >= 0) {
       _applyHoldingBalance(holdings[i], reverse: true);
+      // 還原舊扣款
+      _applyDeductBalance(holdings[i], reverse: true);
       // Re-link broker account if broker changed
       final brokerAcctId = _getOrCreateBrokerAccount(updated.broker, updated.currency);
       final linked = brokerAcctId != null ? updated.copyWith(accountId: brokerAcctId) : updated;
       holdings[i] = linked;
+      // 套用新扣款
+      _applyDeductBalance(linked);
       _syncBrokerAccounts();
       _save();
       notifyListeners();
@@ -608,6 +687,8 @@ class AppState extends ChangeNotifier {
     final i = holdings.indexWhere((h) => h.id == id);
     if (i >= 0) {
       _applyHoldingBalance(holdings[i], reverse: true);
+      // 還原扣款帳戶餘額
+      _applyDeductBalance(holdings[i], reverse: true);
       holdings.removeAt(i);
     }
     _syncBrokerAccounts();
@@ -902,6 +983,15 @@ class AppState extends ChangeNotifier {
       if (expOrder != null) _predefinedExpenseOrder = expOrder;
       final incOrder = _prefs?.getStringList('predefinedIncomeOrder');
       if (incOrder != null) _predefinedIncomeOrder = incOrder;
+
+      // Predefined category settings (hidden/icon/color overrides)
+      final catSettingsRaw = _prefs?.getString('predefinedCategorySettings');
+      if (catSettingsRaw != null) {
+        final raw = jsonDecode(catSettingsRaw) as Map<String, dynamic>;
+        _predefinedCategorySettings = raw.map(
+          (k, v) => MapEntry(k, Map<String, dynamic>.from(v as Map)),
+        );
+      }
     } catch (e) {
       AppLogger.error('✗ Error loading meta from SharedPreferences: $e');
     }

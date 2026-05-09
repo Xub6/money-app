@@ -240,7 +240,10 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                 children: [
                   // 不關聯帳戶（永遠顯示在最前）
                   GestureDetector(
-                    onTap: () => setState(() => _selectedAccountId = null),
+                    onTap: () {
+                      Provider.of<AppState>(context, listen: false).hapticLight();
+                      setState(() => _selectedAccountId = null);
+                    },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
                       margin: const EdgeInsets.only(right: 10),
@@ -281,7 +284,10 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                   ...accounts.map((a) {
                     final sel = _selectedAccountId == a.id;
                     return GestureDetector(
-                      onTap: () => setState(() => _selectedAccountId = a.id),
+                      onTap: () {
+                        Provider.of<AppState>(context, listen: false).hapticLight();
+                        setState(() => _selectedAccountId = a.id);
+                      },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
                         margin: const EdgeInsets.only(right: 10),
@@ -354,15 +360,20 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                   .format(_today.subtract(const Duration(days: 1))),
               selected: _isSameDay(
                   _selectedDate, _today.subtract(const Duration(days: 1))),
-              onTap: () => setState(() =>
-                  _selectedDate = _today.subtract(const Duration(days: 1))),
+              onTap: () {
+                Provider.of<AppState>(context, listen: false).hapticLight();
+                setState(() => _selectedDate = _today.subtract(const Duration(days: 1)));
+              },
             ),
             const SizedBox(width: 10),
             _DateBtn(
               label: AppLocalizations.of(context, 'today'),
               sub: DateFormat('d').format(_today),
               selected: _isSameDay(_selectedDate, _today),
-              onTap: () => setState(() => _selectedDate = _today),
+              onTap: () {
+                Provider.of<AppState>(context, listen: false).hapticLight();
+                setState(() => _selectedDate = _today);
+              },
             ),
             const SizedBox(width: 10),
             _DateBtn(
@@ -372,8 +383,10 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
               selected: _isSameDay(
                   _selectedDate, _today.add(const Duration(days: 1))),
               isPending: true,
-              onTap: () => setState(() =>
-                  _selectedDate = _today.add(const Duration(days: 1))),
+              onTap: () {
+                Provider.of<AppState>(context, listen: false).hapticLight();
+                setState(() => _selectedDate = _today.add(const Duration(days: 1)));
+              },
             ),
           ]),
           if (_isFutureDate) ...[
@@ -448,7 +461,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
               final customCats = isIncome
                   ? appState.customIncomeCategories
                   : appState.customExpenseCategories;
-              final predefined = isIncome ? kIncomeCategories : kCategories;
+              final predefined = isIncome ? appState.filteredIncomeCategories : appState.filteredExpenseCategories;
               final customConverted = customCats.map((m) => Category(
                 m['name'] as String,
                 IconData(m['iconCode'] as int? ?? Icons.category.codePoint, fontFamily: 'MaterialIcons'),
@@ -459,7 +472,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
               final sel = _selectedCategory == c.name;
               return GestureDetector(
                 onTap: () {
-                  HapticFeedback.selectionClick();
+                  Provider.of<AppState>(context, listen: false).hapticLight();
                   setState(() => _selectedCategory = c.name);
                 },
                 child: AnimatedContainer(

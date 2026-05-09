@@ -39,7 +39,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
     _notesCtrl = TextEditingController(text: e?.notes ?? '');
     _selectedAccountId = e?.accountId;
     _selectedDebtAccountId = e?.linkedDebtAccountId;
-    _debitDay = e?.debitDay ?? 0;
+    _debitDay = e?.debitDay ?? 1; // 預設每月 1 日自動扣款
 
     final now = DateTime.now();
     final sd = e?.startDate ?? now;

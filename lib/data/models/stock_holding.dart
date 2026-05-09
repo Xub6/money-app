@@ -14,9 +14,10 @@ class StockHolding {
   final String buyReason;
   final String sellStrategy;
   final DateTime createdAt;
-  final double feeRate; // 手續費率，預設 0.1425%
-  final String? accountId;
-  final String broker; // 券商名稱，用於自動建立股票帳戶
+  final double feeRate;
+  final String? accountId;   // 券商股票帳戶 ID（自動建立）
+  final String broker;       // 券商名稱
+  final String? deductAccountId; // 購買時從哪個帳戶扣款（非股票帳戶）
 
   StockHolding({
     String? id,
@@ -33,6 +34,7 @@ class StockHolding {
     this.feeRate = 0.001425,
     this.accountId,
     this.broker = '',
+    this.deductAccountId,
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now();
 
@@ -73,6 +75,7 @@ class StockHolding {
         'feeRate': feeRate,
         'accountId': accountId,
         'broker': broker,
+        'deductAccountId': deductAccountId,
       };
 
   factory StockHolding.fromJson(Map<String, dynamic> j) => StockHolding(
@@ -91,6 +94,7 @@ class StockHolding {
         feeRate: (j['feeRate'] as num?)?.toDouble() ?? 0.001425,
         accountId: j['accountId'] as String?,
         broker: j['broker'] as String? ?? '',
+        deductAccountId: j['deductAccountId'] as String?,
       );
 
   StockHolding copyWith({
@@ -98,13 +102,16 @@ class StockHolding {
     String? name,
     String? accountId,
     String? broker,
+    String? deductAccountId,
+    double? shares,
+    double? totalCost,
   }) =>
       StockHolding(
         id: id,
         code: code,
         name: name ?? this.name,
-        shares: shares,
-        totalCost: totalCost,
+        shares: shares ?? this.shares,
+        totalCost: totalCost ?? this.totalCost,
         currency: currency,
         purchaseDate: purchaseDate,
         currentPrice: currentPrice ?? this.currentPrice,
@@ -114,5 +121,6 @@ class StockHolding {
         feeRate: feeRate,
         accountId: accountId ?? this.accountId,
         broker: broker ?? this.broker,
+        deductAccountId: deductAccountId ?? this.deductAccountId,
       );
 }
