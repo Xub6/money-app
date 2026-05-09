@@ -1,7 +1,7 @@
 # 進度追蹤文件
 
-## 目前狀態：震動修復完成 ✅（2026-05-09）
-最後完成任務：震動改用 vibration 套件，APK 61.7MB，commit 79c5b52 ✅
+## 目前狀態：UI 修復完成 ✅（2026-05-09）
+最後完成任務：震動 + 計算機反白 + 底部導覽列重設計，APK 61.7MB，commit 3628648 ✅
 
 ### 本次完成（2026-05-09，commit f1af4bf）
 - [x] 【1】震動回饋全覆蓋：FAB press 加 hapticLight，addFixed/updateFixed 加 hapticMedium，category_management_page 改用 appState.hapticLight()（不再繞過 hapticEnabled 開關）
