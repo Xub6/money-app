@@ -167,7 +167,7 @@ class _LoanCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text('已收回 ${fmt.format(pct.toStringAsFixed(0))}%',
+          Text('已收回 ${pct.toStringAsFixed(1)}%',
               style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
         ]),
       ),
