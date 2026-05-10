@@ -1,7 +1,7 @@
 # 進度追蹤文件
 
-## 目前狀態：i18n 全面覆蓋完成 ✅（2026-05-10）
-最後完成任務：7 個檔案硬編碼中文字串全數替換為 AppLocalizations，APK build 成功，commit 187d3dd ✅
+## 目前狀態：i18n 全面掃描修復完成 ✅（2026-05-10）
+最後完成任務：主動掃描所有剩餘硬編碼（category tabs/dialogs、月份格式、還原 dialog、投資刪除 dialog），APK build 成功，commit d82f10b ✅
 
 ### 本次完成（2026-05-10，commit 187d3dd）
 - [x] i18n 全面覆蓋（P1-1 修復）
@@ -37,5 +37,4 @@
 
 ### 下一步
 1. **P1-3（人工 QA）**：Sean 在手機上做語言切換循環測試（zh_TW → ja_JP → en_US → zh_TW → 重啟）
-2. **P2（選做）**：loan_page.dart 仍有少數硬編碼（section header '進行中'/'已完成'、表單 label '借款人'/'金額'/'幣別' 等）
-3. **Play Store**：建 AAB（`flutter build appbundle --release --no-tree-shake-icons`）→ Play Console 上架
+2. **Play Store**：建 AAB（`flutter build appbundle --release --no-tree-shake-icons`）→ Play Console 上架
