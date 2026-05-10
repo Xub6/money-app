@@ -507,6 +507,20 @@ class AppState extends ChangeNotifier {
   }
 
   void deleteFixed(String id) {
+    // If this is a loan-type item, remove the auto-created debt account too.
+    final item = fixedItems.firstWhere((f) => f.id == id,
+        orElse: () => fixedItems.first);
+    if (item.id == id &&
+        item.totalPeriods != null &&
+        item.linkedDebtAccountId != null) {
+      final debtIdx =
+          accounts.indexWhere((a) => a.id == item.linkedDebtAccountId);
+      if (debtIdx >= 0 &&
+          accounts[debtIdx].customName == '${item.title}欠款帳戶') {
+        accounts.removeAt(debtIdx);
+      }
+    }
+
     fixedItems.removeWhere((f) => f.id == id);
     _db.deleteFixedItem(id).catchError((e) {
       AppLogger.error('DB deleteFixedItem failed', error: e);

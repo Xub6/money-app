@@ -75,9 +75,12 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
     int selectedYear = _startMonth.year;
     int selectedMonth = _startMonth.month;
 
-    final now = DateTime.now();
+    const int kStartYear = 1986;
+    final int kEndYear = DateTime.now().year + 5;
+    final int yearCount = kEndYear - kStartYear + 1;
+
     final yearCtrl = FixedExtentScrollController(
-        initialItem: selectedYear - (now.year - 10));
+        initialItem: selectedYear - kStartYear);
     final monthCtrl =
         FixedExtentScrollController(initialItem: selectedMonth - 1);
 
@@ -88,6 +91,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, ss) {
+          const itemExtent = 44.0;
+          final cs = Theme.of(context).colorScheme;
           return SizedBox(
             height: 300,
             child: Column(children: [
@@ -113,54 +118,69 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                 ]),
               ),
               Expanded(
-                child: Row(children: [
-                  Expanded(
-                    child: ListWheelScrollView.useDelegate(
-                      controller: yearCtrl,
-                      itemExtent: 44,
-                      physics: const FixedExtentScrollPhysics(),
-                      onSelectedItemChanged: (i) =>
-                          selectedYear = now.year - 10 + i,
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        childCount: 21,
-                        builder: (ctx, i) {
-                          final y = now.year - 10 + i;
-                          return Center(
-                            child: Text(
-                                AppLocalizations.ofParam(
-                                    context, 'year_label', {'year': y}),
-                                style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w500,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface)),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListWheelScrollView(
-                      controller: monthCtrl,
-                      itemExtent: 44,
-                      physics: const FixedExtentScrollPhysics(),
-                      onSelectedItemChanged: (i) => selectedMonth = i + 1,
-                      children: List.generate(
-                        12,
-                        (i) => Center(
-                          child: Text(
-                              AppLocalizations.ofParam(
-                                  context, 'month_label', {'month': i + 1}),
-                              style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w500,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface)),
+                child: Stack(children: [
+                  // Selection highlight bar centred in the wheel
+                  IgnorePointer(
+                    child: Center(
+                      child: Container(
+                        height: itemExtent,
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.12),
+                          border: Border.symmetric(
+                            horizontal: BorderSide(
+                                color: AppColors.gold.withValues(alpha: 0.45),
+                                width: 1),
+                          ),
                         ),
                       ),
                     ),
                   ),
+                  Row(children: [
+                    Expanded(
+                      child: ListWheelScrollView.useDelegate(
+                        controller: yearCtrl,
+                        itemExtent: itemExtent,
+                        physics: const FixedExtentScrollPhysics(),
+                        onSelectedItemChanged: (i) =>
+                            selectedYear = kStartYear + i,
+                        childDelegate: ListWheelChildBuilderDelegate(
+                          childCount: yearCount,
+                          builder: (ctx, i) {
+                            final y = kStartYear + i;
+                            return Center(
+                              child: Text(
+                                  AppLocalizations.ofParam(
+                                      context, 'year_label', {'year': y}),
+                                  style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w500,
+                                      color: cs.onSurface)),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListWheelScrollView(
+                        controller: monthCtrl,
+                        itemExtent: itemExtent,
+                        physics: const FixedExtentScrollPhysics(),
+                        onSelectedItemChanged: (i) => selectedMonth = i + 1,
+                        children: List.generate(
+                          12,
+                          (i) => Center(
+                            child: Text(
+                                AppLocalizations.ofParam(
+                                    context, 'month_label', {'month': i + 1}),
+                                style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w500,
+                                    color: cs.onSurface)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ]),
                 ]),
               ),
             ]),
