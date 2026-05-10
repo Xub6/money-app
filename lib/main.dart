@@ -2277,6 +2277,48 @@ class _ManagePageState extends State<ManagePage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final ok = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: Text(AppLocalizations.of(context, 'clear_all_confirm_title')),
+                          content: Text(AppLocalizations.of(context, 'clear_all_data_content')),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          actions: [
+                            TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Text(AppLocalizations.of(context, 'cancel'))),
+                            TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: Text(AppLocalizations.of(context, 'delete'),
+                                    style: const TextStyle(
+                                        color: kRed,
+                                        fontWeight: FontWeight.w700))),
+                          ],
+                        ),
+                      );
+                      if (ok == true && mounted) {
+                        widget.state.clearAllData();
+                        messenger.showSnackBar(
+                            SnackBar(content: Text(AppLocalizations.of(context, 'all_data_cleared'))));
+                      }
+                    },
+                    icon: const Icon(Icons.delete_sweep_rounded, color: kRed),
+                    label: Text(AppLocalizations.of(context, 'clear_all_data'), style: const TextStyle(color: kRed)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: kRed),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
               ])),
           const SizedBox(height: 16),
 

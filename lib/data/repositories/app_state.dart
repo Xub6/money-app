@@ -1397,6 +1397,40 @@ class AppState extends ChangeNotifier {
     AppLogger.info('All expense/fixed data cleared; account balances restored');
   }
 
+  void clearAllData() {
+    expenses = [];
+    fixedItems = [];
+    accounts = [];
+    holdings = [];
+    loans = [];
+    loanPayments = [];
+    _customCategories = [];
+    _predefinedCategorySettings = {};
+    _unifiedExpenseOrder = [];
+    _unifiedIncomeOrder = [];
+    _predefinedExpenseOrder = [];
+    _predefinedIncomeOrder = [];
+    streak = 0;
+    _lastDate = '';
+    budget = 30000;
+    _db.clear().catchError((e) {
+      AppLogger.error('DB clear failed', error: e);
+    });
+    for (final key in [
+      'expenses', 'fixed', 'loans', 'loanPayments',
+      'customCategories', 'predefinedCategorySettings',
+      'unifiedExpenseOrder', 'unifiedIncomeOrder',
+      'predefinedExpenseOrder', 'predefinedIncomeOrder',
+    ]) {
+      _prefs?.remove(key);
+    }
+    _prefs?.setInt('streak', 0);
+    _prefs?.setString('lastDate', '');
+    _save();
+    notifyListeners();
+    AppLogger.info('All data cleared (full reset)');
+  }
+
   void restoreFromBackup({
     required List<ExpenseItem> newExpenses,
     required List<FixedItem> newFixedItems,
