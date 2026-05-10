@@ -864,7 +864,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             // 資訊副標（純文字，· 分隔）
                             Text.rich(
                               TextSpan(children: [
-                                TextSpan(text: '支出 NT\$ ${_fmt(thisExp)}'),
+                                TextSpan(text: AppLocalizations.ofParam(context, 'month_expense_format', {'amount': _fmt(thisExp)})),
                                 if (hasTrend) ...[
                                   const TextSpan(text: '  '),
                                   TextSpan(
@@ -884,12 +884,12 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                                 TextSpan(
                                   text: state.recordedToday
-                                      ? ' 連續 ${state.streak} 天'
-                                      : ' ${state.streak} 天未記帳',
+                                      ? ' ${AppLocalizations.ofParam(context, 'streak_active', {'n': state.streak})}'
+                                      : ' ${AppLocalizations.ofParam(context, 'streak_inactive', {'n': state.streak})}',
                                 ),
                                 if (isNow) ...[
                                   const TextSpan(text: '  ·  '),
-                                  TextSpan(text: '第 ${n.day} 天'),
+                                  TextSpan(text: AppLocalizations.ofParam(context, 'day_of_month', {'day': n.day})),
                                 ],
                               ]),
                               textAlign: TextAlign.center,

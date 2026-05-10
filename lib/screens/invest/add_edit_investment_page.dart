@@ -457,7 +457,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
 
             // ── 扣款帳戶 ──
             if (nonStockAccounts.isNotEmpty) ...[
-              _SectionHeader('扣款帳戶（選填）'),
+              _SectionHeader(AppLocalizations.of(context, 'debit_account_label')),
               _GroupCard(
                 cs: cs,
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -469,7 +469,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                     scrollDirection: Axis.horizontal,
                     child: Row(children: [
                       _DeductChip(
-                        label: '不連結',
+                        label: AppLocalizations.of(context, 'not_linked'),
                         selected: _selectedDeductAccountId == null,
                         onTap: () => setState(() => _selectedDeductAccountId = null),
                         cs: cs,

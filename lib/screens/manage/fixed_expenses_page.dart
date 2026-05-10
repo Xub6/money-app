@@ -38,8 +38,8 @@ class FixedExpensesPage extends StatelessWidget {
         foregroundColor: cs.onSurface,
         elevation: 0,
         centerTitle: true,
-        title: const Text('固定開銷',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(AppLocalizations.of(context, 'fixed_expenses'),
+            style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           color: AppColors.gold,
@@ -62,11 +62,11 @@ class FixedExpensesPage extends StatelessWidget {
                 Icon(Icons.receipt_long_outlined,
                     size: 48, color: cs.onSurfaceVariant),
                 const SizedBox(height: 12),
-                Text('尚無固定開銷',
+                Text(AppLocalizations.of(context, 'no_fixed_expenses'),
                     style:
                         TextStyle(color: cs.onSurfaceVariant, fontSize: 15)),
                 const SizedBox(height: 6),
-                Text('點右上角 + 新增',
+                Text(AppLocalizations.of(context, 'add_fixed_hint'),
                     style:
                         TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
               ]),
@@ -80,7 +80,7 @@ class FixedExpensesPage extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Row(children: [
-                    Text('每月固定',
+                    Text(AppLocalizations.of(context, 'monthly_fixed'),
                         style: TextStyle(
                             fontSize: 13, color: cs.onSurfaceVariant)),
                     const Spacer(),
@@ -104,9 +104,9 @@ class FixedExpensesPage extends StatelessWidget {
                   state.deleteFixed(f.id);
                   state.hapticHeavy();
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('已刪除固定開銷「${f.title}」'),
+                    content: Text(AppLocalizations.ofParam(context, 'deleted_fixed_msg', {'name': f.title})),
                     action: SnackBarAction(
-                        label: '復原', onPressed: () => state.addFixed(f)),
+                        label: AppLocalizations.of(context, 'restore_label'), onPressed: () => state.addFixed(f)),
                     duration: const Duration(seconds: 3),
                     showCloseIcon: true,
                   ));
@@ -155,17 +155,16 @@ class _FixedItemTile extends StatelessWidget {
             builder: (ctx) => AlertDialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
-              title: const Text('刪除固定開銷',
-                  style: TextStyle(fontWeight: FontWeight.w800)),
-              content:
-                  Text('確定要刪除「${item.title}」嗎？\n刪除後不會再自動扣款。'),
+              title: Text(AppLocalizations.of(context, 'delete_fixed_title'),
+                  style: const TextStyle(fontWeight: FontWeight.w800)),
+              content: Text(AppLocalizations.ofParam(context, 'delete_fixed_body', {'name': item.title})),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('取消')),
+                    child: Text(AppLocalizations.of(context, 'cancel'))),
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('刪除',
+                  child: Text(AppLocalizations.of(context, 'delete'),
                       style: TextStyle(
                           color: AppColors.error,
                           fontWeight: FontWeight.w700)),

@@ -388,9 +388,8 @@ class _AccountPageState extends State<AccountPage> {
                       listenable: s,
                       builder: (_, __) => _featureRow(
                         icon: Icons.receipt_long_rounded,
-                        title: '固定開銷',
-                        subtitle:
-                            '${s.fixedItems.length} 筆・每月 NT\$ ${NumberFormat('#,###').format(s.fixedTotal)}',
+                        title: AppLocalizations.of(context, 'fixed_expenses'),
+                        subtitle: AppLocalizations.ofParam(context, 'fixed_count_monthly', {'count': s.fixedItems.length, 'amount': NumberFormat('#,###').format(s.fixedTotal)}),
                         onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -405,8 +404,7 @@ class _AccountPageState extends State<AccountPage> {
                       builder: (_, __) => _featureRow(
                         icon: Icons.savings_rounded,
                         title: AppLocalizations.of(context, 'monthly_budget'),
-                        subtitle:
-                            '目前設定 NT\$ ${NumberFormat('#,###').format(s.budget)}',
+                        subtitle: AppLocalizations.ofParam(context, 'budget_current', {'amount': NumberFormat('#,###').format(s.budget)}),
                         onTap: _showBudgetSheet,
                       ),
                     ),
@@ -431,10 +429,10 @@ class _AccountPageState extends State<AccountPage> {
                             s.loans.where((l) => !l.isCompleted).length;
                         return _featureRow(
                           icon: Icons.handshake_rounded,
-                          title: '借款紀錄',
+                          title: AppLocalizations.of(context, 'loan_records'),
                           subtitle: active > 0
-                              ? '進行中 $active 筆'
-                              : '無進行中借款',
+                              ? AppLocalizations.ofParam(context, 'loan_active_count', {'count': active})
+                              : AppLocalizations.of(context, 'no_loans_active'),
                           onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
