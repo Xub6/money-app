@@ -50,6 +50,13 @@ class AppState extends ChangeNotifier {
 
   List<String> get unifiedExpenseOrder => _unifiedExpenseOrder;
   List<String> get unifiedIncomeOrder => _unifiedIncomeOrder;
+
+  Map<String, dynamic> get categoryBackupData => {
+        'customCategories': _customCategories,
+        'predefinedCategorySettings': _predefinedCategorySettings,
+        'unifiedExpenseOrder': _unifiedExpenseOrder,
+        'unifiedIncomeOrder': _unifiedIncomeOrder,
+      };
   // 預設類別覆寫設定: {name: {iconCode, color, isHidden}}
   Map<String, Map<String, dynamic>> _predefinedCategorySettings = {};
 
@@ -1395,13 +1402,38 @@ class AppState extends ChangeNotifier {
     required List<FixedItem> newFixedItems,
     required List<Account> newAccounts,
     required List<StockHolding> newHoldings,
+    List<LoanRecord> newLoans = const [],
+    List<LoanPayment> newLoanPayments = const [],
+    Map<String, dynamic>? newCategoryData,
     int? newBudget,
   }) {
     expenses = newExpenses;
     fixedItems = newFixedItems;
     accounts = newAccounts;
     holdings = newHoldings;
+    loans = List.from(newLoans);
+    loanPayments = List.from(newLoanPayments);
     if (newBudget != null) budget = newBudget;
+
+    if (newCategoryData != null) {
+      final customCat = newCategoryData['customCategories'] as List? ?? [];
+      _customCategories = customCat.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+
+      final predSettings = newCategoryData['predefinedCategorySettings'] as Map<String, dynamic>? ?? {};
+      _predefinedCategorySettings = predSettings.map((k, v) => MapEntry(k, Map<String, dynamic>.from(v as Map)));
+
+      _unifiedExpenseOrder = (newCategoryData['unifiedExpenseOrder'] as List? ?? []).cast<String>();
+      _unifiedIncomeOrder = (newCategoryData['unifiedIncomeOrder'] as List? ?? []).cast<String>();
+
+      _prefs?.setString('customCategories', jsonEncode(_customCategories));
+      _prefs?.setString('predefinedCategorySettings', jsonEncode(_predefinedCategorySettings));
+      _prefs?.setStringList('unifiedExpenseOrder', _unifiedExpenseOrder);
+      _prefs?.setStringList('unifiedIncomeOrder', _unifiedIncomeOrder);
+    }
+
+    _prefs?.setString('loans', jsonEncode(loans.map((l) => l.toJson()).toList()));
+    _prefs?.setString('loanPayments', jsonEncode(loanPayments.map((p) => p.toJson()).toList()));
+
     _db.clear().then((_) {
       for (final e in newExpenses) {
         _db.insertExpense(e).catchError((_) => '');
@@ -1418,7 +1450,8 @@ class AppState extends ChangeNotifier {
         'Restored from backup: ${newExpenses.length} expenses, '
         '${newFixedItems.length} fixed items, '
         '${newAccounts.length} accounts, '
-        '${newHoldings.length} holdings');
+        '${newHoldings.length} holdings, '
+        '${newLoans.length} loans');
   }
 
   String exportToJson() {

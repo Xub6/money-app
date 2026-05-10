@@ -5,6 +5,8 @@ import '../data/models/expense_item.dart';
 import '../data/models/fixed_item.dart';
 import '../data/models/account.dart';
 import '../data/models/stock_holding.dart';
+import '../data/models/loan_record.dart';
+import '../data/models/loan_payment.dart';
 import '../data/models/backup_metadata.dart';
 import '../core/utils/logger.dart';
 import '../core/utils/app_exceptions.dart';
@@ -30,12 +32,15 @@ class BackupService {
     }
   }
 
-  /// Export data as JSON backup (v2.0 — includes accounts and holdings).
+  /// Export data as JSON backup (v3.0 — includes loans + category settings).
   Future<String> exportBackup({
     required List<ExpenseItem> expenses,
     required List<FixedItem> fixedItems,
     List<Account> accounts = const [],
     List<StockHolding> holdings = const [],
+    List<LoanRecord> loans = const [],
+    List<LoanPayment> loanPayments = const [],
+    Map<String, dynamic>? categoryData,
     int? budget,
     String? notes,
   }) async {
@@ -49,9 +54,10 @@ class BackupService {
         fixedCount: fixedItems.length,
         accountCount: accounts.length,
         holdingCount: holdings.length,
+        loanCount: loans.length,
         totalAmount: totalAmount,
         notes: notes,
-        version: '2.0',
+        version: '3.0',
       );
 
       final backupData = BackupData(
@@ -60,6 +66,9 @@ class BackupService {
         fixedItems: fixedItems,
         accounts: accounts,
         holdings: holdings,
+        loans: loans,
+        loanPayments: loanPayments,
+        categoryData: categoryData,
         settings: budget != null ? {'budget': budget} : null,
       );
 

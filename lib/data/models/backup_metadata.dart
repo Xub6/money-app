@@ -2,6 +2,8 @@ import 'expense_item.dart';
 import 'fixed_item.dart';
 import 'account.dart';
 import 'stock_holding.dart';
+import 'loan_record.dart';
+import 'loan_payment.dart';
 
 /// Search result item
 class SearchResult<T> {
@@ -32,6 +34,7 @@ class BackupMetadata {
   final int fixedCount;
   final int accountCount;
   final int holdingCount;
+  final int loanCount;
   final int totalAmount;
   final String appVersion;
   final String? deviceInfo;
@@ -40,11 +43,12 @@ class BackupMetadata {
   BackupMetadata({
     String? id,
     DateTime? timestamp,
-    String version = '2.0',
+    String version = '3.0',
     this.expenseCount = 0,
     this.fixedCount = 0,
     this.accountCount = 0,
     this.holdingCount = 0,
+    this.loanCount = 0,
     this.totalAmount = 0,
     String appVersion = '2.0.0',
     this.deviceInfo,
@@ -69,6 +73,7 @@ class BackupMetadata {
         'fixedCount': fixedCount,
         'accountCount': accountCount,
         'holdingCount': holdingCount,
+        'loanCount': loanCount,
         'totalAmount': totalAmount,
         'appVersion': appVersion,
         'deviceInfo': deviceInfo,
@@ -85,6 +90,7 @@ class BackupMetadata {
         fixedCount: json['fixedCount'] as int? ?? 0,
         accountCount: json['accountCount'] as int? ?? 0,
         holdingCount: json['holdingCount'] as int? ?? 0,
+        loanCount: json['loanCount'] as int? ?? 0,
         totalAmount: json['totalAmount'] as int? ?? 0,
         appVersion: json['appVersion'] as String? ?? '2.0.0',
         deviceInfo: json['deviceInfo'] as String?,
@@ -92,14 +98,17 @@ class BackupMetadata {
       );
 }
 
-/// Complete backup data (v2.0 includes accounts + holdings).
-/// [isLegacy] is true when loaded from a v1.0 backup that lacks those fields.
+/// Complete backup data (v3.0 adds loans + category settings).
+/// [isLegacy] is true when loaded from a v1.0 backup that lacks accounts.
 class BackupData {
   final BackupMetadata metadata;
   final List<ExpenseItem> expenses;
   final List<FixedItem> fixedItems;
   final List<Account> accounts;
   final List<StockHolding> holdings;
+  final List<LoanRecord> loans;
+  final List<LoanPayment> loanPayments;
+  final Map<String, dynamic>? categoryData;
   final Map<String, dynamic>? settings;
   final bool isLegacy;
 
@@ -109,6 +118,9 @@ class BackupData {
     required this.fixedItems,
     this.accounts = const [],
     this.holdings = const [],
+    this.loans = const [],
+    this.loanPayments = const [],
+    this.categoryData,
     this.settings,
     this.isLegacy = false,
   });
@@ -119,6 +131,9 @@ class BackupData {
         'fixedItems': fixedItems.map((f) => f.toJson()).toList(),
         'accounts': accounts.map((a) => a.toJson()).toList(),
         'holdings': holdings.map((h) => h.toJson()).toList(),
+        'loans': loans.map((l) => l.toJson()).toList(),
+        'loanPayments': loanPayments.map((p) => p.toJson()).toList(),
+        'categoryData': categoryData,
         'settings': settings,
       };
 
@@ -150,12 +165,25 @@ class BackupData {
         .map((h) => StockHolding.fromJson(h as Map<String, dynamic>))
         .toList();
 
+    final loansJson = json['loans'] as List? ?? [];
+    final loans = loansJson
+        .map((l) => LoanRecord.fromJson(l as Map<String, dynamic>))
+        .toList();
+
+    final paymentsJson = json['loanPayments'] as List? ?? [];
+    final loanPayments = paymentsJson
+        .map((p) => LoanPayment.fromJson(p as Map<String, dynamic>))
+        .toList();
+
     return BackupData(
       metadata: meta,
       expenses: expenses,
       fixedItems: fixedItems,
       accounts: accounts,
       holdings: holdings,
+      loans: loans,
+      loanPayments: loanPayments,
+      categoryData: json['categoryData'] as Map<String, dynamic>?,
       settings: json['settings'] as Map<String, dynamic>?,
       isLegacy: isLegacy,
     );

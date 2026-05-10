@@ -1561,6 +1561,9 @@ class _ManagePageState extends State<ManagePage> {
         holdings: widget.state.holdings
             .where((h) => !h.id.startsWith(demoPrefix))
             .toList(),
+        loans: widget.state.loans,
+        loanPayments: widget.state.loanPayments,
+        categoryData: widget.state.categoryBackupData,
         budget: widget.state.budget,
       );
       messenger.showSnackBar(
@@ -1663,6 +1666,9 @@ class _ManagePageState extends State<ManagePage> {
         newFixedItems: backupData.fixedItems,
         newAccounts: backupData.accounts,
         newHoldings: backupData.holdings,
+        newLoans: backupData.loans,
+        newLoanPayments: backupData.loanPayments,
+        newCategoryData: backupData.categoryData,
         newBudget: backupData.settings?['budget'] as int?,
       );
       if (!mounted) return;
@@ -1703,6 +1709,9 @@ class _ManagePageState extends State<ManagePage> {
         fixedItems: widget.state.fixedItems.where((f) => !f.id.startsWith(demoPrefix)).toList(),
         accounts: widget.state.accounts.where((a) => !a.id.startsWith(demoPrefix)).toList(),
         holdings: widget.state.holdings.where((h) => !h.id.startsWith(demoPrefix)).toList(),
+        loans: widget.state.loans,
+        loanPayments: widget.state.loanPayments,
+        categoryData: widget.state.categoryBackupData,
         budget: widget.state.budget,
       );
       final documentsDir = await getApplicationDocumentsDirectory();
@@ -1752,6 +1761,9 @@ class _ManagePageState extends State<ManagePage> {
         newFixedItems: backupData.fixedItems,
         newAccounts: backupData.accounts,
         newHoldings: backupData.holdings,
+        newLoans: backupData.loans,
+        newLoanPayments: backupData.loanPayments,
+        newCategoryData: backupData.categoryData,
         newBudget: backupData.settings?['budget'] as int?,
       );
       messenger.showSnackBar(
