@@ -63,12 +63,12 @@ class LoanPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 100),
             children: [
               if (active.isNotEmpty) ...[
-                _sectionHeader('進行中', cs),
+                _sectionHeader(AppLocalizations.of(context, 'loan_active'), cs),
                 ...active.map((l) => _LoanCard(loan: l, state: state)),
                 const SizedBox(height: 16),
               ],
               if (completed.isNotEmpty) ...[
-                _sectionHeader('已完成', cs),
+                _sectionHeader(AppLocalizations.of(context, 'loan_completed'), cs),
                 ...completed.map((l) => _LoanCard(loan: l, state: state)),
               ],
             ],
@@ -150,7 +150,9 @@ class _LoanCard extends StatelessWidget {
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Text('${loan.currency} ${fmt.format(loan.amount)}',
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-              Text(isCompleted ? '已還清' : '剩 ${loan.currency} ${fmt.format(loan.remaining)}',
+              Text(isCompleted
+                  ? AppLocalizations.of(context, 'loan_cleared')
+                  : AppLocalizations.ofParam(context, 'loan_remaining_short', {'currency': loan.currency, 'amount': fmt.format(loan.remaining)}),
                   style: TextStyle(
                       fontSize: 12,
                       color: isCompleted ? kGreen : kRed,
@@ -242,15 +244,15 @@ class LoanDetailPage extends StatelessWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     Expanded(
-                      child: _statBox('借款總額', '${currentLoan.currency} ${fmt.format(currentLoan.amount)}', cs),
+                      child: _statBox(AppLocalizations.of(context, 'loan_total_label'), '${currentLoan.currency} ${fmt.format(currentLoan.amount)}', cs),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _statBox('已收回', '${currentLoan.currency} ${fmt.format(currentLoan.paid)}', cs, color: kGreen),
+                      child: _statBox(AppLocalizations.of(context, 'loan_recovered_label'), '${currentLoan.currency} ${fmt.format(currentLoan.paid)}', cs, color: kGreen),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _statBox('剩餘', '${currentLoan.currency} ${fmt.format(currentLoan.remaining)}', cs, color: currentLoan.isCompleted ? kGreen : kRed),
+                      child: _statBox(AppLocalizations.of(context, 'loan_remaining_label'), '${currentLoan.currency} ${fmt.format(currentLoan.remaining)}', cs, color: currentLoan.isCompleted ? kGreen : kRed),
                     ),
                   ]),
                   const SizedBox(height: 16),
@@ -498,13 +500,12 @@ class _AddLoanPageState extends State<AddLoanPage> {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          _field('借款人', _nameCtrl, hint: '輸入借款人名稱'),
+          _field(AppLocalizations.of(context, 'loan_borrower_label'), _nameCtrl, hint: AppLocalizations.of(context, 'loan_borrower_hint')),
           const SizedBox(height: 14),
-          _field('金額', _amountCtrl, hint: '0', keyboardType: TextInputType.number),
+          _field(AppLocalizations.of(context, 'loan_amount_label'), _amountCtrl, hint: '0', keyboardType: TextInputType.number),
           const SizedBox(height: 14),
 
-          // 幣別
-          _label('幣別'),
+          _label(AppLocalizations.of(context, 'loan_currency_label')),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -523,8 +524,7 @@ class _AddLoanPageState extends State<AddLoanPage> {
           ),
           const SizedBox(height: 14),
 
-          // 扣款帳戶（從哪個帳戶借出）
-          _label('借出帳戶（選填）'),
+          _label(AppLocalizations.of(context, 'loan_source_account')),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -551,8 +551,7 @@ class _AddLoanPageState extends State<AddLoanPage> {
           ),
           const SizedBox(height: 14),
 
-          // 日期
-          _label('借款日期'),
+          _label(AppLocalizations.of(context, 'loan_date_label')),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: _pickDate,
@@ -572,7 +571,7 @@ class _AddLoanPageState extends State<AddLoanPage> {
           ),
           const SizedBox(height: 14),
 
-          _field('備註', _notesCtrl, hint: '選填'),
+          _field(AppLocalizations.of(context, 'loan_notes_label'), _notesCtrl, hint: AppLocalizations.of(context, 'loan_notes_hint')),
         ],
       ),
     );
@@ -702,17 +701,17 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
-              '${widget.loan.borrowerName}・剩餘 ${widget.loan.currency} ${fmt.format(widget.loan.remaining)}',
+              '${widget.loan.borrowerName}・${AppLocalizations.ofParam(context, 'loan_remaining_info', {'currency': widget.loan.currency, 'amount': fmt.format(widget.loan.remaining)})}',
               style: const TextStyle(fontWeight: FontWeight.w700, color: kGold),
             ),
           ),
 
-          _field('收款金額', _totalCtrl, hint: '0', keyboardType: TextInputType.number),
+          _field(AppLocalizations.of(context, 'payment_amount_label'), _totalCtrl, hint: '0', keyboardType: TextInputType.number),
           const SizedBox(height: 14),
-          _field('其中利息', _interestCtrl, hint: '0（選填）', keyboardType: TextInputType.number),
+          _field(AppLocalizations.of(context, 'payment_interest_label'), _interestCtrl, hint: AppLocalizations.of(context, 'payment_interest_hint'), keyboardType: TextInputType.number),
           const SizedBox(height: 14),
 
-          _label('存入帳戶（選填）'),
+          _label(AppLocalizations.of(context, 'payment_deposit_account')),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -739,7 +738,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
           ),
           const SizedBox(height: 14),
 
-          _label('收款日期'),
+          _label(AppLocalizations.of(context, 'payment_date_label')),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: _pickDate,
@@ -759,7 +758,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
           ),
           const SizedBox(height: 14),
 
-          _field('備註', _notesCtrl, hint: '選填'),
+          _field(AppLocalizations.of(context, 'loan_notes_label'), _notesCtrl, hint: AppLocalizations.of(context, 'loan_notes_hint')),
         ],
       ),
     );
