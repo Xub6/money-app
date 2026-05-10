@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'config/localization.dart';
 import 'screens/auth/welcome_page.dart';
+import 'screens/onboarding/language_picker_page.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/categories.dart';
 import 'core/utils/error_handler.dart';
@@ -142,21 +143,35 @@ class _RootRouter extends StatefulWidget {
 }
 
 class _RootRouterState extends State<_RootRouter> {
+  bool? _languageSelected;
   bool? _welcomeSeen;
 
   @override
   void initState() {
     super.initState();
-    WelcomePage.isSeen().then((seen) {
-      if (mounted) setState(() => _welcomeSeen = seen);
+    Future.wait([
+      LanguagePickerPage.isSelected(),
+      WelcomePage.isSeen(),
+    ]).then((results) {
+      if (mounted) {
+        setState(() {
+          _languageSelected = results[0];
+          _welcomeSeen = results[1];
+        });
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_welcomeSeen == null) {
+    if (_languageSelected == null || _welcomeSeen == null) {
       return const Scaffold(
           body: Center(child: CircularProgressIndicator(color: kGold)));
+    }
+    if (!_languageSelected!) {
+      return LanguagePickerPage(
+        onComplete: () => setState(() => _languageSelected = true),
+      );
     }
     if (!_welcomeSeen!) {
       return WelcomePage(
