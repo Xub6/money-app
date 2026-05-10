@@ -896,36 +896,56 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 14),
             Builder(builder: (_) {
               final n = DateTime.now();
-              // prevM/nextM 相對 selectedMonth；thisM 是真實本月
-              final prevM =
-                  DateTime(displayMonth.year, displayMonth.month - 1, 1);
-              final thisM = DateTime(n.year, n.month, 1);
-              final nextM =
-                  DateTime(displayMonth.year, displayMonth.month + 1, 1);
-              bool sameM(DateTime a, DateTime b) =>
-                  a.year == b.year && a.month == b.month;
+              final isNow = displayMonth.year == n.year && displayMonth.month == n.month;
               return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // 左：selectedMonth - 1（純導航，不高亮）
-                    _MonthBtn(
-                        label: AppLocalizations.of(context, 'prev_month'),
-                        subText: AppLocalizations.ofParam(context, 'month_label', {'month': prevM.month}),
-                        selected: false,
-                        onTap: onPrev),
-                    const SizedBox(width: 10),
-                    _MonthBtn(
-                        label: AppLocalizations.of(context, 'this_month'),
-                        subText: AppLocalizations.ofParam(context, 'month_label', {'month': thisM.month}),
-                        selected: sameM(displayMonth, thisM),
-                        onTap: onCur),
-                    const SizedBox(width: 10),
-                    _MonthBtn(
-                        label: AppLocalizations.of(context, 'next_month'),
-                        subText: AppLocalizations.ofParam(context, 'month_label', {'month': nextM.month}),
-                        selected: false,
-                        onTap: onNext),
-                  ]);
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded, size: 28),
+                    color: kGold,
+                    onPressed: onPrev,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: isNow ? null : onCur,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${displayMonth.year}年${displayMonth.month}月',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 18,
+                            ),
+                          ),
+                          if (!isNow) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              AppLocalizations.of(context, 'tap_to_current_month'),
+                              style: TextStyle(
+                                color: kGold.withValues(alpha: 0.8),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right_rounded, size: 28),
+                    color: kGold,
+                    onPressed: onNext,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                  ),
+                ],
+              );
             }),
           ])),
           const SizedBox(height: 16),
