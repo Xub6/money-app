@@ -458,16 +458,9 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             childAspectRatio: 0.95,
             children: () {
               final appState = Provider.of<AppState>(context, listen: false);
-              final customCats = isIncome
-                  ? appState.visibleCustomIncomeCategories
-                  : appState.visibleCustomExpenseCategories;
-              final predefined = isIncome ? appState.filteredIncomeCategories : appState.filteredExpenseCategories;
-              final customConverted = customCats.map((m) => Category(
-                m['name'] as String,
-                IconData(m['iconCode'] as int? ?? Icons.category.codePoint, fontFamily: 'MaterialIcons'),
-                Color(m['color'] as int? ?? 0xFFC59B63),
-              )).toList();
-              return [...predefined, ...customConverted];
+              return isIncome
+                  ? appState.unifiedFilteredIncomeCategories
+                  : appState.unifiedFilteredExpenseCategories;
             }().map((c) {
               final sel = _selectedCategory == c.name;
               return GestureDetector(

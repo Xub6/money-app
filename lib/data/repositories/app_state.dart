@@ -116,6 +116,55 @@ class AppState extends ChangeNotifier {
   List<Category> get filteredIncomeCategories =>
       orderedIncomeCategories.where((c) => !_isPredefinedHidden(c.name)).toList();
 
+  // 統一排序（predefined + custom 混合），供新增交易類別選擇器使用
+  List<Category> get unifiedFilteredExpenseCategories =>
+      _buildUnifiedCategories('expense');
+
+  List<Category> get unifiedFilteredIncomeCategories =>
+      _buildUnifiedCategories('income');
+
+  List<Category> _buildUnifiedCategories(String type) {
+    final isExpense = type == 'expense';
+    final predBase = isExpense ? kCategories : kIncomeCategories;
+    final unifiedOrder = isExpense ? _unifiedExpenseOrder : _unifiedIncomeOrder;
+    final predMap = {for (final c in predBase) c.name: _applyOverride(c)};
+    final customList = (isExpense ? visibleCustomExpenseCategories : visibleCustomIncomeCategories);
+    final customMap = {
+      for (final m in customList)
+        (m['name'] as String): Category(
+          m['name'] as String,
+          IconData(m['iconCode'] as int? ?? Icons.category.codePoint, fontFamily: 'MaterialIcons'),
+          Color(m['color'] as int? ?? 0xFFC59B63),
+        )
+    };
+
+    if (unifiedOrder.isEmpty) {
+      return [
+        ...predBase.map(_applyOverride).where((c) => !_isPredefinedHidden(c.name)),
+        ...customMap.values,
+      ];
+    }
+
+    final result = <Category>[];
+    for (final name in unifiedOrder) {
+      if (predMap.containsKey(name)) {
+        if (!_isPredefinedHidden(name)) result.add(predMap[name]!);
+      } else if (customMap.containsKey(name)) {
+        result.add(customMap[name]!);
+      }
+    }
+    // append anything not in unifiedOrder
+    for (final c in predBase) {
+      if (!unifiedOrder.contains(c.name) && !_isPredefinedHidden(c.name)) {
+        result.add(_applyOverride(c));
+      }
+    }
+    for (final name in customMap.keys) {
+      if (!unifiedOrder.contains(name)) result.add(customMap[name]!);
+    }
+    return result;
+  }
+
   void reorderPredefinedCategory(String type, int oldIndex, int newIndex) {
     final isExpense = type == 'expense';
     if (isExpense && _predefinedExpenseOrder.isEmpty) {
