@@ -1,7 +1,17 @@
 # 進度追蹤文件
 
-## 目前狀態：貸款欠款帳戶同步完成 ✅（2026-05-10）
-最後完成任務：貸款型固定開銷自動建立欠款帳戶，APK build 成功，commit f0e85e9 ✅
+## 目前狀態：i18n 全面覆蓋完成 ✅（2026-05-10）
+最後完成任務：7 個檔案硬編碼中文字串全數替換為 AppLocalizations，APK build 成功，commit 187d3dd ✅
+
+### 本次完成（2026-05-10，commit 187d3dd）
+- [x] i18n 全面覆蓋（P1-1 修復）
+  - loan_page.dart：修正錯誤 import，27+ 硬編碼中文替換
+  - account_page.dart：月預算、定期管理、借款管理等 i18n
+  - invest_page.dart & add_edit_investment_page.dart：刪除對話框、幣別警告 i18n
+  - category_management_page.dart：16 個標籤/對話框全部 i18n
+  - localization.dart：新增 50+ key（loan/invest/category/main 領域，4 語言）
+  - tour_step.dart：移除孤立 step 12（fixedCard 已從 ManagePage 移走）
+  - main.dart：備份/還原對話框 i18n
 
 ### 本次完成（2026-05-10，commit f0e85e9）
 - [x] 【5】貸款型固定開銷欠款帳戶自動建立與同步
@@ -26,7 +36,6 @@
 - 借款利息未自動寫入支出/收入帳（規格說「不算正常收支」，目前僅更新帳戶餘額）
 
 ### 下一步
-1. 手機測試：編輯房貸固定開銷，確認欠款帳戶自動建立 + 餘額正確
-2. 確認 App 重啟後連結仍存在
-3. 確認自動扣款後欠款帳戶餘額同步減少
-4. 測試完成後建 AAB + Play Console 上架
+1. **P1-3（人工 QA）**：Sean 在手機上做語言切換循環測試（zh_TW → ja_JP → en_US → zh_TW → 重啟）
+2. **P2（選做）**：loan_page.dart 仍有少數硬編碼（section header '進行中'/'已完成'、表單 label '借款人'/'金額'/'幣別' 等）
+3. **Play Store**：建 AAB（`flutter build appbundle --release --no-tree-shake-icons`）→ Play Console 上架
