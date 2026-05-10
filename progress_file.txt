@@ -1,7 +1,7 @@
 # 進度追蹤文件
 
-## 目前狀態：資產頁「含股票帳戶」開關完成，APK 61.8MB ✅（2026-05-10）
-最後完成任務：資產頁含股票開關 + 固定開銷排除股票帳戶（commit 573321c）✅
+## 目前狀態：Google Play Console 電話驗證通過 ✅（2026-05-10）— 準備建立 App 並上傳 AAB
+最後完成任務：Sean 完成 Play Console 電話驗證，解鎖上架流程 ✅
 
 ### 本次完成（2026-05-10，commit 573321c）
 - [x] **資產頁「含股票帳戶」開關**
@@ -41,6 +41,14 @@
 - [x] 【3】固定開銷刪除 Snackbar
 - [x] 【4】借款紀錄功能（LoanRecord / LoanPayment 完整 CRUD）
 
-### 下一步
-1. **Play Store 上架**：等 Google Play Console 身分驗證通過（最晚 05-12）→ Sean 電話驗證 → AI 接手上傳 AAB + 填寫商店資料
-2. **上傳路徑**：`build/app/outputs/bundle/release/app-release.aab`
+### 里程碑（2026-05-10）
+- [x] Google Play Console 身分驗證 ✅
+- [x] Google Play Console 電話驗證 ✅ ← 今日完成
+- [ ] 在 Play Console 建立 App（填套件名稱 / App 名稱 / 類別）
+- [ ] 上傳 AAB v2.0.0+2（`build/app/outputs/bundle/release/app-release.aab`，49.5MB）
+- [ ] 填寫商店資訊（說明文字 / 截圖 / 分級問卷）
+- [ ] 送審
+
+### 下一步（最高優先）
+1. **Sean 在 Play Console 建立 App**：套件名稱 `com.qoryva.moneyapp`（或類似），App 名稱「錢錢管家」
+2. **AI 接手**：上傳 AAB → 填寫商店資料 → 送審（Sean 給截圖/授權後執行）
