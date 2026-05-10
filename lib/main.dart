@@ -867,20 +867,19 @@ class _DashboardPageState extends State<DashboardPage> {
                               spacing: 8,
                               runSpacing: 4,
                               children: [
-                                // 支出金額
+                                // 本月支出
                                 _InfoPill(
-                                  icon: Icons.arrow_downward_rounded,
-                                  iconColor: cs.error,
-                                  label: 'NT\$ ${_fmt(thisExp)}',
+                                  label: '${AppLocalizations.of(context, 'month_expense_label')} NT\$ ${_fmt(thisExp)}',
                                   cs: cs,
                                 ),
                                 // 趨勢（跟上月比）
                                 if (hasTrend)
                                   _InfoPill(
-                                    icon: trendUp ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                                    iconColor: trendUp ? cs.error : Colors.green,
-                                    label: '${trendUp ? "+" : ""}$trendPct%',
+                                    label: trendUp
+                                        ? AppLocalizations.ofParam(context, 'trend_up', {'pct': trendPct.abs()})
+                                        : AppLocalizations.ofParam(context, 'trend_down', {'pct': trendPct.abs()}),
                                     cs: cs,
+                                    textColor: trendUp ? cs.error : Colors.green,
                                   ),
                                 // 連勝
                                 _InfoPill(
@@ -895,8 +894,6 @@ class _DashboardPageState extends State<DashboardPage> {
                                 // 本月第X天（只在本月顯示）
                                 if (isNow)
                                   _InfoPill(
-                                    icon: Icons.calendar_today_rounded,
-                                    iconColor: kGold,
                                     label: AppLocalizations.ofParam(context, 'day_of_month', {'day': n.day}),
                                     cs: cs,
                                   ),
@@ -2395,22 +2392,20 @@ class _MonthBtn extends StatelessWidget {
 // 月份卡資訊 Pill
 // ─────────────────────────────────────────────
 class _InfoPill extends StatelessWidget {
-  final IconData? icon;
-  final Color? iconColor;
   final String? emoji;
   final String label;
   final ColorScheme cs;
   final bool highlight;
   final bool recordedToday;
+  final Color? textColor;
 
   const _InfoPill({
-    this.icon,
-    this.iconColor,
     this.emoji,
     required this.label,
     required this.cs,
     this.highlight = false,
     this.recordedToday = false,
+    this.textColor,
   });
 
   @override
@@ -2418,9 +2413,10 @@ class _InfoPill extends StatelessWidget {
     final bgColor = highlight
         ? (recordedToday ? cs.errorContainer : cs.tertiaryContainer)
         : cs.surfaceContainerHighest;
-    final textColor = highlight
-        ? (recordedToday ? cs.onErrorContainer : cs.onTertiaryContainer)
-        : cs.onSurfaceVariant;
+    final resolvedTextColor = textColor ??
+        (highlight
+            ? (recordedToday ? cs.onErrorContainer : cs.onTertiaryContainer)
+            : cs.onSurfaceVariant);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
@@ -2431,13 +2427,10 @@ class _InfoPill extends StatelessWidget {
         if (emoji != null) ...[
           Text(emoji!, style: const TextStyle(fontSize: 11)),
           const SizedBox(width: 3),
-        ] else if (icon != null) ...[
-          Icon(icon, size: 11, color: iconColor ?? textColor),
-          const SizedBox(width: 3),
         ],
         Text(label,
             style: TextStyle(
-              color: textColor,
+              color: resolvedTextColor,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             )),
