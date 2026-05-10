@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/localization.dart';
 import '../../core/utils/error_handler.dart';
 import '../../data/repositories/app_state.dart';
@@ -22,6 +23,27 @@ class AccountPage extends StatefulWidget {
 
 class _AccountPageState extends State<AccountPage> {
   AppState get s => widget.state;
+  bool _includeStock = true;
+  static const _kIncludeStockKey = 'account_include_stock';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadIncludeStock();
+  }
+
+  Future<void> _loadIncludeStock() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getBool(_kIncludeStockKey);
+    if (saved != null && mounted) setState(() => _includeStock = saved);
+  }
+
+  Future<void> _setIncludeStock(bool value) async {
+    s.hapticLight();
+    setState(() => _includeStock = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kIncludeStockKey, value);
+  }
 
   Future<void> _openAdd() async {
     final result = await Navigator.push<Account>(
@@ -204,11 +226,11 @@ class _AccountPageState extends State<AccountPage> {
           final credit = s.accounts
               .where((a) => a.category == AccountCategory.credit)
               .toList();
-          final net = s.netAssets;
-          final assets = s.totalAssetsDisplay;
-          final liabilities = s.totalLiabilities;
           final stockValue = s.totalPortfolioValue;
-          final isNegative = net < 0;
+          final displayAssets = _includeStock ? s.totalAssetsDisplay : s.totalAssets;
+          final displayNet = _includeStock ? s.netAssets : s.totalAssets - s.totalLiabilities;
+          final liabilities = s.totalLiabilities;
+          final isNegative = displayNet < 0;
           return CustomScrollView(
             slivers: [
               // ── 淨資產卡片 ──
@@ -231,7 +253,7 @@ class _AccountPageState extends State<AccountPage> {
                                   fontWeight: FontWeight.w600)),
                           const SizedBox(height: 6),
                           Text(
-                            'NT\$ ${_fmt(net)}',
+                            'NT\$ ${_fmt(displayNet)}',
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w800,
@@ -253,7 +275,7 @@ class _AccountPageState extends State<AccountPage> {
                                           color: cs.onSurfaceVariant,
                                           fontSize: 12)),
                                   const SizedBox(height: 4),
-                                  Text('NT\$ ${_fmt(assets)}',
+                                  Text('NT\$ ${_fmt(displayAssets)}',
                                       style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
@@ -277,7 +299,7 @@ class _AccountPageState extends State<AccountPage> {
                                               : cs.onSurfaceVariant)),
                                 ])),
                           ]),
-                          // ── 股票投資組合行 ──
+                          // ── 股票投資組合行 + 含股票開關 ──
                           if (stockValue > 0) ...[
                             const SizedBox(height: 12),
                             Divider(color: cs.outlineVariant, height: 1),
@@ -300,6 +322,42 @@ class _AccountPageState extends State<AccountPage> {
                                     color: AppColors.gold),
                               ),
                             ]),
+                            const SizedBox(height: 10),
+                            GestureDetector(
+                              onTap: () => _setIncludeStock(!_includeStock),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: _includeStock
+                                      ? AppColors.gold
+                                      : cs.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                  Icon(
+                                    _includeStock
+                                        ? Icons.toggle_on_rounded
+                                        : Icons.toggle_off_rounded,
+                                    size: 16,
+                                    color: _includeStock
+                                        ? Colors.white
+                                        : cs.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    AppLocalizations.of(context, 'include_stock'),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: _includeStock
+                                          ? Colors.white
+                                          : cs.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ]),
+                              ),
+                            ),
                           ],
                         ]),
                   ),

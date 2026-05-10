@@ -484,7 +484,9 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
     final isEdit = widget.existing != null;
     final appState = Provider.of<AppState>(context, listen: false);
     final savingsAccounts = appState.accounts
-        .where((a) => a.category == AccountCategory.savings)
+        .where((a) =>
+            a.category == AccountCategory.savings &&
+            a.typeName != '股票帳戶')
         .toList();
     final creditAccounts = appState.accounts
         .where((a) => a.category == AccountCategory.credit)
