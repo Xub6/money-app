@@ -340,8 +340,11 @@ class AppState extends ChangeNotifier {
 
   int get fixedTotal {
     final now = DateTime.now();
+    // Only count items NOT yet executed this month to avoid double-counting
+    // with dynamicTotal (which already includes the generated expense record).
+    final thisYM = '${now.year}-${now.month.toString().padLeft(2, '0')}';
     return fixedItems
-        .where((i) => i.isActiveAt(now))
+        .where((i) => i.isActiveAt(now) && i.lastExecutedYearMonth != thisYM)
         .fold(0, (s, i) => s + _toTwd(i.amount, i.currency));
   }
 
@@ -1088,7 +1091,9 @@ class AppState extends ChangeNotifier {
       holdings.fold(0.0, (s, h) => s + h.currentValueTwd(usdTwdRate));
   double get totalPortfolioCost =>
       holdings.fold(0.0, (s, h) => s + h.totalCost);
-  double get totalPortfolioProfit => totalPortfolioValue - totalPortfolioCost;
+  // Use net profit (same formula as individual holdings) to keep numbers consistent.
+  double get totalPortfolioProfit =>
+      holdings.fold(0.0, (s, h) => s + h.profitTwd(usdTwdRate));
   double get totalPortfolioProfitPct => totalPortfolioCost == 0
       ? 0
       : totalPortfolioProfit / totalPortfolioCost * 100;
