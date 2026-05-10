@@ -827,36 +827,10 @@ class _DashboardPageState extends State<DashboardPage> {
               key: TourKeys.monthCard,
               child: Column(children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 目前查看月份 標籤（左上）—— 永遠金色 active 樣式
-                Builder(builder: (_) {
-                  final n = DateTime.now();
-                  final isNow = displayMonth.year == n.year &&
-                      displayMonth.month == n.month;
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: kGold.withValues(alpha: 0.15),
-                      border: Border.all(
-                          color: kGold.withValues(alpha: 0.55), width: 1),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Text(
-                      isNow
-                          ? AppLocalizations.of(context, 'current_month_label')
-                          : AppLocalizations.ofParam(context, 'current_month_viewing', {'year': displayMonth.year, 'month': displayMonth.month}),
-                      style: const TextStyle(
-                        color: kGold,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  );
-                }),
-                // 連續記帳徽章（右上）
+                // 連續記帳徽章
                 Tooltip(
                   message: AppLocalizations.of(context, 'streak_record_daily'),
                   child: Container(
