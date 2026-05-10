@@ -466,21 +466,35 @@ class AppState extends ChangeNotifier {
   // ─── Fixed Items ───
 
   void addFixed(FixedItem item) {
-    fixedItems.add(item);
-    _db.insertFixedItem(item).catchError((Object e) {
+    FixedItem toAdd = item;
+    if (item.totalPeriods != null) {
+      final debtId = _getOrCreateLoanDebtAccount(item);
+      if (debtId != item.linkedDebtAccountId) {
+        toAdd = item.copyWith(linkedDebtAccountId: debtId);
+      }
+    }
+    fixedItems.add(toAdd);
+    _db.insertFixedItem(toAdd).catchError((Object e) {
       AppLogger.error('DB insertFixedItem failed', error: e);
       return '';
     });
     _save();
     notifyListeners();
     hapticMedium();
-    AppLogger.info('Fixed item added: ${item.title}');
+    AppLogger.info('Fixed item added: ${toAdd.title}');
   }
 
   void updateFixed(String id, FixedItem newItem) {
     final index = fixedItems.indexWhere((f) => f.id == id);
     if (index >= 0) {
-      final updated = newItem.copyWith(editedAt: DateTime.now());
+      FixedItem toUpdate = newItem;
+      if (newItem.totalPeriods != null) {
+        final debtId = _getOrCreateLoanDebtAccount(newItem);
+        if (debtId != newItem.linkedDebtAccountId) {
+          toUpdate = newItem.copyWith(linkedDebtAccountId: debtId);
+        }
+      }
+      final updated = toUpdate.copyWith(editedAt: DateTime.now());
       fixedItems[index] = updated;
       _db.updateFixedItem(updated).catchError((e) {
         AppLogger.error('DB updateFixedItem failed', error: e);
@@ -488,7 +502,7 @@ class AppState extends ChangeNotifier {
       _save();
       notifyListeners();
       hapticMedium();
-      AppLogger.info('Fixed item updated: ${newItem.title}');
+      AppLogger.info('Fixed item updated: ${toUpdate.title}');
     }
   }
 
@@ -625,6 +639,37 @@ class AppState extends ChangeNotifier {
       _save();
       notifyListeners();
     }
+  }
+
+  // ─── Loan Debt Account Helpers ───
+
+  /// For installment fixed items (totalPeriods != null), ensures a matching
+  /// credit/debt account exists and returns its ID. If the account already
+  /// exists it syncs the balance; otherwise it creates one.
+  /// Balance = -(remainingPeriods × monthlyAmount), negative = still owed.
+  String _getOrCreateLoanDebtAccount(FixedItem item) {
+    final debtName = '${item.title}欠款帳戶';
+    final now = DateTime.now();
+    final remaining = item.remainingPeriods(now) ?? 0;
+    final balance = -(remaining * item.amount).toDouble();
+
+    final idx = accounts.indexWhere(
+      (a) => a.category == AccountCategory.credit && a.customName == debtName,
+    );
+    if (idx >= 0) {
+      accounts[idx] = accounts[idx].copyWith(balance: balance);
+      return accounts[idx].id;
+    }
+    final newAcct = Account(
+      typeName: '欠款',
+      customName: debtName,
+      category: AccountCategory.credit,
+      balance: balance,
+      currency: item.currency,
+      countInTotal: true,
+    );
+    accounts.add(newAcct);
+    return newAcct.id;
   }
 
   // ─── Broker Account Helpers ───
