@@ -1,7 +1,13 @@
 # 進度追蹤文件
 
-## 目前狀態：i18n 全面掃描修復完成 ✅（2026-05-10）
-最後完成任務：主動掃描所有剩餘硬編碼（category tabs/dialogs、月份格式、還原 dialog、投資刪除 dialog），APK build 成功，commit d82f10b ✅
+## 目前狀態：AAB v2.0.0+2 建置完成，準備上傳 Play Console ✅（2026-05-10）
+最後完成任務：P1-3 QA 通過（Sean 手機語言切換循環驗收），AAB release build 成功（49.5MB）✅
+
+### 本次完成（2026-05-10，AAB build）
+- [x] **P1-3 QA 通過**：Sean 手機語言切換循環測試（zh_TW → ja_JP → en_US → zh_TW → 重啟）驗收通過
+- [x] **AAB v2.0.0+2 建置完成**：`flutter build appbundle --release --no-tree-shake-icons`
+  - 輸出路徑：`build/app/outputs/bundle/release/app-release.aab`（49.5MB）
+  - 包含今日所有功能（i18n 全覆蓋 + 貸款欠款帳戶自動建立）
 
 ### 本次完成（2026-05-10，commit 187d3dd）
 - [x] i18n 全面覆蓋（P1-1 修復）
@@ -19,7 +25,6 @@
   - 新增 _getOrCreateLoanDebtAccount()：依「{title}欠款帳戶」命名，避免重複建立
   - 欠款帳戶餘額 = -(剩餘期數 × 每月金額)，與現有期數計算一致
   - App 重啟後連結仍存在（linkedDebtAccountId 持久化於 SharedPreferences）
-  - 原有期數進度顯示、executeFixed 扣款邏輯完全不變
 
 ### 本次完成（2026-05-09，commit f1af4bf）
 - [x] 【1】震動回饋全覆蓋
@@ -27,14 +32,6 @@
 - [x] 【3】固定開銷刪除 Snackbar
 - [x] 【4】借款紀錄功能（LoanRecord / LoanPayment 完整 CRUD）
 
-### 技術細節
-- app_state.dart：新增 _getOrCreateLoanDebtAccount()，修改 addFixed() / updateFixed()
-- 欠款帳戶：category = AccountCategory.credit，typeName = '欠款'，countInTotal = true
-- 自動扣款時 executeFixed / checkAutoFixedExecution 已有 linkedDebtAccountId 減餘額邏輯（不變）
-
-### 未完成
-- 借款利息未自動寫入支出/收入帳（規格說「不算正常收支」，目前僅更新帳戶餘額）
-
 ### 下一步
-1. **P1-3（人工 QA）**：Sean 在手機上做語言切換循環測試（zh_TW → ja_JP → en_US → zh_TW → 重啟）
-2. **Play Store**：建 AAB（`flutter build appbundle --release --no-tree-shake-icons`）→ Play Console 上架
+1. **Play Store 上架**：等 Google Play Console 身分驗證通過（最晚 05-12）→ Sean 電話驗證 → AI 接手上傳 AAB + 填寫商店資料
+2. **上傳路徑**：`build/app/outputs/bundle/release/app-release.aab`
