@@ -24,7 +24,6 @@ class TourKeys {
   // ── Tab 3: Manage ─────────────────────────────────
   static final navManage     = GlobalKey(debugLabel: 'tour_navManage');
   static final accountCard   = GlobalKey(debugLabel: 'tour_accountCard');
-  static final fixedCard     = GlobalKey(debugLabel: 'tour_fixedCard');
   static final backupCard    = GlobalKey(debugLabel: 'tour_backupCard');
   static final feedbackTile  = GlobalKey(debugLabel: 'tour_feedbackTile');
   static final rewatchTile   = GlobalKey(debugLabel: 'tour_rewatchTile');

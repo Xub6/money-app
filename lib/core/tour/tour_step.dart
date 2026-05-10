@@ -24,59 +24,66 @@ class TourStep {
   });
 }
 
-/// The 16-step guided tour definition.
-/// Index 4  = FAB tab-0 (interactive — add expense)
-/// Index 6  = detailList (interactive — long press)
-/// Index 9  = FAB tab-2 (interactive — add investment)
-/// Index 14 = Feedback tile (interactive)
+/// 13-step guided tour — follows the logical first-time setup order:
+/// Accounts → Dashboard → Budget → Add Expense → Detail → Investments → Backup
+///
+/// Interactive steps:
+///   S6  = FAB tab-0 (add expense)
+///   S8  = detailList long-press
+///   S10 = FAB tab-2 (add holding)
 List<TourStep> buildTourSteps(BuildContext context) {
   String t(String key) => AppLocalizations.of(context, key);
   return [
-    // ── Dashboard ────────────────────────────────────────────────── 0
+    // S0 ── Welcome ───────────────────────────────────────────────
     TourStep(targetKey: TourKeys.appBarTitle, tab: 0, side: TooltipSide.below,
       title: t('tour_s0_title'), body: t('tour_s0_body')),
-    // 1
-    TourStep(targetKey: TourKeys.monthCard, tab: 0, side: TooltipSide.below,
-      title: t('tour_s1_title'), body: t('tour_s1_body')),
-    // 2
-    TourStep(targetKey: TourKeys.budgetCard, tab: 0, side: TooltipSide.below,
-      title: t('tour_s2_title'), body: t('tour_s2_body')),
-    // 3
-    TourStep(targetKey: TourKeys.categoryCard, tab: 0, side: TooltipSide.above,
-      title: t('tour_s3_title'), body: t('tour_s3_body')),
-    // 4 ── FAB tab-0 interactive ───────────────────────────────────
-    TourStep(targetKey: TourKeys.fab, tab: 0, isInteractive: true, side: TooltipSide.above,
-      title: t('tour_s4_title'), body: t('tour_s4_body'), hint: t('tour_s4_hint')),
-    // ── Detail ───────────────────────────────────────────────────── 5
-    TourStep(targetKey: TourKeys.detailList, tab: 1, side: TooltipSide.below,
-      title: t('tour_s5_title'), body: t('tour_s5_body')),
-    // 6 ── detailList long-press interactive ──────────────────────
-    TourStep(targetKey: TourKeys.detailList, tab: 1, isInteractive: true, side: TooltipSide.below,
-      title: t('tour_s6_title'), body: t('tour_s6_body'), hint: t('tour_s6_hint')),
-    // ── Invest ───────────────────────────────────────────────────── 7
-    TourStep(targetKey: TourKeys.investHeader, tab: 2, side: TooltipSide.below,
-      title: t('tour_s7_title'), body: t('tour_s7_body')),
-    // 8
-    TourStep(targetKey: TourKeys.investRefresh, tab: 2, side: TooltipSide.below,
-      title: t('tour_s8_title'), body: t('tour_s8_body')),
-    // 9 ── FAB tab-2 interactive ───────────────────────────────────
-    TourStep(targetKey: TourKeys.fab, tab: 2, isInteractive: true, side: TooltipSide.above,
-      title: t('tour_s9_title'), body: t('tour_s9_body'), hint: t('tour_s9_hint')),
-    // ── Manage ──────────────────────────────────────────────────── 10
+
+    // S1 ── Go to Manage tab first ─────────────────────────────── 1
     TourStep(targetKey: TourKeys.navManage, tab: 3, side: TooltipSide.above,
-      title: t('tour_s10_title'), body: t('tour_s10_body')),
-    // 11
+      title: t('tour_s1_title'), body: t('tour_s1_body')),
+
+    // S2 ── Accounts (foundation of all tracking) ─────────────── 2
     TourStep(targetKey: TourKeys.accountCard, tab: 3, side: TooltipSide.below,
-      title: t('tour_s11_title'), body: t('tour_s11_body')),
-    // 12 (fixedCard removed — fixed expenses moved to AccountPage)
-    // 13
+      title: t('tour_s2_title'), body: t('tour_s2_body')),
+
+    // S3 ── Dashboard: monthly overview ───────────────────────── 3
+    TourStep(targetKey: TourKeys.monthCard, tab: 0, side: TooltipSide.below,
+      title: t('tour_s3_title'), body: t('tour_s3_body')),
+
+    // S4 ── Budget progress ────────────────────────────────────── 4
+    TourStep(targetKey: TourKeys.budgetCard, tab: 0, side: TooltipSide.below,
+      title: t('tour_s4_title'), body: t('tour_s4_body')),
+
+    // S5 ── Category analysis ─────────────────────────────────── 5
+    TourStep(targetKey: TourKeys.categoryCard, tab: 0, side: TooltipSide.above,
+      title: t('tour_s5_title'), body: t('tour_s5_body')),
+
+    // S6 ── FAB tab-0 interactive (add expense) ───────────────── 6
+    TourStep(targetKey: TourKeys.fab, tab: 0, isInteractive: true, side: TooltipSide.above,
+      title: t('tour_s6_title'), body: t('tour_s6_body'), hint: t('tour_s6_hint')),
+
+    // S7 ── Detail list ────────────────────────────────────────── 7
+    TourStep(targetKey: TourKeys.detailList, tab: 1, side: TooltipSide.below,
+      title: t('tour_s7_title'), body: t('tour_s7_body')),
+
+    // S8 ── detailList long-press interactive ─────────────────── 8
+    TourStep(targetKey: TourKeys.detailList, tab: 1, isInteractive: true, side: TooltipSide.below,
+      title: t('tour_s8_title'), body: t('tour_s8_body'), hint: t('tour_s8_hint')),
+
+    // S9 ── Invest tab overview ───────────────────────────────── 9
+    TourStep(targetKey: TourKeys.investHeader, tab: 2, side: TooltipSide.below,
+      title: t('tour_s9_title'), body: t('tour_s9_body')),
+
+    // S10 ── FAB tab-2 interactive (add holding) ──────────────── 10
+    TourStep(targetKey: TourKeys.fab, tab: 2, isInteractive: true, side: TooltipSide.above,
+      title: t('tour_s10_title'), body: t('tour_s10_body'), hint: t('tour_s10_hint')),
+
+    // S11 ── Backup ───────────────────────────────────────────── 11
     TourStep(targetKey: TourKeys.backupCard, tab: 3, side: TooltipSide.below,
-      title: t('tour_s13_title'), body: t('tour_s13_body')),
-    // 14 ── Feedback interactive ────────────────────────────────────
-    TourStep(targetKey: TourKeys.feedbackTile, tab: 3, isInteractive: true, side: TooltipSide.above,
-      title: t('tour_s14_title'), body: t('tour_s14_body'), hint: t('tour_s14_hint')),
-    // 15 ── Finish ──────────────────────────────────────────────────
+      title: t('tour_s11_title'), body: t('tour_s11_body')),
+
+    // S12 ── Done / rewatch ───────────────────────────────────── 12
     TourStep(targetKey: TourKeys.rewatchTile, tab: 3, side: TooltipSide.above,
-      title: t('tour_s15_title'), body: t('tour_s15_body')),
+      title: t('tour_s12_title'), body: t('tour_s12_body')),
   ];
 }
