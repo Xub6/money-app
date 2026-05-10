@@ -469,7 +469,9 @@ class _AddLoanPageState extends State<AddLoanPage> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final accounts = widget.state.accounts
-        .where((a) => a.category == AccountCategory.savings)
+        .where((a) =>
+            a.category == AccountCategory.savings &&
+            a.typeName != '股票帳戶')
         .toList();
 
     return Scaffold(
@@ -662,7 +664,9 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final accounts = widget.state.accounts
-        .where((a) => a.category == AccountCategory.savings)
+        .where((a) =>
+            a.category == AccountCategory.savings &&
+            a.typeName != '股票帳戶')
         .toList();
     final fmt = NumberFormat('#,##0', 'en_US');
 

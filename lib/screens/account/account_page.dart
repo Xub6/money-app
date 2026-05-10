@@ -7,6 +7,8 @@ import '../../data/models/account.dart';
 import '../../core/constants/app_colors.dart';
 import 'add_edit_account_page.dart';
 import '../transfer/transfer_page.dart';
+import '../manage/fixed_expenses_page.dart';
+import '../loan/loan_page.dart';
 
 String _fmt(double v) => NumberFormat('#,##0', 'en_US').format(v.round());
 
@@ -41,6 +43,132 @@ class _AccountPageState extends State<AccountPage> {
     s.deleteAccount(a.id);
     ErrorHandler.showUndoSnack(
         context, AppLocalizations.ofParam(context, 'deleted_item', {'name': a.displayName}), () => s.addAccount(a));
+  }
+
+  void _showBudgetSheet() {
+    final ctrl = TextEditingController(text: s.budget.toString());
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Row(children: [
+            const Text('月預算',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            const Spacer(),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('取消',
+                  style: TextStyle(
+                      color:
+                          Theme.of(ctx).colorScheme.onSurfaceVariant)),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: TextField(
+                controller: ctrl,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(
+                    fontSize: 22, fontWeight: FontWeight.w800),
+                decoration: InputDecoration(
+                  prefixText: 'NT\$ ',
+                  filled: true,
+                  fillColor: Theme.of(ctx).colorScheme.primaryContainer,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                          color: AppColors.gold, width: 1.5)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () {
+                final val = int.tryParse(ctrl.text.trim());
+                if (val != null && val > 0) {
+                  s.setBudget(val);
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('預算已更新'),
+                    backgroundColor: AppColors.success,
+                    duration: Duration(seconds: 2),
+                  ));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 16),
+                elevation: 0,
+              ),
+              child: const Text('更新',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Widget _featureRow({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    Key? rowKey,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      key: rowKey,
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.gold, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w700)),
+              Text(subtitle,
+                  style: TextStyle(
+                      fontSize: 12, color: cs.onSurfaceVariant)),
+            ]),
+          ),
+          Icon(Icons.chevron_right, color: AppColors.gold, size: 18),
+        ]),
+      ),
+    );
   }
 
   @override
@@ -235,6 +363,88 @@ class _AccountPageState extends State<AccountPage> {
                       ]),
                     ),
                   ),
+                ),
+              ),
+
+              // ── 定期管理 & 借款管理 ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
+                  child: Column(children: [
+                    // 定期管理 header
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('定期管理',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurfaceVariant)),
+                      ),
+                    ),
+                    // 固定開銷
+                    ListenableBuilder(
+                      listenable: s,
+                      builder: (_, __) => _featureRow(
+                        icon: Icons.receipt_long_rounded,
+                        title: '固定開銷',
+                        subtitle:
+                            '${s.fixedItems.length} 筆・每月 NT\$ ${NumberFormat('#,###').format(s.fixedTotal)}',
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    FixedExpensesPage(state: s))),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // 月預算
+                    ListenableBuilder(
+                      listenable: s,
+                      builder: (_, __) => _featureRow(
+                        icon: Icons.savings_rounded,
+                        title: '月預算',
+                        subtitle:
+                            '目前設定 NT\$ ${NumberFormat('#,###').format(s.budget)}',
+                        onTap: _showBudgetSheet,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // 借款管理 header
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('借款管理',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurfaceVariant)),
+                      ),
+                    ),
+                    // 借款紀錄
+                    ListenableBuilder(
+                      listenable: s,
+                      builder: (_, __) {
+                        final active =
+                            s.loans.where((l) => !l.isCompleted).length;
+                        return _featureRow(
+                          icon: Icons.handshake_rounded,
+                          title: '借款紀錄',
+                          subtitle: active > 0
+                              ? '進行中 $active 筆'
+                              : '無進行中借款',
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      LoanPage(state: s))),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                  ]),
                 ),
               ),
 
