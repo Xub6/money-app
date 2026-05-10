@@ -825,103 +825,108 @@ class _DashboardPageState extends State<DashboardPage> {
           // 月份切換
           _AppCard(
               key: TourKeys.monthCard,
-              child: Column(children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // 連續記帳徽章
-                Tooltip(
-                  message: AppLocalizations.of(context, 'streak_record_daily'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: state.recordedToday
-                          ? Theme.of(context).colorScheme.errorContainer
-                          : Theme.of(context).colorScheme.tertiaryContainer,
-                      borderRadius: BorderRadius.circular(20),
+              child: Builder(builder: (_) {
+                final n = DateTime.now();
+                final isNow = displayMonth.year == n.year && displayMonth.month == n.month;
+                final thisExp = state.dynamicTotal(displayMonth);
+                final prevMonth = DateTime(displayMonth.year, displayMonth.month - 1, 1);
+                final prevExp = state.dynamicTotal(prevMonth);
+                final hasTrend = prevExp > 0;
+                final trendPct = hasTrend ? ((thisExp - prevExp) / prevExp * 100).round() : 0;
+                final trendUp = trendPct >= 0;
+                final cs = Theme.of(context).colorScheme;
+                return Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded, size: 28),
+                      color: kGold,
+                      onPressed: onPrev,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                     ),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text(state.recordedToday ? '🔥' : '⚠️',
-                          style: const TextStyle(fontSize: 13)),
-                      const SizedBox(width: 4),
-                      Text(
-                        state.recordedToday
-                            ? AppLocalizations.ofParam(context, 'streak_active', {'n': state.streak})
-                            : AppLocalizations.ofParam(context, 'streak_inactive', {'n': state.streak}),
-                        style: TextStyle(
-                          color: state.recordedToday
-                              ? Theme.of(context)
-                                  .colorScheme
-                                  .onErrorContainer
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onTertiaryContainer,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ]),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Builder(builder: (_) {
-              final n = DateTime.now();
-              final isNow = displayMonth.year == n.year && displayMonth.month == n.month;
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left_rounded, size: 28),
-                    color: kGold,
-                    onPressed: onPrev,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: isNow ? null : onCur,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${displayMonth.year}年${displayMonth.month}月',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 18,
-                            ),
-                          ),
-                          if (!isNow) ...[
-                            const SizedBox(height: 3),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: isNow ? null : onCur,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 月份大字
                             Text(
-                              AppLocalizations.of(context, 'tap_to_current_month'),
+                              '${displayMonth.year}年${displayMonth.month}月',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: kGold.withValues(alpha: 0.8),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 22,
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            // 資訊行
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                // 支出金額
+                                _InfoPill(
+                                  icon: Icons.arrow_downward_rounded,
+                                  iconColor: cs.error,
+                                  label: 'NT\$ ${_fmt(thisExp)}',
+                                  cs: cs,
+                                ),
+                                // 趨勢（跟上月比）
+                                if (hasTrend)
+                                  _InfoPill(
+                                    icon: trendUp ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                                    iconColor: trendUp ? cs.error : Colors.green,
+                                    label: '${trendUp ? "+" : ""}$trendPct%',
+                                    cs: cs,
+                                  ),
+                                // 連勝
+                                _InfoPill(
+                                  emoji: state.recordedToday ? '🔥' : '⚠️',
+                                  label: state.recordedToday
+                                      ? AppLocalizations.ofParam(context, 'streak_active', {'n': state.streak})
+                                      : AppLocalizations.ofParam(context, 'streak_inactive', {'n': state.streak}),
+                                  cs: cs,
+                                  highlight: true,
+                                  recordedToday: state.recordedToday,
+                                ),
+                                // 本月第X天（只在本月顯示）
+                                if (isNow)
+                                  _InfoPill(
+                                    icon: Icons.calendar_today_rounded,
+                                    iconColor: kGold,
+                                    label: AppLocalizations.ofParam(context, 'day_of_month', {'day': n.day}),
+                                    cs: cs,
+                                  ),
+                              ],
+                            ),
+                            if (!isNow) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                AppLocalizations.of(context, 'tap_to_current_month'),
+                                style: TextStyle(
+                                  color: kGold.withValues(alpha: 0.75),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right_rounded, size: 28),
-                    color: kGold,
-                    onPressed: onNext,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                  ),
-                ],
-              );
-            }),
-          ])),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded, size: 28),
+                      color: kGold,
+                      onPressed: onNext,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    ),
+                  ],
+                );
+              })),
           const SizedBox(height: 16),
 
           // 預算進度
@@ -2382,6 +2387,61 @@ class _MonthBtn extends StatelessWidget {
                   fontSize: 15)),
         ]),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// 月份卡資訊 Pill
+// ─────────────────────────────────────────────
+class _InfoPill extends StatelessWidget {
+  final IconData? icon;
+  final Color? iconColor;
+  final String? emoji;
+  final String label;
+  final ColorScheme cs;
+  final bool highlight;
+  final bool recordedToday;
+
+  const _InfoPill({
+    this.icon,
+    this.iconColor,
+    this.emoji,
+    required this.label,
+    required this.cs,
+    this.highlight = false,
+    this.recordedToday = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = highlight
+        ? (recordedToday ? cs.errorContainer : cs.tertiaryContainer)
+        : cs.surfaceContainerHighest;
+    final textColor = highlight
+        ? (recordedToday ? cs.onErrorContainer : cs.onTertiaryContainer)
+        : cs.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (emoji != null) ...[
+          Text(emoji!, style: const TextStyle(fontSize: 11)),
+          const SizedBox(width: 3),
+        ] else if (icon != null) ...[
+          Icon(icon, size: 11, color: iconColor ?? textColor),
+          const SizedBox(width: 3),
+        ],
+        Text(label,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            )),
+      ]),
     );
   }
 }
