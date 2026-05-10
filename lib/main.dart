@@ -716,7 +716,7 @@ class _DashboardPageState extends State<DashboardPage> {
               Text(AppLocalizations.of(context, 'monthly_expense_chart'),
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
               const SizedBox(height: 12),
-              ...List.generate(12, (i) {
+              ...List.generate(months.length, (i) {
                 final v = monthlyTotals[i];
                 if (v == 0) return const SizedBox.shrink();
                 return Padding(
