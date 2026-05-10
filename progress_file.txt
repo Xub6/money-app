@@ -1,7 +1,16 @@
 # 進度追蹤文件
 
-## 目前狀態：Google Play Console 電話驗證通過 ✅（2026-05-10）— 準備建立 App 並上傳 AAB
-最後完成任務：Sean 完成 Play Console 電話驗證，解鎖上架流程 ✅
+## 目前狀態：QA 完成，P0/P1/P2 全清 ✅（2026-05-11）— 等 Sean 手機真機驗收後可上架
+最後完成任務：全面 QA audit + 修復 P1（計算機i18n）+ P2（備份版本/死代碼/deprecated）✅
+
+### 本次完成（2026-05-11，commit db6782c）
+- [x] **QA Audit 完成**：Phase 0-11 完整掃描，P0=0，P1→已修，P2→已修
+- [x] **P1 修復**：amount_calculator_sheet 硬編碼中文「請輸入有效金額」→ AppLocalizations
+- [x] **P2 修復**：
+  - backup_service 版本相容性改為支援 1.0/2.0/3.0
+  - 移除 unused import loan_page.dart + 死函式 _openFixedDialog
+  - clearAll 後 showSnackBar 加 mounted 保護
+  - activeColor → activeThumbColor（4 個檔案）
 
 ### 本次完成（2026-05-10，commit 573321c）
 - [x] **資產頁「含股票帳戶」開關**
