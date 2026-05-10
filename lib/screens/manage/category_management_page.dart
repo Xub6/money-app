@@ -49,9 +49,9 @@ class _CategoryManagementPageState extends State<CategoryManagementPage>
           labelColor: AppColors.gold,
           unselectedLabelColor: cs.onSurfaceVariant,
           indicatorColor: AppColors.gold,
-          tabs: const [
-            Tab(text: '支出類別'),
-            Tab(text: '收入類別'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context, 'expense_categories')),
+            Tab(text: AppLocalizations.of(context, 'income_categories')),
           ],
         ),
       ),
@@ -476,7 +476,10 @@ class _CategoryEditorState extends State<_CategoryEditor> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isEdit = widget.existing != null;
-    final typeLabel = widget.type == 'expense' ? '支出' : '收入';
+    final isExpense = widget.type == 'expense';
+    final dialogTitle = isEdit
+        ? AppLocalizations.of(context, isExpense ? 'edit_expense_category' : 'edit_income_category')
+        : AppLocalizations.of(context, isExpense ? 'add_expense_category' : 'add_income_category');
 
     return Container(
       decoration: BoxDecoration(
@@ -493,14 +496,13 @@ class _CategoryEditorState extends State<_CategoryEditor> {
           decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2)),
         )),
         const SizedBox(height: 16),
-        Text(isEdit ? '編輯$typeLabel類別' : '新增$typeLabel類別',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        Text(dialogTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
         const SizedBox(height: 20),
 
         TextField(
           controller: _nameCtrl,
           decoration: InputDecoration(
-            labelText: '類別名稱',
+            labelText: AppLocalizations.of(context, 'category_name_label'),
             filled: true,
             fillColor: cs.surfaceContainerLow,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -529,7 +531,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
           ListenableBuilder(
             listenable: _nameCtrl,
             builder: (_, __) => Text(
-              _nameCtrl.text.isEmpty ? '類別名稱' : _nameCtrl.text,
+              _nameCtrl.text.isEmpty ? AppLocalizations.of(context, 'category_name_label') : _nameCtrl.text,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(_selectedColor)),
             ),
           ),

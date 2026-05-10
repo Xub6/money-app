@@ -852,7 +852,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           children: [
                             // 月份大字
                             Text(
-                              '${displayMonth.year}年${displayMonth.month}月',
+                              DateFormat.yMMMM(Localizations.localeOf(context).toString()).format(displayMonth),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: cs.onSurface,
@@ -1736,7 +1736,7 @@ class _ManagePageState extends State<ManagePage> {
         builder: (_) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(AppLocalizations.of(context, 'confirm_restore_title')),
-          content: Text('從選取的檔案還原 ${backupData.expenses.length} 筆記錄、${backupData.accounts.length} 個帳戶、${backupData.holdings.length} 筆持股？\n\n現有資料將會被覆蓋。'),
+          content: Text(AppLocalizations.ofParam(context, 'restore_confirm_body', {'expenses': backupData.expenses.length, 'accounts': backupData.accounts.length, 'holdings': backupData.holdings.length})),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context, 'cancel'))),
             TextButton(

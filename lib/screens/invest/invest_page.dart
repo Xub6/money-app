@@ -823,7 +823,7 @@ class _GroupDetailSheet extends StatelessWidget {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               title: Text(AppLocalizations.of(context, 'delete_record_title'), style: const TextStyle(fontWeight: FontWeight.w800)),
                               content: Text(
-                                '刪除 ${DateFormat('yyyy/MM/dd').format(h.purchaseDate)} 買入的 ${_fmtShares(h.shares)} 股？',
+                                AppLocalizations.ofParam(context, 'delete_record_body', {'date': DateFormat('yyyy/MM/dd').format(h.purchaseDate), 'shares': _fmtShares(h.shares)}),
                               ),
                               actions: [
                                 TextButton(
