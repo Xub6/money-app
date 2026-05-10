@@ -860,47 +860,47 @@ class _DashboardPageState extends State<DashboardPage> {
                                 fontSize: 22,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            // 資訊行
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              spacing: 8,
-                              runSpacing: 4,
-                              children: [
-                                // 本月支出
-                                _InfoPill(
-                                  label: '${AppLocalizations.of(context, 'month_expense_label')} NT\$ ${_fmt(thisExp)}',
-                                  cs: cs,
-                                ),
-                                // 趨勢（跟上月比）
-                                if (hasTrend)
-                                  _InfoPill(
-                                    label: trendUp
-                                        ? AppLocalizations.ofParam(context, 'trend_up', {'pct': trendPct.abs()})
-                                        : AppLocalizations.ofParam(context, 'trend_down', {'pct': trendPct.abs()}),
-                                    cs: cs,
-                                    textColor: trendUp ? cs.error : Colors.green,
+                            const SizedBox(height: 6),
+                            // 資訊副標（純文字，· 分隔）
+                            Text.rich(
+                              TextSpan(children: [
+                                TextSpan(text: '支出 NT\$ ${_fmt(thisExp)}'),
+                                if (hasTrend) ...[
+                                  const TextSpan(text: '  '),
+                                  TextSpan(
+                                    text: trendUp
+                                        ? '↑${trendPct.abs()}%'
+                                        : '↓${trendPct.abs()}%',
+                                    style: TextStyle(
+                                      color: trendUp ? cs.error : Colors.green,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
-                                // 連勝
-                                _InfoPill(
-                                  emoji: state.recordedToday ? '🔥' : '⚠️',
-                                  label: state.recordedToday
-                                      ? AppLocalizations.ofParam(context, 'streak_active', {'n': state.streak})
-                                      : AppLocalizations.ofParam(context, 'streak_inactive', {'n': state.streak}),
-                                  cs: cs,
-                                  highlight: true,
-                                  recordedToday: state.recordedToday,
+                                ],
+                                const TextSpan(text: '  ·  '),
+                                TextSpan(
+                                  text: state.recordedToday ? '🔥' : '⚠️',
+                                  style: const TextStyle(fontSize: 12),
                                 ),
-                                // 本月第X天（只在本月顯示）
-                                if (isNow)
-                                  _InfoPill(
-                                    label: AppLocalizations.ofParam(context, 'day_of_month', {'day': n.day}),
-                                    cs: cs,
-                                  ),
-                              ],
+                                TextSpan(
+                                  text: state.recordedToday
+                                      ? ' 連續 ${state.streak} 天'
+                                      : ' ${state.streak} 天未記帳',
+                                ),
+                                if (isNow) ...[
+                                  const TextSpan(text: '  ·  '),
+                                  TextSpan(text: '第 ${n.day} 天'),
+                                ],
+                              ]),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             if (!isNow) ...[
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 5),
                               Text(
                                 AppLocalizations.of(context, 'tap_to_current_month'),
                                 style: TextStyle(
