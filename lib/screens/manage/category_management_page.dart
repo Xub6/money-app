@@ -128,18 +128,49 @@ class _CategoryTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final appState = Provider.of<AppState>(context);
-    final predefined = type == 'expense'
+    final orderedPred = type == 'expense'
         ? appState.orderedExpenseCategories
         : appState.orderedIncomeCategories;
-    final custom = type == 'expense'
+    final customCats = type == 'expense'
         ? appState.customExpenseCategories
         : appState.customIncomeCategories;
+    final unifiedOrder = type == 'expense'
+        ? appState.unifiedExpenseOrder
+        : appState.unifiedIncomeOrder;
 
-    // Unified list: predefined first, then custom
-    final items = <_CatItem>[
-      ...predefined.map((c) => _CatItem.predefined(c, hidden: appState.isPredefinedHidden(c.name))),
-      ...custom.map((m) => _CatItem.custom(m)),
-    ];
+    // Build unified list respecting interleaved order when available
+    final predMap = {for (final c in orderedPred) c.name: c};
+    final customMap = {for (final m in customCats) m['name'] as String: m};
+
+    final items = <_CatItem>[];
+    if (unifiedOrder.isEmpty) {
+      items
+        ..addAll(orderedPred.map((c) => _CatItem.predefined(c, hidden: appState.isPredefinedHidden(c.name))))
+        ..addAll(customCats.map((m) => _CatItem.custom(m)));
+    } else {
+      final seen = <String>{};
+      for (final name in unifiedOrder) {
+        if (predMap.containsKey(name)) {
+          final cat = predMap[name]!;
+          items.add(_CatItem.predefined(cat, hidden: appState.isPredefinedHidden(cat.name)));
+          seen.add(name);
+        } else if (customMap.containsKey(name)) {
+          items.add(_CatItem.custom(customMap[name]!));
+          seen.add(name);
+        }
+      }
+      // Append anything not yet in the unified order
+      for (final cat in orderedPred) {
+        if (!seen.contains(cat.name)) {
+          items.add(_CatItem.predefined(cat, hidden: appState.isPredefinedHidden(cat.name)));
+        }
+      }
+      for (final m in customCats) {
+        if (!seen.contains(m['name'] as String)) {
+          items.add(_CatItem.custom(m));
+        }
+      }
+    }
 
     if (items.isEmpty) {
       return Center(
@@ -159,15 +190,8 @@ class _CategoryTab extends StatelessWidget {
         if (newIndex > oldIndex) newIndex--;
         final moved = items.removeAt(oldIndex);
         items.insert(newIndex, moved);
-        final predNames = items
-            .where((it) => it.isPredefined)
-            .map((it) => it.predefined!.name)
-            .toList();
-        final customList = items
-            .where((it) => !it.isPredefined)
-            .map((it) => it.map!)
-            .toList();
-        appState.setUnifiedCategoryOrder(type, predNames, customList);
+        final fullOrder = items.map((it) => it.name).toList();
+        appState.setUnifiedCategoryOrder(type, fullOrder);
       },
       itemBuilder: (context, i) {
         final item = items[i];

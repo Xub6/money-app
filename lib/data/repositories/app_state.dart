@@ -44,6 +44,12 @@ class AppState extends ChangeNotifier {
   List<Map<String, dynamic>> _customCategories = [];
   List<String> _predefinedExpenseOrder = [];
   List<String> _predefinedIncomeOrder = [];
+  // Full interleaved order (predefined + custom mixed)
+  List<String> _unifiedExpenseOrder = [];
+  List<String> _unifiedIncomeOrder = [];
+
+  List<String> get unifiedExpenseOrder => _unifiedExpenseOrder;
+  List<String> get unifiedIncomeOrder => _unifiedIncomeOrder;
   // 預設類別覆寫設定: {name: {iconCode, color, isHidden}}
   Map<String, Map<String, dynamic>> _predefinedCategorySettings = {};
 
@@ -185,16 +191,43 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void setUnifiedCategoryOrder(String type, List<String> predefinedNames, List<Map<String, dynamic>> orderedCustom) {
+  void setUnifiedCategoryOrder(String type, List<String> fullOrder) {
     final isExpense = type == 'expense';
+    final predBase = isExpense ? kCategories : kIncomeCategories;
+
+    // Derive predefined-only order for backward compat (filteredExpenseCategories etc.)
+    final predNames = fullOrder.where((n) => predBase.any((c) => c.name == n)).toList();
+
     if (isExpense) {
-      _predefinedExpenseOrder = predefinedNames;
+      _predefinedExpenseOrder = predNames;
+      _unifiedExpenseOrder = fullOrder;
     } else {
-      _predefinedIncomeOrder = predefinedNames;
+      _predefinedIncomeOrder = predNames;
+      _unifiedIncomeOrder = fullOrder;
     }
-    _prefs?.setStringList(isExpense ? 'predefinedExpenseOrder' : 'predefinedIncomeOrder', predefinedNames);
+
+    // Reorder custom categories to match full order
+    final customInOrder = <Map<String, dynamic>>[];
+    for (final name in fullOrder) {
+      if (!predBase.any((c) => c.name == name)) {
+        final idx = _customCategories.indexWhere(
+            (c) => c['name'] == name && c['type'] == type);
+        if (idx >= 0) customInOrder.add(_customCategories[idx]);
+      }
+    }
+    // Keep any custom not in fullOrder at the end
+    for (final cat in _customCategories.where((c) => c['type'] == type)) {
+      if (!customInOrder.any((c) => c['name'] == cat['name'])) {
+        customInOrder.add(cat);
+      }
+    }
     _customCategories.removeWhere((c) => c['type'] == type);
-    _customCategories.addAll(orderedCustom);
+    _customCategories.addAll(customInOrder);
+
+    _prefs?.setStringList(
+        isExpense ? 'predefinedExpenseOrder' : 'predefinedIncomeOrder', predNames);
+    _prefs?.setStringList(
+        isExpense ? 'unifiedExpenseOrder' : 'unifiedIncomeOrder', fullOrder);
     _saveCustomCategories();
     hapticLight();
     notifyListeners();
@@ -1187,6 +1220,12 @@ class AppState extends ChangeNotifier {
       if (expOrder != null) _predefinedExpenseOrder = expOrder;
       final incOrder = _prefs?.getStringList('predefinedIncomeOrder');
       if (incOrder != null) _predefinedIncomeOrder = incOrder;
+
+      // Unified interleaved order (predefined + custom mixed)
+      final uniExp = _prefs?.getStringList('unifiedExpenseOrder');
+      if (uniExp != null) _unifiedExpenseOrder = uniExp;
+      final uniInc = _prefs?.getStringList('unifiedIncomeOrder');
+      if (uniInc != null) _unifiedIncomeOrder = uniInc;
 
       // Predefined category settings (hidden/icon/color overrides)
       final catSettingsRaw = _prefs?.getString('predefinedCategorySettings');
