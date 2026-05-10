@@ -1,7 +1,16 @@
 # 進度追蹤文件
 
-## 目前狀態：AAB v2.0.0+2 建置完成，準備上傳 Play Console ✅（2026-05-10）
-最後完成任務：P1-3 QA 通過（Sean 手機語言切換循環驗收），AAB release build 成功（49.5MB）✅
+## 目前狀態：資產頁「含股票帳戶」開關完成，APK 61.8MB ✅（2026-05-10）
+最後完成任務：資產頁含股票開關 + 固定開銷排除股票帳戶（commit 573321c）✅
+
+### 本次完成（2026-05-10，commit 573321c）
+- [x] **資產頁「含股票帳戶」開關**
+  - 淨資產卡片底部新增 chip 開關（同款 _includeFixed 設計）
+  - _includeStock=true → 顯示含投資現值的總資產/淨資產
+  - _includeStock=false → 只顯示一般帳戶資產（不含股票投資組合）
+  - 開關狀態持久化（SharedPreferences: account_include_stock）
+  - 固定開銷新增/編輯頁：扣款帳戶選單排除股票帳戶（避免誤選）
+  - 四語系 include_stock key 新增（zh_TW/zh_CN/en_US/ja_JP）
 
 ### 本次完成（2026-05-10，AAB build）
 - [x] **P1-3 QA 通過**：Sean 手機語言切換循環測試（zh_TW → ja_JP → en_US → zh_TW → 重啟）驗收通過
