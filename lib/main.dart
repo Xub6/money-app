@@ -33,7 +33,6 @@ import 'services/export_service.dart';
 import 'data/models/backup_metadata.dart';
 import 'screens/account/account_page.dart';
 import 'screens/manage/category_management_page.dart';
-import 'screens/loan/loan_page.dart';
 import 'screens/feedback/feedback_page.dart';
 import 'screens/onboarding/onboarding_service.dart';
 import 'core/tour/tour_controller.dart';
@@ -1781,11 +1780,6 @@ class _ManagePageState extends State<ManagePage> {
   }
 
 
-  void _openFixedDialog({FixedItem? existing}) =>
-      _showFixedItemDialog(context, widget.state, existing: existing);
-
-  void _addFixed() => _openFixedDialog();
-
   String _localeDisplayName(Locale locale) {
     switch ('${locale.languageCode}_${locale.countryCode}') {
       case 'zh_TW':
@@ -2064,7 +2058,7 @@ class _ManagePageState extends State<ManagePage> {
                 widget.state.hapticLight();
                 themeProvider.toggleTheme();
               },
-              activeColor: kGold,
+              activeThumbColor: kGold,
             ),
           ])),
           const SizedBox(height: 16),
@@ -2092,7 +2086,7 @@ class _ManagePageState extends State<ManagePage> {
                   Vibration.vibrate(duration: 40, amplitude: 80);
                   widget.state.setHapticEnabled(v);
                 },
-                activeColor: kGold,
+                activeThumbColor: kGold,
               ),
             ]),
           )),
@@ -2266,7 +2260,7 @@ class _ManagePageState extends State<ManagePage> {
                           ],
                         ),
                       );
-                      if (ok == true) {
+                      if (ok == true && mounted) {
                         widget.state.clearAll();
                         messenger.showSnackBar(
                             SnackBar(content: Text(AppLocalizations.of(context, 'all_cleared'))));

@@ -249,7 +249,7 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
                         Vibration.vibrate(duration: 40, amplitude: 80);
                         setState(() => _countInTotal = v);
                       },
-                      activeColor: AppColors.gold,
+                      activeThumbColor: AppColors.gold,
                     ),
                   ),
                 ])),

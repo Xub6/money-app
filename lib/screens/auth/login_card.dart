@@ -193,7 +193,7 @@ class _LoginCardState extends State<LoginCard> {
               style: TextStyle(fontSize: 11, color: cs.onSurface.withValues(alpha: 0.45))),
           value: p.marketingOptIn,
           onChanged: _toggleOptIn,
-          activeColor: AppColors.gold,
+          activeThumbColor: AppColors.gold,
         ),
         Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
         TextButton(

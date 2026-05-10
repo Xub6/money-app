@@ -112,10 +112,11 @@ class BackupService {
       // Parse backup data
       final backupData = BackupData.fromJson(jsonData);
 
-      // Validate version compatibility
-      if (backupData.metadata.version != '1.0') {
+      // Validate version compatibility (1.0 / 2.0 / 3.0 all supported)
+      const supportedVersions = ['1.0', '2.0', '3.0'];
+      if (!supportedVersions.contains(backupData.metadata.version)) {
         AppLogger.warning(
-          'Backup version mismatch: ${backupData.metadata.version}',
+          'Unknown backup version: ${backupData.metadata.version}',
         );
       }
 

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/repositories/app_state.dart';
+import '../../config/localization.dart';
 
 /// 顯示金額計算機，返回計算結果。
 class AmountCalculatorSheet extends StatefulWidget {
@@ -189,7 +190,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     } else {
       _as?.hapticHeavy();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('請輸入有效金額'), duration: Duration(seconds: 1)),
+        SnackBar(content: Text(AppLocalizations.of(context, 'invalid_amount')), duration: const Duration(seconds: 1)),
       );
     }
   }

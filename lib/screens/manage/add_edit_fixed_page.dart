@@ -683,7 +683,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                   children: [
                     Switch.adaptive(
                       value: _hasPeriods,
-                      activeColor: AppColors.gold,
+                      activeThumbColor: AppColors.gold,
                       onChanged: (v) {
                         Provider.of<AppState>(context, listen: false).hapticLight();
                         setState(() {
