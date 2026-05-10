@@ -1711,7 +1711,7 @@ class _ManagePageState extends State<ManagePage> {
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('分享失敗：$e'), backgroundColor: kRed),
+        SnackBar(content: Text(AppLocalizations.ofParam(context, 'share_failed', {'error': e.toString()})), backgroundColor: kRed),
       );
     }
   }
@@ -1735,13 +1735,13 @@ class _ManagePageState extends State<ManagePage> {
         context: context,
         builder: (_) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('確認還原'),
+          title: Text(AppLocalizations.of(context, 'confirm_restore_title')),
           content: Text('從選取的檔案還原 ${backupData.expenses.length} 筆記錄、${backupData.accounts.length} 個帳戶、${backupData.holdings.length} 筆持股？\n\n現有資料將會被覆蓋。'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context, 'cancel'))),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('還原', style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+              child: Text(AppLocalizations.of(context, 'restore_label'), style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -1756,14 +1756,14 @@ class _ManagePageState extends State<ManagePage> {
       );
       messenger.showSnackBar(
         SnackBar(
-          content: Text('已從檔案還原 ${backupData.expenses.length} 筆記錄'),
+          content: Text(AppLocalizations.ofParam(context, 'restore_file_success', {'count': backupData.expenses.length})),
           backgroundColor: kGreen,
         ),
       );
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('從檔案還原失敗：$e'), backgroundColor: kRed),
+        SnackBar(content: Text(AppLocalizations.ofParam(context, 'restore_failed_msg', {'error': e.toString()})), backgroundColor: kRed),
       );
     }
   }
@@ -2021,8 +2021,8 @@ class _ManagePageState extends State<ManagePage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('類別管理', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                    Text('新增、編輯、刪除支出與收入類別',
+                    Text(AppLocalizations.of(context, 'category_management_title'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(AppLocalizations.of(context, 'category_management_desc'),
                         style: TextStyle(color: kGray, fontSize: 12)),
                   ]),
                 ),
@@ -2141,7 +2141,7 @@ class _ManagePageState extends State<ManagePage> {
                   child: OutlinedButton.icon(
                     onPressed: _doShareBackup,
                     icon: const Icon(Icons.share_rounded),
-                    label: const Text('分享備份（傳至 Drive / 本機）'),
+                    label: Text(AppLocalizations.of(context, 'share_backup_label')),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: kGold),
                       foregroundColor: kGold,
@@ -2205,7 +2205,7 @@ class _ManagePageState extends State<ManagePage> {
                   child: OutlinedButton.icon(
                     onPressed: _doRestoreFromFile,
                     icon: const Icon(Icons.file_open_rounded),
-                    label: const Text('從檔案還原'),
+                    label: Text(AppLocalizations.of(context, 'restore_from_file')),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: kGold),
                       foregroundColor: kGold,
@@ -2346,97 +2346,6 @@ class _AppCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         child: Padding(padding: const EdgeInsets.all(20), child: child),
       );
-}
-
-class _MonthBtn extends StatelessWidget {
-  final String label;
-  final String subText;
-  final bool selected;
-  final VoidCallback onTap;
-  const _MonthBtn(
-      {required this.label,
-      required this.subText,
-      required this.selected,
-      required this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
-        decoration: BoxDecoration(
-          color: selected ? kGold : cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(label,
-              style: TextStyle(
-                  color: selected ? Colors.white.withValues(alpha: 0.85) : cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11)),
-          const SizedBox(height: 2),
-          Text(subText,
-              style: TextStyle(
-                  color: selected ? Colors.white : cs.onSurface,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15)),
-        ]),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// 月份卡資訊 Pill
-// ─────────────────────────────────────────────
-class _InfoPill extends StatelessWidget {
-  final String? emoji;
-  final String label;
-  final ColorScheme cs;
-  final bool highlight;
-  final bool recordedToday;
-  final Color? textColor;
-
-  const _InfoPill({
-    this.emoji,
-    required this.label,
-    required this.cs,
-    this.highlight = false,
-    this.recordedToday = false,
-    this.textColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bgColor = highlight
-        ? (recordedToday ? cs.errorContainer : cs.tertiaryContainer)
-        : cs.surfaceContainerHighest;
-    final resolvedTextColor = textColor ??
-        (highlight
-            ? (recordedToday ? cs.onErrorContainer : cs.onTertiaryContainer)
-            : cs.onSurfaceVariant);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (emoji != null) ...[
-          Text(emoji!, style: const TextStyle(fontSize: 11)),
-          const SizedBox(width: 3),
-        ],
-        Text(label,
-            style: TextStyle(
-              color: resolvedTextColor,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            )),
-      ]),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────

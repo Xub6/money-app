@@ -58,12 +58,12 @@ class _AccountPageState extends State<AccountPage> {
             20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(children: [
-            const Text('月預算',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            Text(AppLocalizations.of(context, 'monthly_budget'),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             const Spacer(),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('取消',
+              child: Text(AppLocalizations.of(context, 'cancel'),
                   style: TextStyle(
                       color:
                           Theme.of(ctx).colorScheme.onSurfaceVariant)),
@@ -99,10 +99,10 @@ class _AccountPageState extends State<AccountPage> {
                 if (val != null && val > 0) {
                   s.setBudget(val);
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('預算已更新'),
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(AppLocalizations.of(context, 'budget_updated')),
                     backgroundColor: AppColors.success,
-                    duration: Duration(seconds: 2),
+                    duration: const Duration(seconds: 2),
                   ));
                 }
               },
@@ -115,8 +115,8 @@ class _AccountPageState extends State<AccountPage> {
                     horizontal: 20, vertical: 16),
                 elevation: 0,
               ),
-              child: const Text('更新',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
+              child: Text(AppLocalizations.of(context, 'update'),
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
           ]),
         ]),
@@ -376,7 +376,7 @@ class _AccountPageState extends State<AccountPage> {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: Text('定期管理',
+                        child: Text(AppLocalizations.of(context, 'periodic_management'),
                             style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -404,7 +404,7 @@ class _AccountPageState extends State<AccountPage> {
                       listenable: s,
                       builder: (_, __) => _featureRow(
                         icon: Icons.savings_rounded,
-                        title: '月預算',
+                        title: AppLocalizations.of(context, 'monthly_budget'),
                         subtitle:
                             '目前設定 NT\$ ${NumberFormat('#,###').format(s.budget)}',
                         onTap: _showBudgetSheet,
@@ -416,7 +416,7 @@ class _AccountPageState extends State<AccountPage> {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: Text('借款管理',
+                        child: Text(AppLocalizations.of(context, 'loan_management'),
                             style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,

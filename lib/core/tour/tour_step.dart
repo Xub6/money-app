@@ -68,9 +68,7 @@ List<TourStep> buildTourSteps(BuildContext context) {
     // 11
     TourStep(targetKey: TourKeys.accountCard, tab: 3, side: TooltipSide.below,
       title: t('tour_s11_title'), body: t('tour_s11_body')),
-    // 12
-    TourStep(targetKey: TourKeys.fixedCard, tab: 3, side: TooltipSide.below,
-      title: t('tour_s12_title'), body: t('tour_s12_body')),
+    // 12 (fixedCard removed — fixed expenses moved to AccountPage)
     // 13
     TourStep(targetKey: TourKeys.backupCard, tab: 3, side: TooltipSide.below,
       title: t('tour_s13_title'), body: t('tour_s13_body')),

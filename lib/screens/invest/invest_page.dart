@@ -543,16 +543,16 @@ class _HoldingDetailSheet extends StatelessWidget {
                       context: context,
                       builder: (ctx) => AlertDialog(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        title: const Text('刪除持股', style: TextStyle(fontWeight: FontWeight.w800)),
-                        content: Text('確定要刪除「${h.name.isNotEmpty ? h.name : h.code}」？'),
+                        title: Text(AppLocalizations.of(context, 'delete_holding_title'), style: const TextStyle(fontWeight: FontWeight.w800)),
+                        content: Text(AppLocalizations.ofParam(context, 'delete_holding_body', {'name': h.name.isNotEmpty ? h.name : h.code})),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: Text('取消', style: TextStyle(color: cs.onSurfaceVariant)),
+                            child: Text(AppLocalizations.of(context, 'cancel'), style: TextStyle(color: cs.onSurfaceVariant)),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('刪除', style: TextStyle(color: _kRed, fontWeight: FontWeight.w700)),
+                            child: Text(AppLocalizations.of(context, 'delete'), style: const TextStyle(color: _kRed, fontWeight: FontWeight.w700)),
                           ),
                         ],
                       ),
@@ -668,7 +668,7 @@ class _GroupCard extends StatelessWidget {
                       color: _kGold.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text('${g.lots.length} 筆',
+                    child: Text(AppLocalizations.ofParam(context, 'transaction_count', {'n': g.lots.length}),
                         style: const TextStyle(color: _kGold, fontSize: 10, fontWeight: FontWeight.w700)),
                   ),
                 ],
@@ -821,18 +821,18 @@ class _GroupDetailSheet extends StatelessWidget {
                             context: context,
                             builder: (ctx) => AlertDialog(
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                              title: const Text('刪除這筆', style: TextStyle(fontWeight: FontWeight.w800)),
+                              title: Text(AppLocalizations.of(context, 'delete_record_title'), style: const TextStyle(fontWeight: FontWeight.w800)),
                               content: Text(
                                 '刪除 ${DateFormat('yyyy/MM/dd').format(h.purchaseDate)} 買入的 ${_fmtShares(h.shares)} 股？',
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(ctx, false),
-                                  child: Text('取消', style: TextStyle(color: cs.onSurfaceVariant)),
+                                  child: Text(AppLocalizations.of(context, 'cancel'), style: TextStyle(color: cs.onSurfaceVariant)),
                                 ),
                                 TextButton(
                                   onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('刪除', style: TextStyle(color: _kRed, fontWeight: FontWeight.w700)),
+                                  child: Text(AppLocalizations.of(context, 'delete'), style: const TextStyle(color: _kRed, fontWeight: FontWeight.w700)),
                                 ),
                               ],
                             ),

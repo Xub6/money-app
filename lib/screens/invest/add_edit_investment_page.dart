@@ -463,7 +463,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 6, bottom: 4),
-                    child: Text('購買股票時從哪個帳戶扣款', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                    child: Text(AppLocalizations.of(context, 'debit_account_hint'), style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                   ),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -500,7 +500,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                         child: Row(children: [
                           const Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.gold),
                           const SizedBox(width: 6),
-                          Expanded(child: Text('幣別不符：股票幣別與帳戶幣別不同，系統將依匯率換算', style: const TextStyle(fontSize: 11, color: AppColors.gold))),
+                          Expanded(child: Text(AppLocalizations.of(context, 'currency_mismatch_warning'), style: const TextStyle(fontSize: 11, color: AppColors.gold))),
                         ]),
                       );
                     }),

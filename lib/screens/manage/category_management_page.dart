@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../config/localization.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/categories.dart';
 import '../../data/repositories/app_state.dart';
@@ -37,7 +38,7 @@ class _CategoryManagementPageState extends State<CategoryManagementPage>
         foregroundColor: cs.onSurface,
         elevation: 0,
         centerTitle: true,
-        title: const Text('類別管理', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(AppLocalizations.of(context, 'category_management_title'), style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           color: AppColors.gold,
@@ -66,7 +67,7 @@ class _CategoryManagementPageState extends State<CategoryManagementPage>
         backgroundColor: AppColors.gold,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('新增類別', style: TextStyle(fontWeight: FontWeight.w700)),
+        label: Text(AppLocalizations.of(context, 'add_category'), style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
     );
   }
@@ -177,7 +178,7 @@ class _CategoryTab extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.category_outlined, size: 48, color: cs.onSurfaceVariant),
           const SizedBox(height: 12),
-          Text('尚無類別', style: TextStyle(color: cs.onSurfaceVariant)),
+          Text(AppLocalizations.of(context, 'no_categories'), style: TextStyle(color: cs.onSurfaceVariant)),
         ]),
       );
     }
@@ -223,15 +224,15 @@ class _CategoryTab extends StatelessWidget {
               context: context,
               builder: (ctx) => AlertDialog(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                title: Text('刪除類別「$catName」', style: const TextStyle(fontWeight: FontWeight.w800)),
+                title: Text(AppLocalizations.ofParam(ctx, 'delete_category_title', {'name': catName}), style: const TextStyle(fontWeight: FontWeight.w800)),
                 content: usedCount > 0
-                    ? Text('此類別已有 $usedCount 筆交易。刪除後交易記錄仍保留，但類別顯示為原名稱。\n\n確定刪除？')
-                    : const Text('確定要刪除此類別？此操作不可復原。'),
+                    ? Text(AppLocalizations.ofParam(ctx, 'delete_category_with_tx', {'count': usedCount}))
+                    : Text(AppLocalizations.of(ctx, 'delete_category_confirm')),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx, 'cancel'))),
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, true),
-                    child: const Text('刪除', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+                    child: Text(AppLocalizations.of(ctx, 'delete'), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),
@@ -332,9 +333,9 @@ class _UnifiedCategoryRow extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: cs.onSurface)),
                 if (!item.isPredefined)
-                  Text('自訂', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  Text(AppLocalizations.of(context, 'custom_label'), style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
                 if (isHidden)
-                  Text('已隱藏', style: TextStyle(fontSize: 11, color: Colors.orange)),
+                  Text(AppLocalizations.of(context, 'hidden_label'), style: TextStyle(fontSize: 11, color: Colors.orange)),
               ]),
             ),
             // 眼睛（隱藏/顯示）
@@ -459,7 +460,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
   void _save() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('請輸入類別名稱')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context, 'enter_category_name'))));
       return;
     }
     widget.onSave({
@@ -537,7 +538,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
 
         // 顏色
         Align(alignment: Alignment.centerLeft,
-            child: Text('顏色', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
+            child: Text(AppLocalizations.of(context, 'color_label'), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
         const SizedBox(height: 8),
         Wrap(
           spacing: 10, runSpacing: 10,
@@ -560,7 +561,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
 
         // 圖示
         Align(alignment: Alignment.centerLeft,
-            child: Text('圖示', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
+            child: Text(AppLocalizations.of(context, 'icon_label'), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
         const SizedBox(height: 8),
         SizedBox(
           height: 220,
@@ -606,7 +607,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 0,
             ),
-            child: Text(isEdit ? '儲存變更' : '新增類別',
+            child: Text(isEdit ? AppLocalizations.of(context, 'save_changes') : AppLocalizations.of(context, 'add_category'),
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           ),
         ),
@@ -690,10 +691,10 @@ class _PredefinedCategoryEditorState extends State<_PredefinedCategoryEditor> {
           decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(2)),
         )),
         const SizedBox(height: 16),
-        Text('編輯「${widget.category.name}」',
+        Text(AppLocalizations.ofParam(context, 'edit_category_title', {'name': widget.category.name}),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text('系統預設類別不可刪除，可調整圖示與顏色，或選擇隱藏',
+        Text(AppLocalizations.of(context, 'predefined_category_note'),
             style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
         const SizedBox(height: 16),
 
@@ -713,7 +714,7 @@ class _PredefinedCategoryEditorState extends State<_PredefinedCategoryEditor> {
 
         // 顏色
         Align(alignment: Alignment.centerLeft,
-            child: Text('顏色', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
+            child: Text(AppLocalizations.of(context, 'color_label'), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
         const SizedBox(height: 8),
         Wrap(
           spacing: 10, runSpacing: 10,
@@ -735,7 +736,7 @@ class _PredefinedCategoryEditorState extends State<_PredefinedCategoryEditor> {
 
         // 圖示
         Align(alignment: Alignment.centerLeft,
-            child: Text('圖示', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
+            child: Text(AppLocalizations.of(context, 'icon_label'), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant))),
         const SizedBox(height: 8),
         SizedBox(
           height: 200,
@@ -782,7 +783,7 @@ class _PredefinedCategoryEditorState extends State<_PredefinedCategoryEditor> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 0,
             ),
-            child: const Text('儲存變更', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+            child: Text(AppLocalizations.of(context, 'save_changes'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           ),
         ),
       ]),

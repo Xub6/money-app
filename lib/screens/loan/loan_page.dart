@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
+import '../../config/localization.dart';
 import '../../data/models/account.dart';
 import '../../data/models/loan_record.dart';
 import '../../data/models/loan_payment.dart';
@@ -25,7 +26,7 @@ class LoanPage extends StatelessWidget {
         foregroundColor: cs.onSurface,
         elevation: 0,
         centerTitle: true,
-        title: const Text('借款紀錄', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(AppLocalizations.of(context, 'loan_records'), style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           color: kGold,
@@ -37,7 +38,7 @@ class LoanPage extends StatelessWidget {
         backgroundColor: kGold,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('新增借款', style: TextStyle(fontWeight: FontWeight.w700)),
+        label: Text(AppLocalizations.of(context, 'add_loan'), style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: ListenableBuilder(
         listenable: state,
@@ -48,9 +49,9 @@ class LoanPage extends StatelessWidget {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.handshake_outlined, size: 56, color: cs.onSurfaceVariant),
                 const SizedBox(height: 16),
-                Text('尚無借款紀錄', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16)),
+                Text(AppLocalizations.of(context, 'no_loans'), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16)),
                 const SizedBox(height: 8),
-                Text('點擊下方按鈕新增', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                Text(AppLocalizations.of(context, 'tap_to_add'), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
               ]),
             );
           }
@@ -167,7 +168,7 @@ class _LoanCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text('已收回 ${pct.toStringAsFixed(1)}%',
+          Text(AppLocalizations.ofParam(context, 'recovered_pct', {'pct': pct.toStringAsFixed(1)}),
               style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
         ]),
       ),
@@ -213,7 +214,7 @@ class LoanDetailPage extends StatelessWidget {
               backgroundColor: kGold,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
-              label: const Text('新增收款', style: TextStyle(fontWeight: FontWeight.w700)),
+              label: Text(AppLocalizations.of(context, 'add_payment'), style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
       body: ListenableBuilder(
         listenable: state,
@@ -263,7 +264,7 @@ class LoanDetailPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text('還款進度 ${pct.toStringAsFixed(1)}%',
+                  Text(AppLocalizations.ofParam(context, 'repayment_progress', {'pct': pct.toStringAsFixed(1)}),
                       style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                   if (currentLoan.notes != null && currentLoan.notes!.isNotEmpty) ...[
                     const SizedBox(height: 12),
@@ -277,7 +278,7 @@ class LoanDetailPage extends StatelessWidget {
               // 收款紀錄
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: Text('收款紀錄',
+                child: Text(AppLocalizations.of(context, 'payment_records'),
                     style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -291,7 +292,7 @@ class LoanDetailPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Center(
-                    child: Text('尚無收款紀錄',
+                    child: Text(AppLocalizations.of(context, 'no_payment_records'),
                         style: TextStyle(color: cs.onSurfaceVariant)),
                   ),
                 )
@@ -331,13 +332,13 @@ class LoanDetailPage extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('刪除借款「${loan.borrowerName}」', style: const TextStyle(fontWeight: FontWeight.w800)),
-        content: const Text('刪除後相關收款紀錄也會一併刪除，帳戶餘額將會還原。確定刪除？'),
+        title: Text(AppLocalizations.ofParam(context, 'delete_loan_title', {'name': loan.borrowerName}), style: const TextStyle(fontWeight: FontWeight.w800)),
+        content: Text(AppLocalizations.of(context, 'delete_loan_body')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context, 'cancel'))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('刪除', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+            child: Text(AppLocalizations.of(context, 'delete'), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -384,13 +385,13 @@ class _PaymentRow extends StatelessWidget {
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('刪除收款紀錄', style: TextStyle(fontWeight: FontWeight.w800)),
-          content: const Text('確定刪除此收款紀錄？帳戶餘額將會還原。'),
+          title: Text(AppLocalizations.of(context, 'delete_payment_title'), style: const TextStyle(fontWeight: FontWeight.w800)),
+          content: Text(AppLocalizations.of(context, 'delete_payment_body')),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context, 'cancel'))),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('刪除', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+              child: Text(AppLocalizations.of(context, 'delete'), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -418,10 +419,10 @@ class _PaymentRow extends StatelessWidget {
               Text(DateFormat('yyyy/MM/dd').format(payment.date),
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
               if (account != null)
-                Text('存入 ${account.displayName}',
+                Text(AppLocalizations.ofParam(context, 'deposited_to', {'account': account.displayName}),
                     style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
               if (payment.interest > 0)
-                Text('利息 ${NumberFormat('#,##0.00', 'en_US').format(payment.interest)}',
+                Text(AppLocalizations.ofParam(context, 'interest_label', {'amount': NumberFormat('#,##0.00', 'en_US').format(payment.interest)}),
                     style: TextStyle(fontSize: 12, color: kGold)),
               if (payment.notes != null && payment.notes!.isNotEmpty)
                 Text(payment.notes!, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
@@ -431,7 +432,7 @@ class _PaymentRow extends StatelessWidget {
             Text('+${fmt.format(payment.total)}',
                 style: const TextStyle(
                     fontWeight: FontWeight.w800, fontSize: 16, color: kGreen)),
-            Text('本金 ${fmt.format(payment.principal)}',
+            Text(AppLocalizations.ofParam(context, 'principal_label', {'amount': fmt.format(payment.principal)}),
                 style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
           ]),
         ]),
@@ -481,16 +482,16 @@ class _AddLoanPageState extends State<AddLoanPage> {
         foregroundColor: cs.onSurface,
         elevation: 0,
         centerTitle: true,
-        title: const Text('新增借款', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(AppLocalizations.of(context, 'add_loan'), style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('取消', style: TextStyle(color: cs.onSurfaceVariant)),
+          child: Text(AppLocalizations.of(context, 'cancel'), style: TextStyle(color: cs.onSurfaceVariant)),
         ),
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text('儲存',
-                style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+            child: Text(AppLocalizations.of(context, 'save_label'),
+                style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -529,7 +530,7 @@ class _AddLoanPageState extends State<AddLoanPage> {
             spacing: 8,
             children: [
               ChoiceChip(
-                label: const Text('不指定'),
+                label: Text(AppLocalizations.of(context, 'not_specified')),
                 selected: _accountId == null,
                 onSelected: (_) => setState(() => _accountId = null),
                 selectedColor: kGold.withValues(alpha: 0.2),
@@ -619,7 +620,7 @@ class _AddLoanPageState extends State<AddLoanPage> {
     final amount = double.tryParse(_amountCtrl.text.trim());
     if (name.isEmpty || amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('請填入借款人與金額')),
+        SnackBar(content: Text(AppLocalizations.of(context, 'fill_borrower_amount'))),
       );
       return;
     }
@@ -677,16 +678,16 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
         foregroundColor: cs.onSurface,
         elevation: 0,
         centerTitle: true,
-        title: const Text('新增收款', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(AppLocalizations.of(context, 'add_payment'), style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('取消', style: TextStyle(color: cs.onSurfaceVariant)),
+          child: Text(AppLocalizations.of(context, 'cancel'), style: TextStyle(color: cs.onSurfaceVariant)),
         ),
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text('儲存',
-                style: TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+            child: Text(AppLocalizations.of(context, 'save_label'),
+                style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -717,7 +718,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
             spacing: 8,
             children: [
               ChoiceChip(
-                label: const Text('不指定'),
+                label: Text(AppLocalizations.of(context, 'not_specified')),
                 selected: _accountId == null,
                 onSelected: (_) => setState(() => _accountId = null),
                 selectedColor: kGold.withValues(alpha: 0.2),
@@ -805,7 +806,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     final total = double.tryParse(_totalCtrl.text.trim());
     if (total == null || total <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('請填入收款金額')),
+        SnackBar(content: Text(AppLocalizations.of(context, 'fill_payment_amount'))),
       );
       return;
     }
