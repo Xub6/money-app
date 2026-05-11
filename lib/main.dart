@@ -1069,7 +1069,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
           // 支出分析
           _AppCard(
-              key: TourKeys.categoryCard,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 // ── Header ──────────────────────────────────────────
@@ -1152,6 +1151,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 else ...[
                   // ── Centered Donut ───────────────────────────────
                   Center(
+                    key: TourKeys.categoryCard, // tour spotlight: 200×200 target
                     child: SizedBox(
                       width: 200,
                       height: 200,
@@ -1482,6 +1482,11 @@ class _DetailPageState extends State<DetailPage> {
     final isLongPressStep = ctrl.isActive &&
         ctrl.isWaitingForInteraction &&
         ctrl.currentStep?.targetKey == TourKeys.detailList;
+
+    // Hide the tour overlay before opening the action sheet so the two
+    // layers don't appear simultaneously.  The overlay stays hidden until
+    // onInteractionComplete() → next() reveals the next step.
+    if (isLongPressStep) ctrl.hide();
 
     final future = showModalBottomSheet<dynamic>(
       context: context,
