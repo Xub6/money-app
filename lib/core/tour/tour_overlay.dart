@@ -35,19 +35,6 @@ class _TourOverlayState extends State<TourOverlay>
     super.dispose();
   }
 
-  static Rect? _findRect(GlobalKey key) {
-    try {
-      final ctx = key.currentContext;
-      if (ctx == null) return null;
-      final box = ctx.findRenderObject() as RenderBox?;
-      if (box == null || !box.attached || !box.hasSize) return null;
-      final pos = box.localToGlobal(Offset.zero);
-      return Rect.fromLTWH(pos.dx, pos.dy, box.size.width, box.size.height);
-    } catch (_) {
-      return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<TourController>(
@@ -56,17 +43,32 @@ class _TourOverlayState extends State<TourOverlay>
         final step = ctrl.currentStep;
         if (step == null) return const SizedBox.shrink();
 
-        final rawRect = _findRect(step.targetKey);
-        final spotRect = rawRect?.inflate(10.0);
+        // Use the pre-calculated rect from the controller.
+        // This was computed AFTER scroll + endOfFrame, so it is always the
+        // stable on-screen position — never a stale off-tab coordinate.
+        final rawRect = ctrl.cachedTargetRect;
         final screen = MediaQuery.of(context).size;
+        final safePad = MediaQuery.of(context).padding;
+
+        // Clamp spotlight rect to screen bounds so the hole never escapes.
+        Rect? spotRect;
+        if (rawRect != null) {
+          final inflated = rawRect.inflate(10.0);
+          spotRect = Rect.fromLTRB(
+            inflated.left.clamp(0.0, screen.width),
+            inflated.top.clamp(safePad.top, screen.height),
+            inflated.right.clamp(0.0, screen.width),
+            inflated.bottom.clamp(0.0, screen.height),
+          );
+          if (spotRect.width < 1 || spotRect.height < 1) spotRect = null;
+        }
 
         return Material(
           type: MaterialType.transparency,
           child: Stack(
             children: [
               // ── Animated spotlight overlay ─────────────────────
-              // RepaintBoundary isolates 60 fps animation repaints from
-              // the rest of the widget tree.
+              // RepaintBoundary isolates 60 fps animation repaints.
               Positioned.fill(
                 child: RepaintBoundary(
                   child: IgnorePointer(
@@ -97,6 +99,8 @@ class _TourOverlayState extends State<TourOverlay>
                 stepIndex: ctrl.stepIndex,
                 totalSteps: ctrl.totalSteps,
                 spotRect: spotRect,
+                screen: screen,
+                safePad: safePad,
                 isWaiting: ctrl.isWaitingForInteraction,
                 isLast: ctrl.isLastStep,
                 onNext: ctrl.next,
@@ -158,7 +162,7 @@ class _SpotlightPainter extends CustomPainter {
     final fullRect = Rect.fromLTWH(0, 0, size.width, size.height);
 
     // Dark overlay with spotlight hole.
-    // Path.evenOdd avoids canvas.saveLayer (no offscreen GPU buffer needed).
+    // Path.evenOdd avoids canvas.saveLayer — no offscreen GPU buffer needed.
     final overlayPaint = Paint()..color = Colors.black.withValues(alpha: 0.70);
     if (spotRect != null) {
       final path = Path()
@@ -170,7 +174,7 @@ class _SpotlightPainter extends CustomPainter {
       canvas.drawRect(fullRect, overlayPaint);
     }
 
-    // Animated gold glow ring — blur sigma reduced from 10 → 4 for GPU performance.
+    // Animated gold glow ring — blur sigma 4 (reduced from 10) for GPU perf.
     if (spotRect != null) {
       final expand = 2.0 + 5.0 * glowValue;
       canvas.drawRRect(
@@ -195,6 +199,8 @@ class _TourTooltip extends StatelessWidget {
   final TourStep step;
   final int stepIndex, totalSteps;
   final Rect? spotRect;
+  final Size screen;
+  final EdgeInsets safePad;
   final bool isWaiting, isLast;
   final AsyncCallback onNext, onPrev, onSkip;
 
@@ -203,6 +209,8 @@ class _TourTooltip extends StatelessWidget {
     required this.stepIndex,
     required this.totalSteps,
     required this.spotRect,
+    required this.screen,
+    required this.safePad,
     required this.isWaiting,
     required this.isLast,
     required this.onNext,
@@ -212,23 +220,40 @@ class _TourTooltip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screen = MediaQuery.of(context).size;
-    final statusBarH = MediaQuery.of(context).padding.top;
-    const padding = 12.0;
-    const cardMaxH = 280.0;
+    const hPad = 12.0; // horizontal margin from screen edge
+    const gap = 14.0;  // gap between spotlight and tooltip
+    const cardMaxH = 300.0;
+    final minTop = safePad.top + hPad;
+    final maxTop = screen.height - cardMaxH - hPad;
 
     double cardTop;
     if (spotRect == null) {
-      cardTop = screen.height / 2 - cardMaxH / 2;
+      // No target visible — center tooltip on screen.
+      cardTop = (screen.height - cardMaxH) / 2;
     } else {
-      final belowTop = spotRect!.bottom + 14;
-      final aboveTop = spotRect!.top - cardMaxH - 14;
-      final showBelow = step.side == TooltipSide.below &&
-          belowTop + cardMaxH + 60 < screen.height;
-      cardTop = showBelow ? belowTop : aboveTop;
+      final belowTop = spotRect!.bottom + gap;
+      final aboveTop = spotRect!.top - cardMaxH - gap;
+      // Prefer the side indicated by the step; fall back to opposite if no room.
+      final preferBelow = step.side == TooltipSide.below;
+      final roomBelow = belowTop + cardMaxH + hPad < screen.height;
+      final roomAbove = aboveTop > minTop;
+
+      if (preferBelow && roomBelow) {
+        cardTop = belowTop;
+      } else if (!preferBelow && roomAbove) {
+        cardTop = aboveTop;
+      } else if (roomBelow) {
+        cardTop = belowTop;
+      } else if (roomAbove) {
+        cardTop = aboveTop;
+      } else {
+        // Neither side has room — center tooltip.
+        cardTop = (screen.height - cardMaxH) / 2;
+      }
     }
-    cardTop = cardTop.clamp(
-        statusBarH + padding, screen.height - cardMaxH - padding);
+
+    // Final clamp: tooltip must stay within safe area vertically.
+    cardTop = cardTop.clamp(minTop, maxTop.toDouble());
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
@@ -236,10 +261,9 @@ class _TourTooltip extends StatelessWidget {
 
     return Positioned(
       top: cardTop,
-      left: padding,
-      right: padding,
-      // Solid card replaces BackdropFilter(blur) — eliminates GPU framebuffer
-      // readback which was the heaviest per-frame cost on the tooltip.
+      left: hPad,
+      right: hPad,
+      // Solid card replaces BackdropFilter — eliminates GPU framebuffer readback.
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xEE111111) : const Color(0xF8FFFFFF),
