@@ -1,7 +1,18 @@
 # 進度追蹤文件
 
-## 目前狀態：QA MAX 完成，P0/P1 已修復 ✅（2026-05-11）— 條件式可上架（需Sean真機確認7項 + Play Console 建立 App）
-最後完成任務：新手導覽重設計（功能展示 → 設定引導邏輯，13步）✅
+## 目前狀態：MP-01 新手導覽效能修復完成 ✅（2026-05-11）— APK 已建置，可安裝測試
+最後完成任務：新手導覽 GPU 卡頓修復（移除 BackdropFilter、Path.evenOdd、transition lock）✅
+
+### 本次完成（2026-05-11，commit 6f757fa）
+- [x] **MP-01 新手導覽效能修復**：
+  - 移除 `BackdropFilter(sigmaX:24)` — 消除 GPU framebuffer readback（最大效能瓶頸）
+  - `_SpotlightPainter`：`saveLayer + BlendMode.clear` → `Path.evenOdd`（消除 offscreen buffer）
+  - glow blur sigma：10 → 4（GPU 負擔降低約 6 倍）
+  - `RepaintBoundary` 包住 `AnimatedBuilder`，隔離 60fps 重繪區域
+  - `next()`/`prev()` 加 `_transitioning` lock，防止快速連點 race condition
+  - `notifyListeners()` 改在 `_prepareStep()` 之前呼叫 → 點下一步立即有視覺回應
+  - `_prepareStep` 等待：420ms+120ms → 150ms+60ms（步驟切換快一倍）
+  - APK：`build/app/outputs/flutter-apk/app-release.apk`（61.8MB）
 
 ### 本次完成（2026-05-11，commit 46ca234）
 - [x] **QA MAX 審計 + P0/P1 修復**：
