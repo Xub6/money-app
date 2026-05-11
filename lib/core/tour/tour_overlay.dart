@@ -50,10 +50,22 @@ class _TourOverlayState extends State<TourOverlay>
         final screen = MediaQuery.of(context).size;
         final safePad = MediaQuery.of(context).padding;
 
+        // When a widget spans more than 40 % of the screen height (e.g. an
+        // Expanded list or a tall card with many buttons), showing it as a
+        // full spotlight leaves almost no dark overlay and forces the tooltip
+        // into a centered fallback that overlaps the target.  Clip to the top
+        // 80 dp so the spotlight is a meaningful focal point and the tooltip
+        // has room to sit naturally below it.
+        Rect? effectiveRect = rawRect;
+        if (rawRect != null && rawRect.height > screen.height * 0.4) {
+          effectiveRect = Rect.fromLTWH(
+              rawRect.left, rawRect.top, rawRect.width, 80.0);
+        }
+
         // Clamp spotlight rect to screen bounds so the hole never escapes.
         Rect? spotRect;
-        if (rawRect != null) {
-          final inflated = rawRect.inflate(10.0);
+        if (effectiveRect != null) {
+          final inflated = effectiveRect.inflate(10.0);
           spotRect = Rect.fromLTRB(
             inflated.left.clamp(0.0, screen.width),
             inflated.top.clamp(safePad.top, screen.height),

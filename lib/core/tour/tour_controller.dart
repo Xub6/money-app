@@ -18,6 +18,10 @@ class TourController extends ChangeNotifier {
   // prevents spotlights from appearing at off-screen / off-tab positions.
   Rect? _cachedTargetRect;
 
+  // Tracks which tab was active when the last step was prepared so we can
+  // wait for the full PageView animation (300 ms) on tab changes.
+  int _lastPreparedTab = -1;
+
   void Function(int tab)? _goToTab;
   VoidCallback? _onTourStart;
   VoidCallback? _onTourEnd;
@@ -66,6 +70,7 @@ class TourController extends ChangeNotifier {
     _finishing = false;
     _transitioning = false;
     _cachedTargetRect = null;
+    _lastPreparedTab = -1; // force full wait on first step
     await _prepareStep(); // calculates _cachedTargetRect
     _hidden = false;
     notifyListeners(); // single reveal at correct position
@@ -147,10 +152,14 @@ class TourController extends ChangeNotifier {
     final step = _steps[_stepIndex];
 
     // 1. Switch to the correct tab.
+    final tabChanged = _lastPreparedTab != step.tab;
     _goToTab?.call(step.tab);
+    _lastPreparedTab = step.tab;
 
-    // 2. Wait for the tab's page to mount and its first layout to complete.
-    await Future.delayed(const Duration(milliseconds: 150));
+    // 2. Wait for layout.  When the tab changes, the PageView animates over
+    //    300 ms — wait 350 ms to ensure the animation is fully complete before
+    //    reading widget positions.  Same-tab steps only need a short settle.
+    await Future.delayed(Duration(milliseconds: tabChanged ? 350 : 150));
 
     // 3. Scroll the target widget into view if it is inside a Scrollable.
     //    Widgets not in a Scrollable (AppBar, FAB, BottomAppBar) throw — caught

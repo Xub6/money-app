@@ -674,7 +674,9 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                         fontWeight: FontWeight.w700, color: cs.onSurface),
                     decoration: InputDecoration(
                       hintText: '100',
-                      hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                      hintStyle: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.35),
+                          fontWeight: FontWeight.w400),
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
@@ -694,12 +696,15 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                         fontWeight: FontWeight.w700, color: cs.onSurface),
                     decoration: InputDecoration(
                       hintText: '58000',
-                      hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                      hintStyle: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.35),
+                          fontWeight: FontWeight.w400),
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
                       prefixText: 'NT\$ ',
-                      prefixStyle: TextStyle(color: cs.onSurfaceVariant),
+                      prefixStyle: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.35)),
                     ),
                   ),
                 ),
