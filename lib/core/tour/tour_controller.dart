@@ -10,6 +10,7 @@ class TourController extends ChangeNotifier {
   int _stepIndex = 0;
   bool _waitingForInteraction = false;
   bool _finishing = false;
+  bool _transitioning = false; // debounce rapid taps
 
   void Function(int tab)? _goToTab;
   VoidCallback? _onTourStart;
@@ -53,29 +54,36 @@ class TourController extends ChangeNotifier {
     _active = true;
     _hidden = false;
     _finishing = false;
+    _transitioning = false;
     await _prepareStep();
     notifyListeners();
   }
 
   Future<void> next() async {
-    if (_finishing || !_active) return;
+    if (_finishing || !_active || _transitioning) return;
     if (isLastStep) {
       await finish();
       return;
     }
+    _transitioning = true;
     _stepIndex++;
     _waitingForInteraction = false;
-    _hidden = false; // ensure overlay visible on new step
+    _hidden = false;
+    notifyListeners(); // immediate feedback: new tooltip visible, spotlight may be null
     await _prepareStep();
-    notifyListeners();
+    _transitioning = false;
+    notifyListeners(); // spotlight settles at final position
   }
 
   Future<void> prev() async {
-    if (_finishing || !_active || _stepIndex == 0) return;
+    if (_finishing || !_active || _stepIndex == 0 || _transitioning) return;
+    _transitioning = true;
     _stepIndex--;
     _waitingForInteraction = false;
     _hidden = false;
+    notifyListeners();
     await _prepareStep();
+    _transitioning = false;
     notifyListeners();
   }
 
@@ -90,19 +98,18 @@ class TourController extends ChangeNotifier {
     _active = false;
     _hidden = false;
     _waitingForInteraction = false;
+    _transitioning = false;
     notifyListeners();
     _onTourEnd?.call();
     await OnboardingService.markOnboardingSeen();
   }
 
-  /// Temporarily hide the overlay (e.g. while a modal route is open).
   void hide() {
     if (_hidden) return;
     _hidden = true;
     notifyListeners();
   }
 
-  /// Restore the overlay after hiding.
   void unhide() {
     if (!_hidden) return;
     _hidden = false;
@@ -124,22 +131,21 @@ class TourController extends ChangeNotifier {
     final step = _steps[_stepIndex];
 
     _goToTab?.call(step.tab);
-    await Future.delayed(const Duration(milliseconds: 420));
+    await Future.delayed(const Duration(milliseconds: 150)); // reduced from 420
 
-    // Scroll the target widget into view using Flutter's built-in mechanism.
-    // Widgets not inside a Scrollable (AppBar, FAB, BottomAppBar) will throw —
-    // we catch silently since those widgets are always visible on screen.
+    // Scroll the target widget into view. Widgets not inside a Scrollable
+    // (AppBar, FAB, BottomAppBar) will throw — caught silently since always visible.
     final ctx = step.targetKey.currentContext;
     if (ctx != null) {
       try {
         final alignment = step.side == TooltipSide.above ? 0.6 : 0.1;
         await Scrollable.ensureVisible(
           ctx,
-          duration: const Duration(milliseconds: 350),
+          duration: const Duration(milliseconds: 300), // reduced from 350
           curve: Curves.easeInOut,
           alignment: alignment,
         );
-        await Future.delayed(const Duration(milliseconds: 120));
+        await Future.delayed(const Duration(milliseconds: 60)); // reduced from 120
       } catch (_) {}
     }
 

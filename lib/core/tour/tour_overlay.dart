@@ -65,12 +65,16 @@ class _TourOverlayState extends State<TourOverlay>
           child: Stack(
             children: [
               // ── Animated spotlight overlay ─────────────────────
+              // RepaintBoundary isolates 60 fps animation repaints from
+              // the rest of the widget tree.
               Positioned.fill(
-                child: IgnorePointer(
-                  child: AnimatedBuilder(
-                    animation: _glowAnim,
-                    builder: (_, __) => CustomPaint(
-                      painter: _SpotlightPainter(spotRect, _glowAnim.value),
+                child: RepaintBoundary(
+                  child: IgnorePointer(
+                    child: AnimatedBuilder(
+                      animation: _glowAnim,
+                      builder: (_, __) => CustomPaint(
+                        painter: _SpotlightPainter(spotRect, _glowAnim.value),
+                      ),
                     ),
                   ),
                 ),
@@ -153,28 +157,27 @@ class _SpotlightPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final fullRect = Rect.fromLTWH(0, 0, size.width, size.height);
 
-    // Dark overlay with spotlight hole
-    canvas.saveLayer(fullRect, Paint());
-    canvas.drawRect(
-      fullRect,
-      Paint()..color = Colors.black.withValues(alpha: 0.70),
-    );
+    // Dark overlay with spotlight hole.
+    // Path.evenOdd avoids canvas.saveLayer (no offscreen GPU buffer needed).
+    final overlayPaint = Paint()..color = Colors.black.withValues(alpha: 0.70);
     if (spotRect != null) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(spotRect!, const Radius.circular(16)),
-        Paint()..blendMode = BlendMode.clear,
-      );
+      final path = Path()
+        ..addRect(fullRect)
+        ..addRRect(RRect.fromRectAndRadius(spotRect!, const Radius.circular(16)));
+      path.fillType = PathFillType.evenOdd;
+      canvas.drawPath(path, overlayPaint);
+    } else {
+      canvas.drawRect(fullRect, overlayPaint);
     }
-    canvas.restore();
 
-    // Animated gold glow ring (drawn after restore so it's visible in hole)
+    // Animated gold glow ring — blur sigma reduced from 10 → 4 for GPU performance.
     if (spotRect != null) {
       final expand = 2.0 + 5.0 * glowValue;
       canvas.drawRRect(
         RRect.fromRectAndRadius(spotRect!.inflate(expand), const Radius.circular(20)),
         Paint()
           ..color = AppColors.gold.withValues(alpha: 0.20 + 0.40 * glowValue)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.5,
       );
@@ -235,127 +238,126 @@ class _TourTooltip extends StatelessWidget {
       top: cardTop,
       left: padding,
       right: padding,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.68)
-                  : Colors.white.withValues(alpha: 0.88),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.10)
-                    : Colors.white.withValues(alpha: 0.65),
-                width: 1,
-              ),
+      // Solid card replaces BackdropFilter(blur) — eliminates GPU framebuffer
+      // readback which was the heaviest per-frame cost on the tooltip.
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xEE111111) : const Color(0xF8FFFFFF),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.10)
+                : Colors.black.withValues(alpha: 0.06),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.28),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Skip button ────────────────────────────────
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: onSkip,
+                  child: Text(
+                    AppLocalizations.of(context, 'tour_skip'),
+                    style: TextStyle(color: subColor, fontSize: 12),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // ── Title ─────────────────────────────────────
+              Text(
+                step.title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: textColor,
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              // ── Body ──────────────────────────────────────
+              Text(
+                step.body,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: subColor,
+                  height: 1.55,
+                ),
+              ),
+
+              // ── Interactive hint (left gold stripe) ────────
+              if (isWaiting && step.hint != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(10),
+                    border: const Border(
+                      left: BorderSide(color: AppColors.gold, width: 3),
+                    ),
+                  ),
+                  child: Text(
+                    step.hint!,
+                    style: const TextStyle(
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 18),
+
+              // ── Navigation row ────────────────────────────
+              Row(
                 children: [
-                  // ── Skip button ────────────────────────────────
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: onSkip,
-                      child: Text(
-                        AppLocalizations.of(context, 'tour_skip'),
-                        style: TextStyle(color: subColor, fontSize: 12),
-                      ),
-                    ),
-                  ),
+                  if (stepIndex > 0)
+                    _NavButton(
+                      label: AppLocalizations.of(context, 'tour_prev'),
+                      onTap: onPrev,
+                      filled: false,
+                      textColor: subColor,
+                    )
+                  else
+                    const SizedBox(width: 72),
 
-                  const SizedBox(height: 8),
+                  const Spacer(),
 
-                  // ── Title ─────────────────────────────────────
-                  Text(
-                    step.title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: textColor,
-                    ),
-                  ),
+                  _DotProgress(current: stepIndex, total: totalSteps),
 
-                  const SizedBox(height: 6),
+                  const Spacer(),
 
-                  // ── Body ──────────────────────────────────────
-                  Text(
-                    step.body,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: subColor,
-                      height: 1.55,
-                    ),
-                  ),
-
-                  // ── Interactive hint (left gold stripe) ────────
-                  if (isWaiting && step.hint != null) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
-                      decoration: BoxDecoration(
-                        color: AppColors.gold.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(10),
-                        border: const Border(
-                          left: BorderSide(color: AppColors.gold, width: 3),
-                        ),
-                      ),
-                      child: Text(
-                        step.hint!,
-                        style: const TextStyle(
-                          color: AppColors.gold,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 18),
-
-                  // ── Navigation row ────────────────────────────
-                  Row(
-                    children: [
-                      // 上一步
-                      if (stepIndex > 0)
-                        _NavButton(
-                          label: AppLocalizations.of(context, 'tour_prev'),
-                          onTap: onPrev,
-                          filled: false,
-                          textColor: subColor,
-                        )
-                      else
-                        const SizedBox(width: 72),
-
-                      const Spacer(),
-
-                      // Dot progress indicator
-                      _DotProgress(
-                          current: stepIndex, total: totalSteps),
-
-                      const Spacer(),
-
-                      // 下一步 / 完成
-                      if (!isWaiting)
-                        _NavButton(
-                          label: isLast ? AppLocalizations.of(context, 'tour_done') : AppLocalizations.of(context, 'tour_next'),
-                          onTap: onNext,
-                          filled: true,
-                          textColor: Colors.white,
-                        )
-                      else
-                        const SizedBox(width: 72),
-                    ],
-                  ),
+                  if (!isWaiting)
+                    _NavButton(
+                      label: isLast
+                          ? AppLocalizations.of(context, 'tour_done')
+                          : AppLocalizations.of(context, 'tour_next'),
+                      onTap: onNext,
+                      filled: true,
+                      textColor: Colors.white,
+                    )
+                  else
+                    const SizedBox(width: 72),
                 ],
               ),
-            ),
+            ],
           ),
         ),
       ),
