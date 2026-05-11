@@ -1,7 +1,20 @@
 # 進度追蹤文件
 
-## 目前狀態：MP-01 新手導覽效能修復完成 ✅（2026-05-11）— APK 已建置，可安裝測試
-最後完成任務：新手導覽 GPU 卡頓修復（移除 BackdropFilter、Path.evenOdd、transition lock）✅
+## 目前狀態：待機中 ✅（2026-05-12）— 新手導覽位置跳動修復，APK 已建置可安裝測試
+
+最後完成任務：新手導覽 spotlight 先跳中間再跳正確位置 bug 修復 ✅
+
+### 本次完成（2026-05-12，commit 2d94788）
+- [x] **新手導覽位置跳動修復**：
+  - 根本原因：overlay 在 scroll+layout 結束前就讀取 RenderBox 位置，讀到 PageView 相鄰頁的 stale 座標
+  - `tour_controller.dart`：新增 `_cachedTargetRect`，在 tab 切換 → scroll → `endOfFrame` 全部完成後才計算 rect
+  - 顯示流程改為：`_hidden = true` → `_prepareStep()` → `_cachedTargetRect` 計算完 → `_hidden = false` → `notifyListeners()`
+  - 新增 `_findRectOnScreen()`：加 ±600dp sanity check，過濾掉 PageView 相鄰頁的 off-screen 座標
+  - 最多重試 2 個 endOfFrame，適應 lazy builder 的延遲 layout
+  - `tour_overlay.dart`：改讀 `ctrl.cachedTargetRect`（不再在 build() 裡呼叫 `_findRect()`）
+  - spotlight rect 加 screen bounds clamp，防止光圈超出螢幕邊界
+  - tooltip 位置邏輯改進：考慮 roomBelow/roomAbove 雙側空間，無空間時置中
+  - APK：`build/app/outputs/flutter-apk/app-release.apk`（61.8MB）
 
 ### 本次完成（2026-05-11，commit 6f757fa）
 - [x] **MP-01 新手導覽效能修復**：
@@ -39,50 +52,15 @@
 
 ### 本次完成（2026-05-10，commit 573321c）
 - [x] **資產頁「含股票帳戶」開關**
-  - 淨資產卡片底部新增 chip 開關（同款 _includeFixed 設計）
-  - _includeStock=true → 顯示含投資現值的總資產/淨資產
-  - _includeStock=false → 只顯示一般帳戶資產（不含股票投資組合）
-  - 開關狀態持久化（SharedPreferences: account_include_stock）
-  - 固定開銷新增/編輯頁：扣款帳戶選單排除股票帳戶（避免誤選）
-  - 四語系 include_stock key 新增（zh_TW/zh_CN/en_US/ja_JP）
-
-### 本次完成（2026-05-10，AAB build）
-- [x] **P1-3 QA 通過**：Sean 手機語言切換循環測試（zh_TW → ja_JP → en_US → zh_TW → 重啟）驗收通過
-- [x] **AAB v2.0.0+2 建置完成**：`flutter build appbundle --release --no-tree-shake-icons`
-  - 輸出路徑：`build/app/outputs/bundle/release/app-release.aab`（49.5MB）
-  - 包含今日所有功能（i18n 全覆蓋 + 貸款欠款帳戶自動建立）
-
-### 本次完成（2026-05-10，commit 187d3dd）
-- [x] i18n 全面覆蓋（P1-1 修復）
-  - loan_page.dart：修正錯誤 import，27+ 硬編碼中文替換
-  - account_page.dart：月預算、定期管理、借款管理等 i18n
-  - invest_page.dart & add_edit_investment_page.dart：刪除對話框、幣別警告 i18n
-  - category_management_page.dart：16 個標籤/對話框全部 i18n
-  - localization.dart：新增 50+ key（loan/invest/category/main 領域，4 語言）
-  - tour_step.dart：移除孤立 step 12（fixedCard 已從 ManagePage 移走）
-  - main.dart：備份/還原對話框 i18n
-
-### 本次完成（2026-05-10，commit f0e85e9）
-- [x] 【5】貸款型固定開銷欠款帳戶自動建立與同步
-  - addFixed / updateFixed：totalPeriods != null 時自動建立或連結欠款帳戶
-  - 新增 _getOrCreateLoanDebtAccount()：依「{title}欠款帳戶」命名，避免重複建立
-  - 欠款帳戶餘額 = -(剩餘期數 × 每月金額)，與現有期數計算一致
-  - App 重啟後連結仍存在（linkedDebtAccountId 持久化於 SharedPreferences）
-
-### 本次完成（2026-05-09，commit f1af4bf）
-- [x] 【1】震動回饋全覆蓋
-- [x] 【2】類別管理統一列表
-- [x] 【3】固定開銷刪除 Snackbar
-- [x] 【4】借款紀錄功能（LoanRecord / LoanPayment 完整 CRUD）
 
 ### 里程碑（2026-05-10）
 - [x] Google Play Console 身分驗證 ✅
-- [x] Google Play Console 電話驗證 ✅ ← 今日完成
+- [x] Google Play Console 電話驗證 ✅
 - [ ] 在 Play Console 建立 App（填套件名稱 / App 名稱 / 類別）
-- [ ] 上傳 AAB v2.0.0+2（`build/app/outputs/bundle/release/app-release.aab`，49.5MB）
-- [ ] 填寫商店資訊（說明文字 / 截圖 / 分級問卷）
+- [ ] 上傳 AAB v2.0.0+2
+- [ ] 填寫商店資訊
 - [ ] 送審
 
-### 下一步（最高優先）
-1. **Sean 在 Play Console 建立 App**：套件名稱 `com.qoryva.moneyapp`（或類似），App 名稱「錢錢管家」
-2. **AI 接手**：上傳 AAB → 填寫商店資料 → 送審（Sean 給截圖/授權後執行）
+### 下一步
+1. 安裝 APK 真機測試導覽流程（確認位置跳動已消除）
+2. Sean 在 Play Console 建立 App → 上傳 AAB → 送審
