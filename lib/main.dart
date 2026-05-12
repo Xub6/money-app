@@ -197,7 +197,6 @@ class _MainShellState extends State<MainShell> {
   AppState get s => widget.state;
 
   final _manageScrollCtrl = ScrollController();
-  OverlayEntry? _tourEntry;
   String? _pendingDetailFilter;
 
   void _goToDetailWithFilter(String category) {
@@ -215,18 +214,10 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _initTour() {
-    final ctrl = context.read<TourController>();
-    ctrl.init(
+    context.read<TourController>().init(
       goToTab: _goToTab,
       onTourSkip: _onTourSkipped,
     );
-    _tourEntry = OverlayEntry(
-      builder: (_) => Consumer<TourController>(
-        builder: (_, c, __) =>
-            c.isActive ? const TourOverlay() : const SizedBox.shrink(),
-      ),
-    );
-    Overlay.of(context).insert(_tourEntry!);
   }
 
   Future<void> _checkOnboarding() async {
@@ -267,8 +258,6 @@ class _MainShellState extends State<MainShell> {
 
   @override
   void dispose() {
-    _tourEntry?.remove();
-    _tourEntry = null;
     _pageController.dispose();
     _manageScrollCtrl.dispose();
     super.dispose();
@@ -470,7 +459,9 @@ class _MainShellState extends State<MainShell> {
       ),
     ];
 
-    return Scaffold(
+    return Stack(
+      children: [
+        Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context, 'app_name'),
             key: TourKeys.appBarTitle,
@@ -514,32 +505,40 @@ class _MainShellState extends State<MainShell> {
         elevation: 8,
         child: Row(children: [
           _NavItem(
-              key: TourKeys.navDashboard,
+              tourKey: TourKeys.navDashboard,
               icon: Icons.pie_chart_rounded,
               label: AppLocalizations.of(context, 'dashboard'),
               selected: _tab == 0,
               onTap: () => _goToTab(0)),
           _NavItem(
-              key: TourKeys.navDetail,
+              tourKey: TourKeys.navDetail,
               icon: Icons.list_alt_rounded,
               label: AppLocalizations.of(context, 'detail'),
               selected: _tab == 1,
               onTap: () => _goToTab(1)),
           const SizedBox(width: 56),
           _NavItem(
-              key: TourKeys.navInvest,
+              tourKey: TourKeys.navInvest,
               icon: Icons.candlestick_chart_rounded,
               label: AppLocalizations.of(context, 'invest'),
               selected: _tab == 2,
               onTap: () => _goToTab(2)),
           _NavItem(
-              key: TourKeys.navManage,
+              tourKey: TourKeys.navManage,
               icon: Icons.settings_rounded,
               label: AppLocalizations.of(context, 'manage'),
               selected: _tab == 3,
               onTap: () => _goToTab(3)),
         ]),
       ),
+        ),
+        // Tour overlay lives here — below Navigator routes so pushed pages
+        // (AccountPage, AddExpense, AddHolding) render above it naturally.
+        Consumer<TourController>(
+          builder: (_, c, __) =>
+              c.isActive ? const TourOverlay() : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }
@@ -1847,9 +1846,10 @@ class _ManagePageState extends State<ManagePage> {
           GestureDetector(
             key: TourKeys.accountCard,
             onTap: () {
+              final fromTour = context.read<TourController>().isActive;
               context.read<TourController>().notifyRouteOpened('accountPage');
               Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => AccountPage(state: widget.state)));
+                  MaterialPageRoute(builder: (_) => AccountPage(state: widget.state, isFromTour: fromTour)));
             },
             behavior: HitTestBehavior.opaque,
             child: Container(
@@ -2525,8 +2525,10 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final GlobalKey? tourKey;
   const _NavItem(
       {super.key,
+      this.tourKey,
       required this.icon,
       required this.label,
       required this.selected,
@@ -2544,33 +2546,37 @@ class _NavItem extends StatelessWidget {
           splashColor: AppColors.gold.withValues(alpha: 0.18),
           highlightColor: AppColors.gold.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(12),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            // 頂部細線指示器
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              height: 2.5,
-              width: selected ? 24.0 : 0.0,
-              decoration: BoxDecoration(
-                color: AppColors.gold,
-                borderRadius: BorderRadius.circular(2),
+          // SizedBox.expand is a SingleChildRenderObjectWidget — its RenderObject
+          // is found directly by findRenderObject(), giving the correct nav-item rect.
+          child: SizedBox.expand(
+            key: tourKey,
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                height: 2.5,
+                width: selected ? 24.0 : 0.0,
+                decoration: BoxDecoration(
+                  color: AppColors.gold,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 6),
-            AnimatedScale(
-              scale: selected ? 1.12 : 1.0,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(height: 2),
-            Text(label,
-                style: TextStyle(
-                    color: color,
-                    fontSize: 11,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
-            const SizedBox(height: 4),
-          ]),
+              const SizedBox(height: 6),
+              AnimatedScale(
+                scale: selected ? 1.12 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 2),
+              Text(label,
+                  style: TextStyle(
+                      color: color,
+                      fontSize: 11,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+              const SizedBox(height: 4),
+            ]),
+          ),
         ),
       ),
     );

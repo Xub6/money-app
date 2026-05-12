@@ -15,7 +15,8 @@ String _fmt(double v) => NumberFormat('#,##0', 'en_US').format(v.round());
 
 class AccountPage extends StatefulWidget {
   final AppState state;
-  const AccountPage({super.key, required this.state});
+  final bool isFromTour;
+  const AccountPage({super.key, required this.state, this.isFromTour = false});
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -233,6 +234,28 @@ class _AccountPageState extends State<AccountPage> {
           final isNegative = displayNet < 0;
           return CustomScrollView(
             slivers: [
+              if (widget.isFromTour)
+                SliverToBoxAdapter(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    color: AppColors.gold.withValues(alpha: 0.12),
+                    child: Row(children: [
+                      const Icon(Icons.north_east_rounded, color: AppColors.gold, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          AppLocalizations.of(context, 'tour_account_hint'),
+                          style: const TextStyle(
+                            color: AppColors.gold,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ),
               // ── 淨資產卡片 ──
               SliverToBoxAdapter(
                 child: Padding(

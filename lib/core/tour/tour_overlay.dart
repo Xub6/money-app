@@ -46,10 +46,11 @@ class _TourOverlayState extends State<TourOverlay>
         final screen = MediaQuery.of(context).size;
         final safePad = MediaQuery.of(context).padding;
 
-        // Clip oversized rects (tall lists etc.) to a focused top-80dp strip.
+        // Clip only extremely tall rects (full-screen lists) to a 250dp strip.
+        // Cards like backupCard (~55% screen) are shown in full.
         Rect? effectiveRect = rawRect;
-        if (rawRect != null && rawRect.height > screen.height * 0.4) {
-          effectiveRect = Rect.fromLTWH(rawRect.left, rawRect.top, rawRect.width, 80.0);
+        if (rawRect != null && rawRect.height > screen.height * 0.65) {
+          effectiveRect = Rect.fromLTWH(rawRect.left, rawRect.top, rawRect.width, 250.0);
         }
 
         Rect? spotRect;
