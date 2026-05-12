@@ -58,25 +58,25 @@ List<TourStep> buildTourSteps(BuildContext context) {
     TourStep(targetKey: TourKeys.categoryCard, tab: 0, side: TooltipSide.above,
       title: t('tour_s5_title'), body: t('tour_s5_body')),
 
-    // S6 ── FAB tab-0 interactive (add expense) ───────────────── 6
-    TourStep(targetKey: TourKeys.fab, tab: 0, isInteractive: true, side: TooltipSide.above,
-      title: t('tour_s6_title'), body: t('tour_s6_body'), hint: t('tour_s6_hint')),
+    // S6 ── FAB tab-0 (add expense) ───────────────────────────── 6
+    TourStep(targetKey: TourKeys.fab, tab: 0, side: TooltipSide.above,
+      title: t('tour_s6_title'), body: t('tour_s6_body')),
 
     // S7 ── Detail list ────────────────────────────────────────── 7
     TourStep(targetKey: TourKeys.detailList, tab: 1, side: TooltipSide.below,
       title: t('tour_s7_title'), body: t('tour_s7_body')),
 
-    // S8 ── detailList long-press interactive ─────────────────── 8
-    TourStep(targetKey: TourKeys.detailList, tab: 1, isInteractive: true, side: TooltipSide.below,
-      title: t('tour_s8_title'), body: t('tour_s8_body'), hint: t('tour_s8_hint')),
+    // S8 ── detailList long-press ─────────────────────────────── 8
+    TourStep(targetKey: TourKeys.detailList, tab: 1, side: TooltipSide.below,
+      title: t('tour_s8_title'), body: t('tour_s8_body')),
 
     // S9 ── Invest tab overview ───────────────────────────────── 9
     TourStep(targetKey: TourKeys.investHeader, tab: 2, side: TooltipSide.below,
       title: t('tour_s9_title'), body: t('tour_s9_body')),
 
-    // S10 ── FAB tab-2 interactive (add holding) ──────────────── 10
-    TourStep(targetKey: TourKeys.fab, tab: 2, isInteractive: true, side: TooltipSide.above,
-      title: t('tour_s10_title'), body: t('tour_s10_body'), hint: t('tour_s10_hint')),
+    // S10 ── FAB tab-2 (add holding) ──────────────────────────── 10
+    TourStep(targetKey: TourKeys.fab, tab: 2, side: TooltipSide.above,
+      title: t('tour_s10_title'), body: t('tour_s10_body')),
 
     // S11 ── Backup ───────────────────────────────────────────── 11
     TourStep(targetKey: TourKeys.backupCard, tab: 3, side: TooltipSide.below,

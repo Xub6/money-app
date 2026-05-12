@@ -186,16 +186,27 @@ class _SpotlightPainter extends CustomPainter {
       canvas.drawRect(fullRect, overlayPaint);
     }
 
-    // Animated gold glow ring — blur sigma 4 (reduced from 10) for GPU perf.
+    // Solid white border at the spotlight edge — makes the cutout clearly visible.
     if (spotRect != null) {
-      final expand = 2.0 + 5.0 * glowValue;
       canvas.drawRRect(
-        RRect.fromRectAndRadius(spotRect!.inflate(expand), const Radius.circular(20)),
+        RRect.fromRectAndRadius(spotRect!.inflate(1.5), const Radius.circular(17)),
         Paint()
-          ..color = AppColors.gold.withValues(alpha: 0.20 + 0.40 * glowValue)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4)
+          ..color = Colors.white.withValues(alpha: 0.55)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.5,
+          ..strokeWidth = 1.5,
+      );
+    }
+
+    // Animated gold glow ring — sigma 8 for clear visibility on real devices.
+    if (spotRect != null) {
+      final expand = 3.0 + 6.0 * glowValue;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(spotRect!.inflate(expand), const Radius.circular(22)),
+        Paint()
+          ..color = AppColors.gold.withValues(alpha: 0.35 + 0.55 * glowValue)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.5,
       );
     }
   }
