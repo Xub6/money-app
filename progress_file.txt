@@ -1,8 +1,23 @@
 # 進度追蹤文件
 
-## 目前狀態：待機中 ✅（2026-05-12）— 導覽 spotlight 修復完成，APK 已建置可安裝測試
+## 目前狀態：待機中 ✅（2026-05-12）— 新手導覽升級為「財務初始化任務」系統完成，APK 已建置
 
-最後完成任務：導覽 spotlight 偏移修復 + backupCard clipping + S2 帳戶創建引導 ✅
+最後完成任務：新手導覽重構為任務制系統 + 三選項入口 + 資料狀態分支 + 四語系更新 ✅
+
+### 本次完成（2026-05-12，commit 914aec7）
+- [x] **新手導覽升級為「財務初始化任務」系統**：
+  - **架構重構**：
+    - `tour_step.dart`：新增 `finish` 動作類型，`buildMissionSteps(context, {hasAccounts, hasTransactions})` 取代舊固定 16 步，改為 13 步資料狀態分支任務
+    - `tour_controller.dart`：`startMission()` 接受資料狀態，`_stepJustCompleted` 互動完成回饋，`_onActionCompleted()` 延遲 600ms 再推進
+    - `tour_overlay.dart`：互動步驟完成顯示 ✓ 閃爍回饋，finish 步驟顯示「完成 ✓」按鈕
+  - **新入口畫面**：`onboarding_start_page.dart`（新建）三選項卡片（快速開始/完整設定/先看範例）+ 跳過
+  - **main.dart 接入**：`_checkOnboarding` → `_showOnboardingStart`，`_launchMission()` 傳即時 hasAccounts/hasTransactions
+  - **資料狀態分支**：
+    - 無帳戶：S1「建立帳戶」，S7 警告 + 允許略過
+    - 無交易：S8/S9 空狀態文案，不強說「長按記錄」
+    - 有資料：S11 強調備份，S9 顯示操作說明
+  - **四語系更新**：zh_TW/zh_CN/en_US/ja_JP 全部替換 tour_s0~s15 為新 s0~s12 + 變體文案 + onboarding_start_* 字串
+- APK：`build/app/outputs/flutter-apk/app-release.apk`（61.8MB）
 
 ### 本次完成（2026-05-12，commit f2c3d06）
 - [x] **導覽 spotlight 三項修復**：
