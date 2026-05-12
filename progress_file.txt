@@ -1,8 +1,18 @@
 # 進度追蹤文件
 
-## 目前狀態：待機中 ✅（2026-05-12）— 新手導覽位置跳動修復，APK 已建置可安裝測試
+## 目前狀態：待機中 ✅（2026-05-12）— 導覽卡住 bug 修復 + spotlight 加強，APK 已建置可安裝測試
 
-最後完成任務：新手導覽 spotlight 先跳中間再跳正確位置 bug 修復 ✅
+最後完成任務：導覽 interactive steps 修復（S6/S8/S10 改為純說明步驟）+ spotlight 白框+glow 加強 ✅
+
+### 本次完成（2026-05-12，commit c75ebd7）
+- [x] **導覽 interactive steps 移除**：
+  - S6（新增支出 FAB）、S8（長按刪除）、S10（新增持股 FAB）移除 `isInteractive:true`
+  - 修復：action sheet 與 tour overlay 同時顯示、用戶完全卡住無法前進
+  - 三步改為純說明步驟，有「下一步」按鈕，流程順暢
+- [x] **spotlight 可視性加強**：
+  - 新增白色實線邊框（alpha 0.55），spotlight 切口在真機上清晰可見
+  - glow ring: sigma 4→8, alpha 0.20/0.60→0.35/0.90, strokeWidth 2.5→3.5
+- APK：`build/app/outputs/flutter-apk/app-release.apk`（61.8MB）
 
 ### 本次完成（2026-05-12，commit 2d94788）
 - [x] **新手導覽位置跳動修復**：
