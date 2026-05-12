@@ -1,8 +1,15 @@
 # 進度追蹤文件
 
-## 目前狀態：待機中 ✅（2026-05-12）— 新手導覽完整改版為任務式互動教學，APK 已建置可安裝測試
+## 目前狀態：待機中 ✅（2026-05-12）— 導覽 spotlight 修復完成，APK 已建置可安裝測試
 
-最後完成任務：MP-01 新手導覽從「簡報式說明」全面改版為「遊戲式任務系統」✅
+最後完成任務：導覽 spotlight 偏移修復 + backupCard clipping + S2 帳戶創建引導 ✅
+
+### 本次完成（2026-05-12，commit f2c3d06）
+- [x] **導覽 spotlight 三項修復**：
+  - **Step 10/14 nav item 偏左修復**：`_NavItem` 加 `tourKey` param，把 GlobalKey 放在 `SizedBox.expand`（SingleChildRenderObjectWidget）上，`findRenderObject()` 直接取得正確 RenderBox，消除偏左一格的問題
+  - **Step 15 backupCard 截斷修復**：`tour_overlay.dart` clip 閾值從 0.4→0.65，clip 高度從 80→250dp，備份卡（~55% 螢幕高）不再被截斷
+  - **Step 3 帳戶創建引導**：`AccountPage` 加 `isFromTour` param，從導覽開啟時頂部顯示金色提示 bar（「點右上角 ＋ 新增帳戶」），S2/S3 說明文字四語言更新
+- APK：`build/app/outputs/flutter-apk/app-release.apk`（61.8MB）
 
 ### 本次完成（2026-05-12，commit 86e6112）
 - [x] **新手導覽任務式大改版**：
