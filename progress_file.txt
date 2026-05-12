@@ -1,10 +1,47 @@
 # 進度追蹤文件
 
-## 目前狀態：待機中 ✅（2026-05-12）— 導覽三模式真正分流完成，APK 已建置
+## 目前狀態：待機中 ✅（2026-05-12）— 任務型新手導覽狀態機完成，APK 已建置
 
-最後完成任務：導覽系統大改版：OnboardingMode enum + QuickStart(7步)/FullSetup(11步)/Demo(5步) 真正分流 + Demo 資料隔離 + Spotlight 定位修正 ✅
+最後完成任務：真正任務型新手導覽狀態機：TourStepType + StepPredicate + TourSession + AppState 監聽 + Spotlight 穩定性修復 ✅
 
 ### 本次完成（2026-05-12，本次 commit）
+- [x] **任務型新手導覽狀態機**：
+  - **`tour_session.dart`**（新建）：`TourSession`（startAccountCount + createdAt + accountPageWasOpened）
+  - **`tour_step.dart`** 全面改寫：
+    - `TourStepType` enum：info / actionRequired / finish（取代 TourActionType）
+    - `StepPredicate = bool Function(AppState, TourSession, int currentTab)` typedef
+    - `DynamicBodyBuilder = String Function(AppState, TourSession, BuildContext)` typedef
+    - `TourStep` 新增 `completionPredicate`、`actionHintLocKey`、`dynamicBody` 欄位，移除 `const`
+    - `buildQuickStartSteps`：7步全部使用 actionRequired + 真實 predicate（tab/accountCount/expenseCount），S5 動態內文（有無關聯帳戶）
+    - `buildFullSetupSteps`：11步使用相同 predicate 架構
+    - `buildDemoSteps`：5步，demo_s3 改用 actionRequired（tab==1 predicate）
+  - **`tour_controller.dart`** 全面改寫：
+    - `AppState? _appState` + `TourSession? _session` + `int _currentTab`
+    - `init()` 新增 `required AppState appState` 參數，呼叫 `addListener(_onAppStateChanged)`
+    - `startMission()` 建立 TourSession（記錄 startAccountCount）
+    - `_onAppStateChanged()` → `_checkCurrentStepPredicate()`
+    - `notifyTabChanged()` 更新 `_currentTab` → 觸發 predicate 檢查
+    - `notifyRouteOpened()` 設定 `session.accountPageWasOpened` → 觸發 predicate 檢查
+    - `next()` 加保護：actionRequired 且 predicate 未滿足時禁止前進
+    - `_onActionCompleted()`：predicate 滿足 → 600ms ✓ 閃爍 → `next()`
+    - **Spotlight 穩定性修復**：5次重試，比較連續兩次 rect 差距 < 2px 才採用（不再 pre-render 錯誤位置）
+    - `dispose()` 正確移除 AppState listener
+  - **`tour_overlay.dart`** 更新：
+    - 內嵌 `Consumer<AppState>` 取得 dynamicBody 資料
+    - `bodyText` 由 `step.dynamicBody!()` 或 `step.body` 決定
+    - `_MissionPanel` 新增 `bodyText`、`isCurrentStepCompleted` 參數
+    - actionRequired 步驟：右側顯示 step-specific 操作提示（`actionHintLocKey`），無「略過此步」按鈕
+    - info/finish 步驟：正常「下一步」/「完成」按鈕
+    - 互動阻擋條件改為 `step.isActionRequired`（取代 `step.isInteractive`）
+  - **`main.dart`** 更新：`init()` 新增 `appState: context.read<AppState>()`；`startMission()` 移除 hasAccounts/hasTransactions 參數
+  - **`localization.dart`** 新增 60 個 key（4語言 × 15 key）：
+    - qs/fs/demo 各步驟 `_action_hint` key（actionRequired 步驟等待時顯示）
+    - `qs_s5_body_linked`、`qs_s5_body_unlinked`（含 `{amount}` placeholder）
+    - `fs_s5_body_linked`、`fs_s5_body_unlinked`
+  - APK：`build/app/outputs/flutter-apk/app-release.apk`（62.0MB，需 `--no-tree-shake-icons`）
+  - `flutter analyze`：0 errors，54 items 均為 pre-existing info/warning
+
+### 本次完成（2026-05-12，舊 commit）
 - [x] **導覽系統三模式真正分流**：
   - **OnboardingMode enum**（tour_step.dart）：quickStart / fullSetup / demo
   - **三套獨立 step builder**：

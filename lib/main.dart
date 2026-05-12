@@ -218,6 +218,7 @@ class _MainShellState extends State<MainShell> {
   void _initTour() {
     context.read<TourController>().init(
       goToTab: _goToTabAsync,
+      appState: context.read<AppState>(),
       onTourEnd: _handleTourEnd,
       onTourSkip: _handleTourSkip,
     );
@@ -322,12 +323,7 @@ class _MainShellState extends State<MainShell> {
     if (mode == OnboardingMode.demo) {
       appState.loadDemoData();
     }
-    context.read<TourController>().startMission(
-      context,
-      mode,
-      hasAccounts: appState.accounts.isNotEmpty,
-      hasTransactions: appState.expenses.isNotEmpty,
-    );
+    context.read<TourController>().startMission(context, mode);
   }
 
   void _onRewatchOnboarding() {

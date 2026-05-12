@@ -1,6 +1,8 @@
 import 'dart:developer' as dev;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import '../../data/repositories/app_state.dart';
+import 'tour_session.dart';
 import 'tour_step.dart';
 
 class TourController extends ChangeNotifier {
@@ -12,12 +14,16 @@ class TourController extends ChangeNotifier {
   bool _transitioning = false;
   bool _wrongTap = false;
   bool _stepJustCompleted = false;
+  bool _currentStepCompleted = false;
   OnboardingMode _mode = OnboardingMode.quickStart;
 
   Rect? _cachedTargetRect;
   int _lastPreparedTab = -1;
+  int _currentTab = 0;
 
-  // goToTab 改為 async，讓呼叫端 await animateToPage 完成後再算 rect
+  AppState? _appState;
+  TourSession? _session;
+
   Future<void> Function(int tab)? _goToTab;
   VoidCallback? _onTourEnd;
   VoidCallback? _onTourSkip;
@@ -31,9 +37,11 @@ class TourController extends ChangeNotifier {
   bool get isLastStep => _stepIndex == _steps.length - 1;
   bool get showWrongTapHint => _wrongTap;
   bool get stepJustCompleted => _stepJustCompleted;
+  bool get isCurrentStepCompleted => _currentStepCompleted;
   Rect? get cachedTargetRect => _cachedTargetRect;
   OnboardingMode get mode => _mode;
   bool get isDemoMode => _mode == OnboardingMode.demo;
+  TourSession? get session => _session;
 
   TourStep? get currentStep =>
       (_active && _steps.isNotEmpty && _stepIndex < _steps.length)
@@ -44,36 +52,46 @@ class TourController extends ChangeNotifier {
 
   void init({
     required Future<void> Function(int tab) goToTab,
+    required AppState appState,
     VoidCallback? onTourEnd,
     VoidCallback? onTourSkip,
   }) {
     _goToTab = goToTab;
     _onTourEnd = onTourEnd;
     _onTourSkip = onTourSkip;
+    _appState?.removeListener(_onAppStateChanged);
+    _appState = appState;
+    _appState!.addListener(_onAppStateChanged);
+  }
+
+  @override
+  void dispose() {
+    _appState?.removeListener(_onAppStateChanged);
+    super.dispose();
   }
 
   // ── Tour lifecycle ───────────────────────────────────────────
 
   Future<void> startMission(
     BuildContext context,
-    OnboardingMode mode, {
-    bool hasAccounts = false,
-    bool hasTransactions = false,
-  }) async {
+    OnboardingMode mode,
+  ) async {
     _mode = mode;
-    dev.log('[Onboarding] start mode=${mode.name}  hasAccounts=$hasAccounts  hasTransactions=$hasTransactions');
+    final appState = _appState;
+
+    final realAccountCount = appState?.accounts
+            .where((a) => !a.id.startsWith('tour_demo_'))
+            .length ??
+        0;
+    _session = TourSession(startAccountCount: realAccountCount);
+
+    dev.log('[Onboarding] start mode=${mode.name}  '
+        'startAccounts=$realAccountCount  '
+        'sessionAt=${_session!.createdAt}');
 
     _steps = switch (mode) {
-      OnboardingMode.quickStart => buildQuickStartSteps(
-          context,
-          hasAccounts: hasAccounts,
-          hasTransactions: hasTransactions,
-        ),
-      OnboardingMode.fullSetup => buildFullSetupSteps(
-          context,
-          hasAccounts: hasAccounts,
-          hasTransactions: hasTransactions,
-        ),
+      OnboardingMode.quickStart => buildQuickStartSteps(context),
+      OnboardingMode.fullSetup => buildFullSetupSteps(context),
       OnboardingMode.demo => buildDemoSteps(context),
     };
 
@@ -84,15 +102,22 @@ class TourController extends ChangeNotifier {
     _transitioning = false;
     _wrongTap = false;
     _stepJustCompleted = false;
+    _currentStepCompleted = false;
     _cachedTargetRect = null;
     _lastPreparedTab = -1;
+    _currentTab = 0;
+
     await _prepareStep();
     _hidden = false;
     notifyListeners();
+    _checkCurrentStepPredicate();
   }
 
   Future<void> next() async {
     if (_finishing || !_active || _transitioning) return;
+    final step = currentStep;
+    // actionRequired 步驟：predicate 未滿足時禁止前進
+    if (step != null && step.isActionRequired && !_currentStepCompleted) return;
     if (isLastStep) {
       await finish();
       return;
@@ -101,6 +126,7 @@ class TourController extends ChangeNotifier {
     _stepIndex++;
     _wrongTap = false;
     _stepJustCompleted = false;
+    _currentStepCompleted = false;
     _cachedTargetRect = null;
     _hidden = true;
     notifyListeners();
@@ -108,6 +134,7 @@ class TourController extends ChangeNotifier {
     _hidden = false;
     _transitioning = false;
     notifyListeners();
+    _checkCurrentStepPredicate();
   }
 
   Future<void> prev() async {
@@ -116,6 +143,7 @@ class TourController extends ChangeNotifier {
     _stepIndex--;
     _wrongTap = false;
     _stepJustCompleted = false;
+    _currentStepCompleted = false;
     _cachedTargetRect = null;
     _hidden = true;
     notifyListeners();
@@ -123,9 +151,8 @@ class TourController extends ChangeNotifier {
     _hidden = false;
     _transitioning = false;
     notifyListeners();
+    _checkCurrentStepPredicate();
   }
-
-  Future<void> skipStep() async => next();
 
   Future<void> skip() async {
     await finish();
@@ -139,13 +166,12 @@ class TourController extends ChangeNotifier {
     _hidden = false;
     _wrongTap = false;
     _stepJustCompleted = false;
+    _currentStepCompleted = false;
     _transitioning = false;
     notifyListeners();
     _onTourEnd?.call();
-    // markOnboardingSeen 由 main.dart 的 _handleTourEnd 負責
   }
 
-  /// Demo 模式結束後（dialog 處理完）呼叫以清除 mode 旗標
   void clearDemoMode() {
     _mode = OnboardingMode.quickStart;
   }
@@ -162,24 +188,18 @@ class TourController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Event-driven completion ──────────────────────────────────
+  // ── Event notifications ──────────────────────────────────────
 
   void notifyTabChanged(int newTab) {
-    if (!_active || _transitioning || _finishing || _stepJustCompleted) return;
-    final step = currentStep;
-    if (step?.actionType == TourActionType.waitForTabChange &&
-        newTab == step?.expectedTab) {
-      _onActionCompleted();
-    }
+    _currentTab = newTab;
+    if (!_active || _finishing) return;
+    _checkCurrentStepPredicate();
   }
 
   void notifyRouteOpened(String routeId) {
-    if (!_active || _transitioning || _finishing || _stepJustCompleted) return;
-    final step = currentStep;
-    if (step?.actionType == TourActionType.waitForRouteOpen &&
-        step?.expectedRouteId == routeId) {
-      _onActionCompleted();
-    }
+    if (!_active || _finishing) return;
+    if (routeId == 'accountPage') _session?.accountPageWasOpened = true;
+    _checkCurrentStepPredicate();
   }
 
   void notifyWrongTap() {
@@ -194,15 +214,38 @@ class TourController extends ChangeNotifier {
     });
   }
 
+  // ── Predicate evaluation ─────────────────────────────────────
+
+  void _onAppStateChanged() {
+    if (!_active || _finishing || _transitioning) return;
+    _checkCurrentStepPredicate();
+  }
+
+  void _checkCurrentStepPredicate() {
+    if (_currentStepCompleted || _transitioning || _finishing) return;
+    final step = currentStep;
+    if (step == null || !step.isActionRequired) return;
+    final pred = step.completionPredicate;
+    if (pred == null) return;
+    final appState = _appState;
+    final session = _session;
+    if (appState == null || session == null) return;
+
+    final satisfied = pred(appState, session, _currentTab);
+    if (satisfied) _onActionCompleted();
+  }
+
   // ── Completion feedback + auto-advance ───────────────────────
 
   Future<void> _onActionCompleted() async {
+    if (_currentStepCompleted) return;
+    _currentStepCompleted = true;
     _stepJustCompleted = true;
     notifyListeners();
     await Future.delayed(const Duration(milliseconds: 600));
     if (!_active || _finishing) return;
     _stepJustCompleted = false;
-    await next();
+    await next(); // guard in next() passes because _currentStepCompleted == true
   }
 
   // ── Step preparation ─────────────────────────────────────────
@@ -214,11 +257,9 @@ class TourController extends ChangeNotifier {
     final tabChanged = _lastPreparedTab != step.tab;
     _lastPreparedTab = step.tab;
 
-    // await animateToPage 完成，確認 PageView 切換動畫真正結束後才計算 rect
     if (_goToTab != null) {
       await _goToTab!(step.tab);
     }
-    // 動畫結束後再等一幀讓 layout 穩定
     if (tabChanged) {
       await Future.delayed(const Duration(milliseconds: 80));
     }
@@ -236,13 +277,23 @@ class TourController extends ChangeNotifier {
       } catch (_) {}
     }
 
-    await WidgetsBinding.instance.endOfFrame;
-
-    // 最多重試 3 次，確認 rect 不為 null 且有實際 size
-    _cachedTargetRect = _findRectOnScreen(step.targetKey);
-    for (int retry = 0; retry < 3 && _cachedTargetRect == null; retry++) {
+    // Stability-based rect detection: require 2 consecutive readings < 2px diff
+    Rect? prevRect;
+    _cachedTargetRect = null;
+    for (int i = 0; i < 5; i++) {
       await WidgetsBinding.instance.endOfFrame;
-      _cachedTargetRect = _findRectOnScreen(step.targetKey);
+      await Future.delayed(const Duration(milliseconds: 16));
+      final curr = _findRectOnScreen(step.targetKey);
+      if (curr != null && prevRect != null) {
+        final dx = (curr.left - prevRect.left).abs();
+        final dy = (curr.top - prevRect.top).abs();
+        if (dx < 2.0 && dy < 2.0) {
+          _cachedTargetRect = curr;
+          break;
+        }
+      }
+      prevRect = curr;
+      if (curr != null) _cachedTargetRect = curr;
     }
   }
 
@@ -253,10 +304,8 @@ class TourController extends ChangeNotifier {
       if (ctx == null) return null;
       final box = ctx.findRenderObject() as RenderBox?;
       if (box == null || !box.attached || !box.hasSize) return null;
-      // size 為 0 時不框（禁止亂框）
       if (box.size.width < 1 || box.size.height < 1) return null;
       final pos = box.localToGlobal(Offset.zero);
-      // ±600 sanity check：過濾 PageView 相鄰頁 off-screen 座標
       if (pos.dx < -600 || pos.dy < -600 || pos.dx > 4000 || pos.dy > 4000) {
         return null;
       }

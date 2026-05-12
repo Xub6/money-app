@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/localization.dart';
 import '../../core/constants/app_colors.dart';
+import '../../data/repositories/app_state.dart';
 import 'tour_controller.dart';
 import 'tour_step.dart';
 
@@ -42,108 +43,119 @@ class _TourOverlayState extends State<TourOverlay>
         final step = ctrl.currentStep;
         if (step == null) return const SizedBox.shrink();
 
-        final rawRect = ctrl.cachedTargetRect;
-        final screen = MediaQuery.of(context).size;
-        final safePad = MediaQuery.of(context).padding;
+        return Consumer<AppState>(
+          builder: (context, appState, _) {
+            final rawRect = ctrl.cachedTargetRect;
+            final screen = MediaQuery.of(context).size;
+            final safePad = MediaQuery.of(context).padding;
 
-        // 超長列表限制高度到 250dp；正常卡片不截斷
-        Rect? effectiveRect = rawRect;
-        if (rawRect != null && rawRect.height > screen.height * 0.65) {
-          effectiveRect =
-              Rect.fromLTWH(rawRect.left, rawRect.top, rawRect.width, 250.0);
-        }
+            // 超長卡片截斷
+            Rect? effectiveRect = rawRect;
+            if (rawRect != null && rawRect.height > screen.height * 0.65) {
+              effectiveRect = Rect.fromLTWH(
+                  rawRect.left, rawRect.top, rawRect.width, 250.0);
+            }
 
-        Rect? spotRect;
-        if (effectiveRect != null) {
-          final inflated = effectiveRect.inflate(10.0);
-          spotRect = Rect.fromLTRB(
-            inflated.left.clamp(0.0, screen.width),
-            inflated.top.clamp(safePad.top, screen.height),
-            inflated.right.clamp(0.0, screen.width),
-            inflated.bottom.clamp(0.0, screen.height),
-          );
-          if (spotRect.width < 1 || spotRect.height < 1) spotRect = null;
-        }
+            Rect? spotRect;
+            if (effectiveRect != null) {
+              final inflated = effectiveRect.inflate(10.0);
+              spotRect = Rect.fromLTRB(
+                inflated.left.clamp(0.0, screen.width),
+                inflated.top.clamp(safePad.top, screen.height),
+                inflated.right.clamp(0.0, screen.width),
+                inflated.bottom.clamp(0.0, screen.height),
+              );
+              if (spotRect.width < 1 || spotRect.height < 1) spotRect = null;
+            }
 
-        // spotlight 在螢幕下方 60% 時，panel 移到頂部
-        const panelH = 210.0;
-        final panelAtTop = spotRect != null &&
-            spotRect.center.dy > screen.height * 0.60;
+            const panelH = 210.0;
+            final panelAtTop = spotRect != null &&
+                spotRect.center.dy > screen.height * 0.60;
 
-        return Material(
-          type: MaterialType.transparency,
-          child: Stack(
-            children: [
-              // ── 遮罩 + spotlight 切口 ────────────────────────
-              Positioned.fill(
-                child: RepaintBoundary(
-                  child: IgnorePointer(
-                    child: AnimatedBuilder(
-                      animation: _glowAnim,
-                      builder: (_, __) => CustomPaint(
-                        painter: _SpotlightPainter(spotRect, _glowAnim.value),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            // Resolve dynamic body text
+            final bodyText = (step.dynamicBody != null && ctrl.session != null)
+                ? step.dynamicBody!(appState, ctrl.session!, context)
+                : step.body;
 
-              // ── 互動阻擋層 ───────────────────────────────────
-              if (step.isInteractive && spotRect != null)
-                ..._buildInteractiveBlockers(spotRect, screen, ctrl)
-              else
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {},
-                  ),
-                ),
-
-              // ── 任務面板 ─────────────────────────────────────
-              _MissionPanel(
-                step: step,
-                stepIndex: ctrl.stepIndex,
-                totalSteps: ctrl.totalSteps,
-                panelAtTop: panelAtTop,
-                panelH: panelH,
-                safePad: safePad,
-                wrongTap: ctrl.showWrongTapHint,
-                stepJustCompleted: ctrl.stepJustCompleted,
-                isLast: ctrl.isLastStep,
-                onNext: ctrl.next,
-                onPrev: ctrl.prev,
-                onSkipStep: ctrl.skipStep,
-                onSkipAll: ctrl.skip,
-              ),
-
-              // ── Demo 橫幅（顯示在所有層上方）────────────────
-              if (ctrl.isDemoMode)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: IgnorePointer(
-                    child: Container(
-                      padding: EdgeInsets.only(
-                        top: safePad.top + 2,
-                        bottom: 4,
-                      ),
-                      color: Colors.orange.withValues(alpha: 0.92),
-                      alignment: Alignment.center,
-                      child: Text(
-                        AppLocalizations.of(context, 'tour_demo_banner'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
+            return Material(
+              type: MaterialType.transparency,
+              child: Stack(
+                children: [
+                  // ── 遮罩 + spotlight 切口 ──────────────────────
+                  Positioned.fill(
+                    child: RepaintBoundary(
+                      child: IgnorePointer(
+                        child: AnimatedBuilder(
+                          animation: _glowAnim,
+                          builder: (_, __) => CustomPaint(
+                            painter:
+                                _SpotlightPainter(spotRect, _glowAnim.value),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
+
+                  // ── 互動阻擋層 ───────────────────────────────────
+                  if (step.isActionRequired && spotRect != null)
+                    ..._buildInteractiveBlockers(spotRect, screen, ctrl)
+                  else
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {},
+                      ),
+                    ),
+
+                  // ── 任務面板 ───────────────────────────────────
+                  _MissionPanel(
+                    step: step,
+                    bodyText: bodyText,
+                    stepIndex: ctrl.stepIndex,
+                    totalSteps: ctrl.totalSteps,
+                    panelAtTop: panelAtTop,
+                    panelH: panelH,
+                    safePad: safePad,
+                    wrongTap: ctrl.showWrongTapHint,
+                    stepJustCompleted: ctrl.stepJustCompleted,
+                    isCurrentStepCompleted: ctrl.isCurrentStepCompleted,
+                    isLast: ctrl.isLastStep,
+                    onNext: ctrl.next,
+                    onPrev: ctrl.prev,
+                    onSkipAll: ctrl.skip,
+                  ),
+
+                  // ── Demo 橫幅 ─────────────────────────────────
+                  if (ctrl.isDemoMode)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: IgnorePointer(
+                        child: Container(
+                          padding: EdgeInsets.only(
+                            top: safePad.top + 2,
+                            bottom: 4,
+                          ),
+                          color: Colors.orange.withValues(alpha: 0.92),
+                          alignment: Alignment.center,
+                          child: Text(
+                            AppLocalizations.of(
+                                context, 'tour_demo_banner'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -161,9 +173,7 @@ class _TourOverlayState extends State<TourOverlay>
           right: 0,
           height: spot.top.clamp(minH, screen.height),
           child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onWrongTap,
-          ),
+              behavior: HitTestBehavior.opaque, onTap: onWrongTap),
         ),
       if (spot.bottom < screen.height)
         Positioned(
@@ -172,9 +182,7 @@ class _TourOverlayState extends State<TourOverlay>
           right: 0,
           bottom: 0,
           child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onWrongTap,
-          ),
+              behavior: HitTestBehavior.opaque, onTap: onWrongTap),
         ),
       if (spot.left > 0)
         Positioned(
@@ -183,9 +191,7 @@ class _TourOverlayState extends State<TourOverlay>
           width: spot.left.clamp(0, screen.width),
           height: spot.height,
           child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onWrongTap,
-          ),
+              behavior: HitTestBehavior.opaque, onTap: onWrongTap),
         ),
       if (spot.right < screen.width)
         Positioned(
@@ -194,9 +200,7 @@ class _TourOverlayState extends State<TourOverlay>
           right: 0,
           height: spot.height,
           child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onWrongTap,
-          ),
+              behavior: HitTestBehavior.opaque, onTap: onWrongTap),
         ),
     ];
   }
@@ -212,7 +216,6 @@ class _SpotlightPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final fullRect = Rect.fromLTWH(0, 0, size.width, size.height);
-
     final overlayPaint = Paint()..color = Colors.black.withValues(alpha: 0.72);
     if (spotRect != null) {
       final path = Path()
@@ -224,9 +227,7 @@ class _SpotlightPainter extends CustomPainter {
     } else {
       canvas.drawRect(fullRect, overlayPaint);
     }
-
     if (spotRect != null) {
-      // 白色實線框
       canvas.drawRRect(
         RRect.fromRectAndRadius(
             spotRect!.inflate(1.5), const Radius.circular(17)),
@@ -235,8 +236,6 @@ class _SpotlightPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5,
       );
-
-      // 金色脈動光暈
       final expand = 3.0 + 6.0 * glowValue;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -259,14 +258,17 @@ class _SpotlightPainter extends CustomPainter {
 
 class _MissionPanel extends StatelessWidget {
   final TourStep step;
+  final String bodyText;
   final int stepIndex, totalSteps;
-  final bool panelAtTop, wrongTap, stepJustCompleted, isLast;
+  final bool panelAtTop, wrongTap, stepJustCompleted, isCurrentStepCompleted,
+      isLast;
   final double panelH;
   final EdgeInsets safePad;
-  final AsyncCallback onNext, onPrev, onSkipStep, onSkipAll;
+  final AsyncCallback onNext, onPrev, onSkipAll;
 
   const _MissionPanel({
     required this.step,
+    required this.bodyText,
     required this.stepIndex,
     required this.totalSteps,
     required this.panelAtTop,
@@ -274,10 +276,10 @@ class _MissionPanel extends StatelessWidget {
     required this.safePad,
     required this.wrongTap,
     required this.stepJustCompleted,
+    required this.isCurrentStepCompleted,
     required this.isLast,
     required this.onNext,
     required this.onPrev,
-    required this.onSkipStep,
     required this.onSkipAll,
   });
 
@@ -291,13 +293,6 @@ class _MissionPanel extends StatelessWidget {
     final divColor = isDark
         ? Colors.white.withValues(alpha: 0.10)
         : Colors.black.withValues(alpha: 0.08);
-
-    // 方向提示文字
-    final hintKey =
-        panelAtTop ? 'tour_action_hint_below' : 'tour_action_hint_above';
-    final hintText = AppLocalizations.of(
-        context, wrongTap ? 'tour_wrong_tap' : hintKey);
-    final hintColor = wrongTap ? Colors.orange : AppColors.gold;
 
     final borderRadius = panelAtTop
         ? const BorderRadius.only(
@@ -376,9 +371,9 @@ class _MissionPanel extends StatelessWidget {
               ),
               const SizedBox(height: 5),
 
-              // ── 說明文字 ──────────────────────────────────
+              // ── 說明文字（可動態）──────────────────────────
               Text(
-                step.body,
+                bodyText,
                 style: TextStyle(fontSize: 13, color: subColor, height: 1.5),
               ),
 
@@ -387,64 +382,7 @@ class _MissionPanel extends StatelessWidget {
               const SizedBox(height: 10),
 
               // ── Footer ────────────────────────────────────
-              Row(
-                children: [
-                  // 左側：略過此步 / 上一步
-                  if (step.allowSkipStep && step.isInteractive)
-                    _TextBtn(
-                      label: AppLocalizations.of(
-                          context, 'tour_skip_step'),
-                      color: subColor,
-                      onTap: onSkipStep,
-                    )
-                  else if (!step.isInteractive && stepIndex > 0)
-                    _TextBtn(
-                      label:
-                          AppLocalizations.of(context, 'tour_prev'),
-                      color: subColor,
-                      onTap: onPrev,
-                    )
-                  else
-                    const SizedBox(width: 60),
-
-                  const Spacer(),
-
-                  // 右側：互動提示 / ✓完成閃爍 / 下一步按鈕
-                  if (stepJustCompleted && step.isInteractive)
-                    // 互動步驟剛完成：閃爍 ✓ 回饋
-                    AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 200),
-                      style: const TextStyle(
-                        color: AppColors.gold,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                      ),
-                      child: Text(AppLocalizations.of(
-                          context, 'tour_step_done')),
-                    )
-                  else if (step.isInteractive)
-                    // 等待互動：顯示方向提示
-                    AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 300),
-                      style: TextStyle(
-                        color: hintColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      child: Text(hintText),
-                    )
-                  else
-                    // 純說明步驟或 finish 步驟：顯示按鈕
-                    _FilledBtn(
-                      label: (isLast || step.isFinish)
-                          ? AppLocalizations.of(
-                              context, 'tour_done')
-                          : AppLocalizations.of(
-                              context, 'tour_next'),
-                      onTap: onNext,
-                    ),
-                ],
-              ),
+              _buildFooter(context, subColor),
             ],
           ),
         ),
@@ -456,6 +394,87 @@ class _MissionPanel extends StatelessWidget {
     } else {
       return Positioned(bottom: 0, left: 0, right: 0, child: panel);
     }
+  }
+
+  Widget _buildFooter(BuildContext context, Color subColor) {
+    if (step.isActionRequired) {
+      return _buildActionRequiredFooter(context, subColor);
+    }
+    return _buildInfoFooter(context, subColor);
+  }
+
+  Widget _buildActionRequiredFooter(BuildContext context, Color subColor) {
+    // actionRequired: 左側空，右側顯示狀態
+    Widget rightWidget;
+
+    if (stepJustCompleted) {
+      // 完成閃爍 ✓
+      rightWidget = AnimatedDefaultTextStyle(
+        duration: const Duration(milliseconds: 200),
+        style: const TextStyle(
+          color: AppColors.gold,
+          fontSize: 15,
+          fontWeight: FontWeight.w900,
+        ),
+        child: Text(AppLocalizations.of(context, 'tour_step_done')),
+      );
+    } else {
+      // 等待完成：顯示 step-specific 操作提示
+      final hintKey = step.actionHintLocKey ?? 'tour_action_hint_below';
+      final hintText = wrongTap
+          ? AppLocalizations.of(context, 'tour_wrong_tap')
+          : AppLocalizations.of(context, hintKey);
+      final hintColor = wrongTap ? Colors.orange : AppColors.gold;
+      rightWidget = AnimatedDefaultTextStyle(
+        duration: const Duration(milliseconds: 300),
+        style: TextStyle(
+          color: hintColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+        child: Text(hintText, textAlign: TextAlign.right),
+      );
+    }
+
+    return Row(
+      children: [
+        // 上一步（若不是第一步）
+        if (stepIndex > 0)
+          _TextBtn(
+            label: AppLocalizations.of(context, 'tour_prev'),
+            color: subColor,
+            onTap: onPrev,
+          )
+        else
+          const SizedBox(width: 60),
+        const Spacer(),
+        rightWidget,
+      ],
+    );
+  }
+
+  Widget _buildInfoFooter(BuildContext context, Color subColor) {
+    return Row(
+      children: [
+        // 上一步（info 步驟）
+        if (!step.isFinish && stepIndex > 0)
+          _TextBtn(
+            label: AppLocalizations.of(context, 'tour_prev'),
+            color: subColor,
+            onTap: onPrev,
+          )
+        else
+          const SizedBox(width: 60),
+        const Spacer(),
+        // 下一步 / 完成
+        _FilledBtn(
+          label: (isLast || step.isFinish)
+              ? AppLocalizations.of(context, 'tour_done')
+              : AppLocalizations.of(context, 'tour_next'),
+          onTap: onNext,
+        ),
+      ],
+    );
   }
 }
 
