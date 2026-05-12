@@ -1,11 +1,21 @@
 # 進度追蹤文件
 
-## 目前狀態：待機中 ✅（2026-05-13）— 導覽自動導航 + Spotlight 跨頁面 + 回呼架構完成，APK 已建置
+## 目前狀態：待機中 ✅（2026-05-13）— fullPageInteraction 修復完成，APK 已建置（commit 9a6842a）
 
-最後完成任務：導覽完全自動化：onAccountCreated/onTransactionCreated 回呼 + TourOverlay 移至 MaterialApp.builder（spotlight 可顯示於 AccountPage 內）+ QuickStart 改為 8 步 + 帳戶建立後自動返回首頁 ✅
+最後完成任務：fullPageInteraction 修復：表單填寫步驟（S4 帳戶表單、S5 支出表單）不再有黑色遮罩阻擋，使用者可自由操作表單 ✅
 
-### 本次完成（2026-05-13，本次 commit）
-- [x] **導覽自動導航 + Spotlight 跨頁面 + 回呼架構**：
+### 本次完成（2026-05-13，commit 9a6842a）
+- [x] **fullPageInteraction 修復**（tour 遮罩完全不阻擋表單）：
+  - **`tour_overlay.dart`**：`isActionRequired && spotRect == null` 時跳過黑色遮罩層和所有阻擋器，只顯示提示面板（panel hint），面板外所有事件穿透到底下頁面
+  - **`tour_controller.dart`**：
+    - `notifyAddAccountPageOpened()` 現在也清除 `_cachedTargetRect` + `notifyListeners()`，讓 AddEditAccountPage 一推送就進入 fullPageInteraction
+    - 新增 `notifyFormOpened()`：清除 spotlight rect 並通知（用於 FAB → 表單頁面）
+    - 新增 `notifyFormDismissed()`：使用者取消表單時重新跑 `_prepareStep()` 恢復 spotlight
+  - **`main.dart`**：`_fabTap()` 改呼叫 `notifyFormOpened()`（取代 `notifyRouteOpened`）；`_openAdd()` / `_openAddInvestment()` 取消時呼叫 `notifyFormDismissed()`
+  - **`account_page.dart`**：`_openAdd()` 取消時呼叫 `notifyFormDismissed()` 恢復 ＋ 按鈕 spotlight
+
+### 上上次完成（2026-05-13，commit 17c8f63）
+- [x] **導覽自動導航 + Spotlight 跨頁面 + 回呼架構（commit 17c8f63）**：
   - **架構升級**：`TourOverlay` 從 `MainShell` Stack 移至 `MaterialApp.builder`，覆蓋整個 Navigator → spotlight 現在可顯示於所有推送頁面（AccountPage、AddEditAccountPage 等）
   - **`tour_session.dart`** 新增欄位：`addAccountPageOpened`、`accountCreated`、`transactionCreated`
   - **`tour_keys.dart`** 新增：`TourKeys.accountAddBtn`（AccountPage 右上角 ＋ 按鈕）
