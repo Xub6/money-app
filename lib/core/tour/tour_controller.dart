@@ -1,6 +1,8 @@
 import 'dart:developer' as dev;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import '../../data/models/account.dart';
+import '../../data/models/expense_item.dart';
 import '../../data/repositories/app_state.dart';
 import 'tour_session.dart';
 import 'tour_step.dart';
@@ -25,6 +27,8 @@ class TourController extends ChangeNotifier {
   TourSession? _session;
 
   Future<void> Function(int tab)? _goToTab;
+  VoidCallback? _popToMain;
+  void Function(String locKey)? _showSuccessMsg;
   VoidCallback? _onTourEnd;
   VoidCallback? _onTourSkip;
 
@@ -55,8 +59,12 @@ class TourController extends ChangeNotifier {
     required AppState appState,
     VoidCallback? onTourEnd,
     VoidCallback? onTourSkip,
+    VoidCallback? popToMain,
+    void Function(String locKey)? onShowSuccess,
   }) {
     _goToTab = goToTab;
+    _popToMain = popToMain;
+    _showSuccessMsg = onShowSuccess;
     _onTourEnd = onTourEnd;
     _onTourSkip = onTourSkip;
     _appState?.removeListener(_onAppStateChanged);
@@ -202,6 +210,29 @@ class TourController extends ChangeNotifier {
     _checkCurrentStepPredicate();
   }
 
+  /// Called from AccountPage when the + AppBar button is tapped.
+  void notifyAddAccountPageOpened() {
+    if (!_active || _finishing) return;
+    _session?.addAccountPageOpened = true;
+    _checkCurrentStepPredicate();
+  }
+
+  /// Called from AccountPage after a new account is saved.
+  void onAccountCreated(Account account) {
+    if (!_active || _finishing) return;
+    _session?.accountCreated = true;
+    dev.log('[Tour] onAccountCreated: ${account.displayName}');
+    _checkCurrentStepPredicate();
+  }
+
+  /// Called from main.dart after a new expense is saved.
+  void onTransactionCreated(ExpenseItem expense) {
+    if (!_active || _finishing) return;
+    _session?.transactionCreated = true;
+    dev.log('[Tour] onTransactionCreated: ${expense.amount}');
+    _checkCurrentStepPredicate();
+  }
+
   void notifyWrongTap() {
     if (!_active || _finishing) return;
     if (_wrongTap) return;
@@ -245,7 +276,23 @@ class TourController extends ChangeNotifier {
     await Future.delayed(const Duration(milliseconds: 600));
     if (!_active || _finishing) return;
     _stepJustCompleted = false;
+    await _handleStepCompletionSideEffects();
     await next(); // guard in next() passes because _currentStepCompleted == true
+  }
+
+  // Steps that require post-completion navigation (pop pushed routes, switch tab,
+  // show success feedback) before auto-advancing to the next step.
+  Future<void> _handleStepCompletionSideEffects() async {
+    final step = currentStep;
+    if (step == null) return;
+    // After account created: pop AccountPage → switch to tab 0 → success snackbar
+    if (step.id == 'qs_s4' || step.id == 'fs_s2') {
+      _popToMain?.call();
+      await Future.delayed(const Duration(milliseconds: 350));
+      await _goToTab?.call(0);
+      await Future.delayed(const Duration(milliseconds: 100));
+      _showSuccessMsg?.call('tour_account_created_success');
+    }
   }
 
   // ── Step preparation ─────────────────────────────────────────

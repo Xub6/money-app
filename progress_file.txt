@@ -1,8 +1,52 @@
 # 進度追蹤文件
 
-## 目前狀態：待機中 ✅（2026-05-12）— 任務型新手導覽狀態機完成，APK 已建置
+## 目前狀態：待機中 ✅（2026-05-13）— 導覽自動導航 + Spotlight 跨頁面 + 回呼架構完成，APK 已建置
 
-最後完成任務：真正任務型新手導覽狀態機：TourStepType + StepPredicate + TourSession + AppState 監聽 + Spotlight 穩定性修復 ✅
+最後完成任務：導覽完全自動化：onAccountCreated/onTransactionCreated 回呼 + TourOverlay 移至 MaterialApp.builder（spotlight 可顯示於 AccountPage 內）+ QuickStart 改為 8 步 + 帳戶建立後自動返回首頁 ✅
+
+### 本次完成（2026-05-13，本次 commit）
+- [x] **導覽自動導航 + Spotlight 跨頁面 + 回呼架構**：
+  - **架構升級**：`TourOverlay` 從 `MainShell` Stack 移至 `MaterialApp.builder`，覆蓋整個 Navigator → spotlight 現在可顯示於所有推送頁面（AccountPage、AddEditAccountPage 等）
+  - **`tour_session.dart`** 新增欄位：`addAccountPageOpened`、`accountCreated`、`transactionCreated`
+  - **`tour_keys.dart`** 新增：`TourKeys.accountAddBtn`（AccountPage 右上角 ＋ 按鈕）
+  - **`tour_controller.dart`** 新增：
+    - `_popToMain`、`_showSuccessMsg` 欄位（由 main.dart 注入）
+    - `notifyAddAccountPageOpened()`：帳戶頁 ＋ 按鈕被點時設定 session flag
+    - `onAccountCreated(account)`：帳戶儲存後設定 flag → 觸發 predicate
+    - `onTransactionCreated(expense)`：支出儲存後設定 flag → 觸發 predicate
+    - `_handleStepCompletionSideEffects()`：qs_s4/fs_s2 完成後自動 popToMain → goToTab(0) → 成功 snackbar
+  - **`tour_step.dart`** QuickStart 從 7 步重建為 8 步（qs_s0~qs_s7）：
+    - S0: info（歡迎）
+    - S1: actionRequired（前往管理頁，spotlight navManage）
+    - S2: actionRequired（點帳戶卡，spotlight accountCard，predicate: accountPageWasOpened）
+    - S3: actionRequired（點 ＋ 按鈕，spotlight accountAddBtn，predicate: addAccountPageOpened）
+    - S4: actionRequired（填表儲存，無 spotlight，predicate: accountCreated → 完成後自動回首頁）
+    - S5: actionRequired（記錄支出，spotlight FAB，predicate: transactionCreated callback）
+    - S6: info（同步結果，spotlight monthCard，動態內文）
+    - S7: finish
+  - **`tour_overlay.dart`** 修復互動阻擋邏輯：actionRequired + 無 spotlight = 不阻擋（讓使用者填寫表單）
+  - **`account_page.dart`** 更新：
+    - ＋ AppBar 按鈕加上 `TourKeys.accountAddBtn` GlobalKey
+    - `_openAdd()`：點擊時呼叫 `notifyAddAccountPageOpened()`；儲存後呼叫 `onAccountCreated(result)`
+  - **`main.dart`** 更新：
+    - `MaterialApp.builder` 放置 TourOverlay（全域覆蓋）
+    - `_initTour()` 注入 `popToMain` + `onShowSuccess` 回呼
+    - `_openAdd()` 支出儲存後呼叫 `onTransactionCreated(result)`
+    - 移除 MainShell Stack 中的 TourOverlay
+  - **`localization.dart`** 更新（4 語言）：
+    - qs_s2/s3 文案更新（開啟帳戶管理 / 點 ＋ 新增帳戶）
+    - 新增 `tour_qs_s4_save_title/body/action_hint`（填寫帳戶資料）
+    - 新增 `tour_account_created_success`（成功 snackbar 文案）
+  - APK：`build/app/outputs/flutter-apk/app-release.apk`（62.0MB）
+  - `flutter analyze`：0 errors，55 items 均為 pre-existing info/warning
+
+### 下一步（驗收測試）
+A. 帳戶建立後 → 成功提示 + 自動回 tab 0 + spotlight FAB ✓
+B. 取消帳戶建立 → 停在「建立帳戶」步驟 ✓
+C. 取消支出表單 → 停在「記錄支出」步驟 ✓
+D. 支出實際儲存 → 成功 → 自動回首頁 → 同步可見 ✓
+E. 三模式完全獨立（qs/fs/demo 各自流程）✓
+F. Spotlight 在每次 tab/路由切換後位置正確 ✓
 
 ### 本次完成（2026-05-12，本次 commit）
 - [x] **任務型新手導覽狀態機**：

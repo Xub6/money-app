@@ -117,6 +117,13 @@ class _MoneyAppState extends State<MoneyApp> {
             darkTheme: themeProvider.darkTheme,
             themeMode:
                 themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            // TourOverlay above Navigator so spotlight works inside pushed routes
+            builder: (_, child) => Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                const TourOverlay(),
+              ],
+            ),
             home: Consumer<AppState>(
               builder: (context, appState, _) {
                 if (!appState.loaded) {
@@ -221,6 +228,18 @@ class _MainShellState extends State<MainShell> {
       appState: context.read<AppState>(),
       onTourEnd: _handleTourEnd,
       onTourSkip: _handleTourSkip,
+      popToMain: () {
+        if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+      },
+      onShowSuccess: (locKey) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context, locKey)),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 2),
+          ));
+        }
+      },
     );
   }
 
@@ -420,6 +439,12 @@ class _MainShellState extends State<MainShell> {
     );
     if (result != null && mounted) {
       s.addExpense(result);
+      // Notify tour that expense was actually saved (not just form opened)
+      if (mounted) {
+        try {
+          context.read<TourController>().onTransactionCreated(result);
+        } catch (_) {}
+      }
     }
   }
 
@@ -558,9 +583,7 @@ class _MainShellState extends State<MainShell> {
       ),
     ];
 
-    return Stack(
-      children: [
-        Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context, 'app_name'),
             key: TourKeys.appBarTitle,
@@ -630,14 +653,6 @@ class _MainShellState extends State<MainShell> {
               onTap: () => _goToTab(3)),
         ]),
       ),
-        ),
-        // Tour overlay lives here — below Navigator routes so pushed pages
-        // (AccountPage, AddExpense, AddHolding) render above it naturally.
-        Consumer<TourController>(
-          builder: (_, c, __) =>
-              c.isActive ? const TourOverlay() : const SizedBox.shrink(),
-        ),
-      ],
     );
   }
 }

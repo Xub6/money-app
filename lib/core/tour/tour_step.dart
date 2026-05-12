@@ -53,13 +53,13 @@ int _realAccountCount(AppState a) =>
 bool _hasNewRealExpense(AppState a, TourSession s) => a.expenses.any((e) =>
     !e.id.startsWith('tour_demo_') && e.createdAt.isAfter(s.createdAt));
 
-// ─── Quick Start: 7 steps (qs_s0 ~ qs_s6) ────────────────────────────────────
-// 目標：建立帳戶 → 第一筆支出 → 查看同步結果
+// ─── Quick Start: 8 steps (qs_s0 ~ qs_s7) ────────────────────────────────────
+// 帳戶管理 → 點 + → 填表儲存（自動回首頁） → 記支出 → 查看同步
 List<TourStep> buildQuickStartSteps(BuildContext context) {
   String t(String key) => AppLocalizations.of(context, key);
 
   return [
-    // qs_s0: 歡迎說明（info）
+    // qs_s0: 歡迎（info）
     TourStep(
       id: 'qs_s0',
       tab: 0,
@@ -68,7 +68,7 @@ List<TourStep> buildQuickStartSteps(BuildContext context) {
       body: t('tour_qs_s0_body'),
     ),
 
-    // qs_s1: 前往管理頁（必須切到 tab 3）
+    // qs_s1: 前往管理頁（切到 tab 3）
     TourStep(
       id: 'qs_s1',
       tab: 0,
@@ -80,48 +80,57 @@ List<TourStep> buildQuickStartSteps(BuildContext context) {
       body: t('tour_qs_s1_body'),
     ),
 
-    // qs_s2: 建立帳戶（進入帳戶頁並實際新增帳戶）
+    // qs_s2: 點帳戶卡片（進入 AccountPage）
     TourStep(
       id: 'qs_s2',
       tab: 3,
       targetKey: TourKeys.accountCard,
       type: TourStepType.actionRequired,
-      completionPredicate: (appState, session, _) =>
-          _realAccountCount(appState) > session.startAccountCount,
+      completionPredicate: (_, session, __) => session.accountPageWasOpened,
       actionHintLocKey: 'tour_qs_s2_action_hint',
       title: t('tour_qs_s2_title'),
       body: t('tour_qs_s2_body'),
     ),
 
-    // qs_s3: 回到記帳頁（tab 0）且確認帳戶已存在
+    // qs_s3: 點右上角 ＋（AccountPage 內，spotlight 在 + 按鈕）
     TourStep(
       id: 'qs_s3',
       tab: 3,
-      targetKey: TourKeys.navDashboard,
+      targetKey: TourKeys.accountAddBtn,
       type: TourStepType.actionRequired,
-      completionPredicate: (appState, session, tab) =>
-          tab == 0 && _realAccountCount(appState) > session.startAccountCount,
+      completionPredicate: (_, session, __) => session.addAccountPageOpened,
       actionHintLocKey: 'tour_qs_s3_action_hint',
       title: t('tour_qs_s3_title'),
       body: t('tour_qs_s3_body'),
     ),
 
-    // qs_s4: 記錄第一筆支出（實際存入）
+    // qs_s4: 填好帳戶資料並儲存（在 AddEditAccountPage，無 spotlight）
+    // 完成後 controller 自動 pop → tab 0 → 成功提示
     TourStep(
       id: 'qs_s4',
+      tab: 3,
+      type: TourStepType.actionRequired,
+      completionPredicate: (_, session, __) => session.accountCreated,
+      actionHintLocKey: 'tour_qs_s4_save_action_hint',
+      title: t('tour_qs_s4_save_title'),
+      body: t('tour_qs_s4_save_body'),
+    ),
+
+    // qs_s5: 記錄第一筆支出（FAB spotlight，需實際儲存）
+    TourStep(
+      id: 'qs_s5',
       tab: 0,
       targetKey: TourKeys.fab,
       type: TourStepType.actionRequired,
-      completionPredicate: (appState, session, _) =>
-          _hasNewRealExpense(appState, session),
-      actionHintLocKey: 'tour_qs_s4_action_hint',
+      completionPredicate: (_, session, __) => session.transactionCreated,
+      actionHintLocKey: 'tour_qs_s4_action_hint', // 複用「點 + → 填金額 → 儲存」文案
       title: t('tour_qs_s4_title'),
       body: t('tour_qs_s4_body'),
     ),
 
-    // qs_s5: 查看同步結果（info，動態內文根據支出是否關聯帳戶）
+    // qs_s6: 查看同步結果（info，動態內文）
     TourStep(
-      id: 'qs_s5',
+      id: 'qs_s6',
       tab: 0,
       targetKey: TourKeys.monthCard,
       title: t('tour_qs_s5_title'),
@@ -141,9 +150,9 @@ List<TourStep> buildQuickStartSteps(BuildContext context) {
       },
     ),
 
-    // qs_s6: 完成
+    // qs_s7: 完成
     TourStep(
-      id: 'qs_s6',
+      id: 'qs_s7',
       tab: 0,
       type: TourStepType.finish,
       title: t('tour_qs_s6_title'),
@@ -179,13 +188,14 @@ List<TourStep> buildFullSetupSteps(BuildContext context) {
       body: t('tour_fs_s1_body'),
     ),
 
-    // fs_s2: 建立帳戶
+    // fs_s2: 建立帳戶（callback-based — auto-nav after save）
     TourStep(
       id: 'fs_s2',
       tab: 3,
       targetKey: TourKeys.accountCard,
       type: TourStepType.actionRequired,
       completionPredicate: (appState, session, _) =>
+          session.accountCreated ||
           _realAccountCount(appState) > session.startAccountCount,
       actionHintLocKey: 'tour_fs_s2_action_hint',
       title: t('tour_fs_s2_title'),

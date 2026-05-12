@@ -97,9 +97,12 @@ class _TourOverlayState extends State<TourOverlay>
                   ),
 
                   // ── 互動阻擋層 ───────────────────────────────────
+                  // actionRequired + spotlight: 只阻擋 spotlight 外區域
+                  // actionRequired + no spotlight: 不阻擋（使用者自由操作表單）
+                  // info / finish: 阻擋全畫面（只有面板按鈕可操作）
                   if (step.isActionRequired && spotRect != null)
                     ..._buildInteractiveBlockers(spotRect, screen, ctrl)
-                  else
+                  else if (!step.isActionRequired)
                     Positioned.fill(
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,

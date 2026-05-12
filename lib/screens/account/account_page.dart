@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/localization.dart';
-import '../../core/utils/error_handler.dart';
-import '../../data/repositories/app_state.dart';
-import '../../data/models/account.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/tour/tour_controller.dart';
+import '../../core/tour/tour_keys.dart';
+import '../../core/utils/error_handler.dart';
+import '../../data/models/account.dart';
+import '../../data/repositories/app_state.dart';
 import 'add_edit_account_page.dart';
 import '../transfer/transfer_page.dart';
 import '../manage/fixed_expenses_page.dart';
@@ -47,11 +50,23 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Future<void> _openAdd() async {
+    // Notify tour that + was tapped (advances tour from "tap +" step to "fill form" step)
+    if (mounted) {
+      try {
+        context.read<TourController>().notifyAddAccountPageOpened();
+      } catch (_) {}
+    }
     final result = await Navigator.push<Account>(
       context,
       MaterialPageRoute(builder: (_) => const AddEditAccountPage()),
     );
-    if (result != null && mounted) s.addAccount(result);
+    if (result != null && mounted) {
+      s.addAccount(result);
+      // Notify tour: controller handles auto-pop + goToTab(0) + success snackbar
+      try {
+        context.read<TourController>().onAccountCreated(result);
+      } catch (_) {}
+    }
   }
 
   Future<void> _openEdit(Account a) async {
@@ -213,6 +228,7 @@ class _AccountPageState extends State<AccountPage> {
         ),
         actions: [
           IconButton(
+            key: TourKeys.accountAddBtn,
             icon: const Icon(Icons.add, color: AppColors.gold, size: 26),
             onPressed: _openAdd,
           ),
