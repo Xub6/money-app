@@ -1,6 +1,6 @@
+import 'dart:developer' as dev;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import '../../screens/onboarding/onboarding_service.dart';
 import 'tour_step.dart';
 
 class TourController extends ChangeNotifier {
@@ -11,12 +11,14 @@ class TourController extends ChangeNotifier {
   bool _finishing = false;
   bool _transitioning = false;
   bool _wrongTap = false;
-  bool _stepJustCompleted = false;  // 互動步驟完成時的短暫回饋旗標
+  bool _stepJustCompleted = false;
+  OnboardingMode _mode = OnboardingMode.quickStart;
 
   Rect? _cachedTargetRect;
   int _lastPreparedTab = -1;
 
-  void Function(int tab)? _goToTab;
+  // goToTab 改為 async，讓呼叫端 await animateToPage 完成後再算 rect
+  Future<void> Function(int tab)? _goToTab;
   VoidCallback? _onTourEnd;
   VoidCallback? _onTourSkip;
 
@@ -30,6 +32,8 @@ class TourController extends ChangeNotifier {
   bool get showWrongTapHint => _wrongTap;
   bool get stepJustCompleted => _stepJustCompleted;
   Rect? get cachedTargetRect => _cachedTargetRect;
+  OnboardingMode get mode => _mode;
+  bool get isDemoMode => _mode == OnboardingMode.demo;
 
   TourStep? get currentStep =>
       (_active && _steps.isNotEmpty && _stepIndex < _steps.length)
@@ -39,7 +43,7 @@ class TourController extends ChangeNotifier {
   // ── Initialisation ───────────────────────────────────────────
 
   void init({
-    required void Function(int tab) goToTab,
+    required Future<void> Function(int tab) goToTab,
     VoidCallback? onTourEnd,
     VoidCallback? onTourSkip,
   }) {
@@ -50,19 +54,29 @@ class TourController extends ChangeNotifier {
 
   // ── Tour lifecycle ───────────────────────────────────────────
 
-  /// 啟動任務式導覽（主入口）
-  /// [hasAccounts]     用戶是否已有帳戶
-  /// [hasTransactions] 用戶是否已有交易記錄
   Future<void> startMission(
-    BuildContext context, {
+    BuildContext context,
+    OnboardingMode mode, {
     bool hasAccounts = false,
     bool hasTransactions = false,
   }) async {
-    _steps = buildMissionSteps(
-      context,
-      hasAccounts: hasAccounts,
-      hasTransactions: hasTransactions,
-    );
+    _mode = mode;
+    dev.log('[Onboarding] start mode=${mode.name}  hasAccounts=$hasAccounts  hasTransactions=$hasTransactions');
+
+    _steps = switch (mode) {
+      OnboardingMode.quickStart => buildQuickStartSteps(
+          context,
+          hasAccounts: hasAccounts,
+          hasTransactions: hasTransactions,
+        ),
+      OnboardingMode.fullSetup => buildFullSetupSteps(
+          context,
+          hasAccounts: hasAccounts,
+          hasTransactions: hasTransactions,
+        ),
+      OnboardingMode.demo => buildDemoSteps(context),
+    };
+
     _stepIndex = 0;
     _active = true;
     _hidden = true;
@@ -76,9 +90,6 @@ class TourController extends ChangeNotifier {
     _hidden = false;
     notifyListeners();
   }
-
-  /// 向後相容：不傳資料狀態的重看入口（由 main.dart 傳入最新狀態）
-  Future<void> start(BuildContext context) => startMission(context);
 
   Future<void> next() async {
     if (_finishing || !_active || _transitioning) return;
@@ -131,7 +142,12 @@ class TourController extends ChangeNotifier {
     _transitioning = false;
     notifyListeners();
     _onTourEnd?.call();
-    await OnboardingService.markOnboardingSeen();
+    // markOnboardingSeen 由 main.dart 的 _handleTourEnd 負責
+  }
+
+  /// Demo 模式結束後（dialog 處理完）呼叫以清除 mode 旗標
+  void clearDemoMode() {
+    _mode = OnboardingMode.quickStart;
   }
 
   void hide() {
@@ -148,7 +164,6 @@ class TourController extends ChangeNotifier {
 
   // ── Event-driven completion ──────────────────────────────────
 
-  /// PageView 換頁時呼叫（tab 索引）
   void notifyTabChanged(int newTab) {
     if (!_active || _transitioning || _finishing || _stepJustCompleted) return;
     final step = currentStep;
@@ -158,8 +173,6 @@ class TourController extends ChangeNotifier {
     }
   }
 
-  /// FAB/卡片開啟特定頁面時呼叫
-  /// [routeId]: 'addExpense' | 'addHolding' | 'accountPage'
   void notifyRouteOpened(String routeId) {
     if (!_active || _transitioning || _finishing || _stepJustCompleted) return;
     final step = currentStep;
@@ -169,7 +182,6 @@ class TourController extends ChangeNotifier {
     }
   }
 
-  /// 互動阻擋器：使用者點到 spotlight 外時呼叫
   void notifyWrongTap() {
     if (!_active || _finishing) return;
     if (_wrongTap) return;
@@ -184,7 +196,6 @@ class TourController extends ChangeNotifier {
 
   // ── Completion feedback + auto-advance ───────────────────────
 
-  /// 互動步驟完成：先顯示 ✓ 回饋 600ms，再推進下一步
   Future<void> _onActionCompleted() async {
     _stepJustCompleted = true;
     notifyListeners();
@@ -201,10 +212,16 @@ class TourController extends ChangeNotifier {
     final step = _steps[_stepIndex];
 
     final tabChanged = _lastPreparedTab != step.tab;
-    _goToTab?.call(step.tab);
     _lastPreparedTab = step.tab;
 
-    await Future.delayed(Duration(milliseconds: tabChanged ? 350 : 150));
+    // await animateToPage 完成，確認 PageView 切換動畫真正結束後才計算 rect
+    if (_goToTab != null) {
+      await _goToTab!(step.tab);
+    }
+    // 動畫結束後再等一幀讓 layout 穩定
+    if (tabChanged) {
+      await Future.delayed(const Duration(milliseconds: 80));
+    }
 
     final ctx = step.targetKey?.currentContext;
     if (ctx != null) {
@@ -221,8 +238,9 @@ class TourController extends ChangeNotifier {
 
     await WidgetsBinding.instance.endOfFrame;
 
+    // 最多重試 3 次，確認 rect 不為 null 且有實際 size
     _cachedTargetRect = _findRectOnScreen(step.targetKey);
-    for (int retry = 0; retry < 2 && _cachedTargetRect == null; retry++) {
+    for (int retry = 0; retry < 3 && _cachedTargetRect == null; retry++) {
       await WidgetsBinding.instance.endOfFrame;
       _cachedTargetRect = _findRectOnScreen(step.targetKey);
     }
@@ -235,7 +253,10 @@ class TourController extends ChangeNotifier {
       if (ctx == null) return null;
       final box = ctx.findRenderObject() as RenderBox?;
       if (box == null || !box.attached || !box.hasSize) return null;
+      // size 為 0 時不框（禁止亂框）
+      if (box.size.width < 1 || box.size.height < 1) return null;
       final pos = box.localToGlobal(Offset.zero);
+      // ±600 sanity check：過濾 PageView 相鄰頁 off-screen 座標
       if (pos.dx < -600 || pos.dy < -600 || pos.dx > 4000 || pos.dy > 4000) {
         return null;
       }

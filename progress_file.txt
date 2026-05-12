@@ -1,8 +1,24 @@
 # 進度追蹤文件
 
-## 目前狀態：待機中 ✅（2026-05-12）— 新手導覽升級為「財務初始化任務」系統完成，APK 已建置
+## 目前狀態：待機中 ✅（2026-05-12）— 導覽三模式真正分流完成，APK 已建置
 
-最後完成任務：新手導覽重構為任務制系統 + 三選項入口 + 資料狀態分支 + 四語系更新 ✅
+最後完成任務：導覽系統大改版：OnboardingMode enum + QuickStart(7步)/FullSetup(11步)/Demo(5步) 真正分流 + Demo 資料隔離 + Spotlight 定位修正 ✅
+
+### 本次完成（2026-05-12，本次 commit）
+- [x] **導覽系統三模式真正分流**：
+  - **OnboardingMode enum**（tour_step.dart）：quickStart / fullSetup / demo
+  - **三套獨立 step builder**：
+    - `buildQuickStartSteps`：7步（qs_s0~qs_s6）帳戶 + 第一筆支出閉環
+    - `buildFullSetupSteps`：11步（fs_s0~fs_s10）完整帳戶 + 記帳 + 預算 + 明細 + 備份
+    - `buildDemoSteps`：5步（demo_s0~demo_s4）純說明，使用示範資料
+  - **OnboardingStartPage**：改為 `void Function(OnboardingMode) onSelect`，移除 nullable fallback
+  - **main.dart**：`_launchMission(appState, mode)` 接收 mode；demo 進入前呼叫 `appState.loadDemoData()`；`_goToTabAsync` 供 Tour 使用（await animateToPage）；Demo exit dialog（清除/保留選項）
+  - **TourController**：`startMission(context, mode, ...)` 接收 mode；`_goToTab` 改為 `Future<void> Function`；await 完成頁面切換動畫後才計算 spotlight rect；retry 從 2 次增加到 3 次；`clearDemoMode()` 方法；不再自動呼叫 `markOnboardingSeen`（由 main.dart 的 `_handleTourEnd` 負責）
+  - **Demo 資料隔離**：注入 in-memory overlay，不寫入 SharedPreferences；離開時顯示 dialog 讓使用者選擇清除或保留
+  - **Demo 橫幅**：tour_overlay.dart 顯示橙色「示範模式」橫幅
+  - **log 輸出**：`[Onboarding] start mode=quickStart/fullSetup/demo`
+  - **四語系**：zh_TW/zh_CN/en_US/ja_JP 新增 qs/fs/demo 三套共 54 個 key + banner + exit dialog key
+  - APK：`build/app/outputs/flutter-apk/app-release.apk`（61.9MB）
 
 ### 本次完成（2026-05-12，commit 914aec7）
 - [x] **新手導覽升級為「財務初始化任務」系統**：

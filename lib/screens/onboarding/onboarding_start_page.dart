@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../config/localization.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/tour/tour_step.dart';
 
 /// 新手導覽入口選擇頁
-/// 使用者第一次打開 App 時顯示，讓使用者選擇進入方式。
+/// 三個入口各自傳入不同 OnboardingMode，無 nullable fallback。
 class OnboardingStartPage extends StatelessWidget {
-  final VoidCallback onQuickStart;
-  final VoidCallback? onFullSetup;  // 完整設定（預留，目前等同快速開始）
-  final VoidCallback? onDemo;       // 先看範例（預留，目前等同快速開始）
-  final VoidCallback? onSkip;       // 跳過，直接進入 App
+  final void Function(OnboardingMode mode) onSelect;
+  final VoidCallback? onSkip;
 
   const OnboardingStartPage({
     super.key,
-    required this.onQuickStart,
-    this.onFullSetup,
-    this.onDemo,
+    required this.onSelect,
     this.onSkip,
   });
 
@@ -32,7 +29,7 @@ class OnboardingStartPage extends StatelessWidget {
             children: [
               const SizedBox(height: 52),
 
-              // ── App icon area ─────────────────────────────
+              // ── App icon ──────────────────────────────────
               Center(
                 child: Container(
                   width: 76,
@@ -81,14 +78,14 @@ class OnboardingStartPage extends StatelessWidget {
 
               const SizedBox(height: 36),
 
-              // ── 快速開始（主推選項）──────────────────────
+              // ── 快速開始（主推）──────────────────────────
               _OptionCard(
                 icon: Icons.flash_on_rounded,
                 iconColor: AppColors.gold,
                 title: AppLocalizations.of(context, 'onboarding_quick_title'),
                 desc: AppLocalizations.of(context, 'onboarding_quick_desc'),
                 isHighlight: true,
-                onTap: onQuickStart,
+                onTap: () => onSelect(OnboardingMode.quickStart),
               ),
 
               const SizedBox(height: 12),
@@ -99,7 +96,7 @@ class OnboardingStartPage extends StatelessWidget {
                 iconColor: Colors.blueAccent,
                 title: AppLocalizations.of(context, 'onboarding_full_title'),
                 desc: AppLocalizations.of(context, 'onboarding_full_desc'),
-                onTap: onFullSetup ?? onQuickStart,
+                onTap: () => onSelect(OnboardingMode.fullSetup),
               ),
 
               const SizedBox(height: 12),
@@ -110,12 +107,12 @@ class OnboardingStartPage extends StatelessWidget {
                 iconColor: Colors.purpleAccent,
                 title: AppLocalizations.of(context, 'onboarding_demo_title'),
                 desc: AppLocalizations.of(context, 'onboarding_demo_desc'),
-                onTap: onDemo ?? onQuickStart,
+                onTap: () => onSelect(OnboardingMode.demo),
               ),
 
               const Spacer(),
 
-              // ── 跳過按鈕 ──────────────────────────────────
+              // ── 跳過 ──────────────────────────────────────
               TextButton(
                 onPressed: onSkip,
                 style: TextButton.styleFrom(
@@ -168,8 +165,7 @@ class _OptionCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
@@ -181,7 +177,6 @@ class _OptionCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Icon box
               Container(
                 width: 46,
                 height: 46,
@@ -192,8 +187,6 @@ class _OptionCard extends StatelessWidget {
                 child: Icon(icon, color: iconColor, size: 22),
               ),
               const SizedBox(width: 14),
-
-              // Text
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,8 +211,6 @@ class _OptionCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // Chevron
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 14,

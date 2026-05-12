@@ -115,6 +115,33 @@ class _TourOverlayState extends State<TourOverlay>
                 onSkipStep: ctrl.skipStep,
                 onSkipAll: ctrl.skip,
               ),
+
+              // ── Demo 橫幅（顯示在所有層上方）────────────────
+              if (ctrl.isDemoMode)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: Container(
+                      padding: EdgeInsets.only(
+                        top: safePad.top + 2,
+                        bottom: 4,
+                      ),
+                      color: Colors.orange.withValues(alpha: 0.92),
+                      alignment: Alignment.center,
+                      child: Text(
+                        AppLocalizations.of(context, 'tour_demo_banner'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         );

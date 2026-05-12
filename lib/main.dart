@@ -40,6 +40,7 @@ import 'screens/onboarding/onboarding_start_page.dart';
 import 'core/tour/tour_controller.dart';
 import 'core/tour/tour_keys.dart';
 import 'core/tour/tour_overlay.dart';
+import 'core/tour/tour_step.dart';
 import 'config/firebase_config.dart';
 import 'screens/auth/login_card.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -216,9 +217,74 @@ class _MainShellState extends State<MainShell> {
 
   void _initTour() {
     context.read<TourController>().init(
-      goToTab: _goToTab,
-      onTourSkip: _onTourSkipped,
+      goToTab: _goToTabAsync,
+      onTourEnd: _handleTourEnd,
+      onTourSkip: _handleTourSkip,
     );
+  }
+
+  // Tour 用的 async 版本（await animateToPage 完成後才繼續）
+  Future<void> _goToTabAsync(int tab) async {
+    if (_tab == tab) return;
+    s.hapticLight();
+    setState(() => _tab = tab);
+    try {
+      await _pageController.animateToPage(
+        tab,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } catch (_) {}
+  }
+
+  void _handleTourEnd() {
+    _afterTour();
+  }
+
+  void _handleTourSkip() {
+    // Demo 模式跳過：不做一般 skip 行為，由 _afterTour 處理
+    if (context.read<TourController>().isDemoMode) return;
+    _onTourSkipped();
+  }
+
+  Future<void> _afterTour() async {
+    if (!mounted) return;
+    final tour = context.read<TourController>();
+    if (tour.isDemoMode) {
+      await _showDemoExitDialog();
+    } else {
+      await OnboardingService.markOnboardingSeen();
+    }
+  }
+
+  Future<void> _showDemoExitDialog() async {
+    if (!mounted) return;
+    final appState = context.read<AppState>();
+    final tour = context.read<TourController>();
+    final keep = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(ctx, 'tour_demo_exit_title')),
+        content: Text(AppLocalizations.of(ctx, 'tour_demo_exit_body')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(AppLocalizations.of(ctx, 'tour_demo_exit_clear')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: kGold),
+            child: Text(AppLocalizations.of(ctx, 'tour_demo_exit_keep')),
+          ),
+        ],
+      ),
+    );
+    if (keep != true) {
+      appState.clearDemoData();
+    }
+    tour.clearDemoMode();
+    await OnboardingService.markOnboardingSeen();
   }
 
   Future<void> _checkOnboarding() async {
@@ -236,19 +302,9 @@ class _MainShellState extends State<MainShell> {
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => OnboardingStartPage(
-          onQuickStart: () {
+          onSelect: (mode) {
             Navigator.of(context).pop();
-            _launchMission(appState);
-          },
-          onFullSetup: () {
-            // 預留：目前與快速開始相同，架構已就位
-            Navigator.of(context).pop();
-            _launchMission(appState);
-          },
-          onDemo: () {
-            // 預留：目前與快速開始相同，架構已就位
-            Navigator.of(context).pop();
-            _launchMission(appState);
+            _launchMission(appState, mode);
           },
           onSkip: () {
             Navigator.of(context).pop();
@@ -260,11 +316,15 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  /// 以目前資料狀態啟動任務式導覽
-  void _launchMission(AppState appState) {
+  /// 根據 mode 啟動任務式導覽；demo 模式先注入示範資料
+  void _launchMission(AppState appState, OnboardingMode mode) {
     if (!mounted) return;
+    if (mode == OnboardingMode.demo) {
+      appState.loadDemoData();
+    }
     context.read<TourController>().startMission(
       context,
+      mode,
       hasAccounts: appState.accounts.isNotEmpty,
       hasTransactions: appState.expenses.isNotEmpty,
     );
@@ -272,8 +332,7 @@ class _MainShellState extends State<MainShell> {
 
   void _onRewatchOnboarding() {
     if (!mounted) return;
-    final appState = context.read<AppState>();
-    _launchMission(appState);
+    _showOnboardingStart();
   }
 
   Future<void> _onTourSkipped() async {
