@@ -214,7 +214,26 @@ class TourController extends ChangeNotifier {
   void notifyAddAccountPageOpened() {
     if (!_active || _finishing) return;
     _session?.addAccountPageOpened = true;
+    // Immediately clear spotlight so AddEditAccountPage is fully interactive.
+    _cachedTargetRect = null;
+    notifyListeners();
     _checkCurrentStepPredicate();
+  }
+
+  /// Call just before pushing any form page. Clears spotlight so the overlay
+  /// enters fullPageInteraction mode (no dark overlay, no blockers).
+  void notifyFormOpened() {
+    if (!_active || _finishing) return;
+    _cachedTargetRect = null;
+    notifyListeners();
+  }
+
+  /// Call when a form page is dismissed without saving (user cancelled).
+  /// Re-prepares the current step to restore the spotlight.
+  Future<void> notifyFormDismissed() async {
+    if (!_active || _finishing) return;
+    await _prepareStep();
+    notifyListeners();
   }
 
   /// Called from AccountPage after a new account is saved.

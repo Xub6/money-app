@@ -77,6 +77,59 @@ class _TourOverlayState extends State<TourOverlay>
                 ? step.dynamicBody!(appState, ctrl.session!, context)
                 : step.body;
 
+            // fullPageInteraction: actionRequired but no spotlight target
+            // (e.g. fill-in-form steps) — show panel hint only, zero blocking
+            final isFullPageInteraction =
+                step.isActionRequired && spotRect == null;
+
+            if (isFullPageInteraction) {
+              return Stack(
+                children: [
+                  _MissionPanel(
+                    step: step,
+                    bodyText: bodyText,
+                    stepIndex: ctrl.stepIndex,
+                    totalSteps: ctrl.totalSteps,
+                    panelAtTop: false,
+                    panelH: panelH,
+                    safePad: safePad,
+                    wrongTap: ctrl.showWrongTapHint,
+                    stepJustCompleted: ctrl.stepJustCompleted,
+                    isCurrentStepCompleted: ctrl.isCurrentStepCompleted,
+                    isLast: ctrl.isLastStep,
+                    onNext: ctrl.next,
+                    onPrev: ctrl.prev,
+                    onSkipAll: ctrl.skip,
+                  ),
+                  if (ctrl.isDemoMode)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: IgnorePointer(
+                        child: Container(
+                          padding: EdgeInsets.only(
+                            top: safePad.top + 2,
+                            bottom: 4,
+                          ),
+                          color: Colors.orange.withValues(alpha: 0.92),
+                          alignment: Alignment.center,
+                          child: Text(
+                            AppLocalizations.of(context, 'tour_demo_banner'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            }
+
             return Material(
               type: MaterialType.transparency,
               child: Stack(
@@ -98,7 +151,6 @@ class _TourOverlayState extends State<TourOverlay>
 
                   // ── 互動阻擋層 ───────────────────────────────────
                   // actionRequired + spotlight: 只阻擋 spotlight 外區域
-                  // actionRequired + no spotlight: 不阻擋（使用者自由操作表單）
                   // info / finish: 阻擋全畫面（只有面板按鈕可操作）
                   if (step.isActionRequired && spotRect != null)
                     ..._buildInteractiveBlockers(spotRect, screen, ctrl)

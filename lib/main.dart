@@ -437,14 +437,12 @@ class _MainShellState extends State<MainShell> {
         builder: (_) => AddEditExpensePage(allExpenses: s.expenses),
       ),
     );
-    if (result != null && mounted) {
+    if (!mounted) return;
+    if (result != null) {
       s.addExpense(result);
-      // Notify tour that expense was actually saved (not just form opened)
-      if (mounted) {
-        try {
-          context.read<TourController>().onTransactionCreated(result);
-        } catch (_) {}
-      }
+      try { context.read<TourController>().onTransactionCreated(result); } catch (_) {}
+    } else {
+      try { context.read<TourController>().notifyFormDismissed(); } catch (_) {}
     }
   }
 
@@ -453,7 +451,12 @@ class _MainShellState extends State<MainShell> {
       context,
       MaterialPageRoute(builder: (_) => const AddEditInvestmentPage()),
     );
-    if (result != null && mounted) s.addHolding(result);
+    if (!mounted) return;
+    if (result != null) {
+      s.addHolding(result);
+    } else {
+      try { context.read<TourController>().notifyFormDismissed(); } catch (_) {}
+    }
   }
 
   void _openAddFixed() => _showFixedItemDialog(context, s);
@@ -463,12 +466,12 @@ class _MainShellState extends State<MainShell> {
     final ctrl = context.read<TourController>();
     switch (_tab) {
       case 2:
-        if (ctrl.isActive) ctrl.notifyRouteOpened('addHolding');
+        if (ctrl.isActive) ctrl.notifyFormOpened();
         _openAddInvestment();
       case 3:
         _showManageFabMenu();
       default:
-        if (ctrl.isActive) ctrl.notifyRouteOpened('addExpense');
+        if (ctrl.isActive) ctrl.notifyFormOpened();
         _openAdd();
     }
   }

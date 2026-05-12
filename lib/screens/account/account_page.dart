@@ -50,22 +50,22 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Future<void> _openAdd() async {
-    // Notify tour that + was tapped (advances tour from "tap +" step to "fill form" step)
+    // Notify tour: clears spotlight so AddEditAccountPage is fully interactive
     if (mounted) {
-      try {
-        context.read<TourController>().notifyAddAccountPageOpened();
-      } catch (_) {}
+      try { context.read<TourController>().notifyAddAccountPageOpened(); } catch (_) {}
     }
     final result = await Navigator.push<Account>(
       context,
       MaterialPageRoute(builder: (_) => const AddEditAccountPage()),
     );
-    if (result != null && mounted) {
+    if (!mounted) return;
+    if (result != null) {
       s.addAccount(result);
       // Notify tour: controller handles auto-pop + goToTab(0) + success snackbar
-      try {
-        context.read<TourController>().onAccountCreated(result);
-      } catch (_) {}
+      try { context.read<TourController>().onAccountCreated(result); } catch (_) {}
+    } else {
+      // User cancelled — restore spotlight on the + button
+      try { context.read<TourController>().notifyFormDismissed(); } catch (_) {}
     }
   }
 
