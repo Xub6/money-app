@@ -1,8 +1,19 @@
 # 進度追蹤文件
 
-## 目前狀態：待機中 ✅（2026-05-12）— 導覽卡住 bug 修復 + spotlight 加強，APK 已建置可安裝測試
+## 目前狀態：待機中 ✅（2026-05-12）— 新手導覽完整改版為任務式互動教學，APK 已建置可安裝測試
 
-最後完成任務：導覽 interactive steps 修復（S6/S8/S10 改為純說明步驟）+ spotlight 白框+glow 加強 ✅
+最後完成任務：MP-01 新手導覽從「簡報式說明」全面改版為「遊戲式任務系統」✅
+
+### 本次完成（2026-05-12，commit 86e6112）
+- [x] **新手導覽任務式大改版**：
+  - 架構重寫：TourActionType（infoOnly / waitForTabChange / waitForRouteOpen）
+  - TourController 改為事件驅動：notifyTabChanged() / notifyRouteOpened()
+  - TourOverlay 改為底部 mission panel，spotlight 清楚置中顯示
+  - 16 步任務流程：使用者必須實際點 tab、帳戶卡、FAB 才能進下一步
+  - 點錯位置顯示 ⚠️ 警示（notifyWrongTap），「略過此步」避免卡死
+  - panel 智慧判斷頂/底部位置（spotlight 在下方時 panel 移到頂部）
+  - 四語言（zh_TW / zh_CN / en_US / ja_JP）全面更新為任務語氣文案
+  - APK：`build/app/outputs/flutter-apk/app-release.apk`（61.8MB）
 
 ### 本次完成（2026-05-12，commit c75ebd7）
 - [x] **導覽 interactive steps 移除**：
