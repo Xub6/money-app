@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import '../../screens/onboarding/onboarding_service.dart';
@@ -12,7 +11,7 @@ class TourController extends ChangeNotifier {
   bool _finishing = false;
   bool _transitioning = false;
   bool _wrongTap = false;
-  int _currentTab = 0;
+  bool _stepJustCompleted = false;  // 互動步驟完成時的短暫回饋旗標
 
   Rect? _cachedTargetRect;
   int _lastPreparedTab = -1;
@@ -29,6 +28,7 @@ class TourController extends ChangeNotifier {
   int get totalSteps => _steps.length;
   bool get isLastStep => _stepIndex == _steps.length - 1;
   bool get showWrongTapHint => _wrongTap;
+  bool get stepJustCompleted => _stepJustCompleted;
   Rect? get cachedTargetRect => _cachedTargetRect;
 
   TourStep? get currentStep =>
@@ -50,20 +50,35 @@ class TourController extends ChangeNotifier {
 
   // ── Tour lifecycle ───────────────────────────────────────────
 
-  Future<void> start(BuildContext context) async {
-    _steps = buildTourSteps(context);
+  /// 啟動任務式導覽（主入口）
+  /// [hasAccounts]     用戶是否已有帳戶
+  /// [hasTransactions] 用戶是否已有交易記錄
+  Future<void> startMission(
+    BuildContext context, {
+    bool hasAccounts = false,
+    bool hasTransactions = false,
+  }) async {
+    _steps = buildMissionSteps(
+      context,
+      hasAccounts: hasAccounts,
+      hasTransactions: hasTransactions,
+    );
     _stepIndex = 0;
     _active = true;
     _hidden = true;
     _finishing = false;
     _transitioning = false;
     _wrongTap = false;
+    _stepJustCompleted = false;
     _cachedTargetRect = null;
     _lastPreparedTab = -1;
     await _prepareStep();
     _hidden = false;
     notifyListeners();
   }
+
+  /// 向後相容：不傳資料狀態的重看入口（由 main.dart 傳入最新狀態）
+  Future<void> start(BuildContext context) => startMission(context);
 
   Future<void> next() async {
     if (_finishing || !_active || _transitioning) return;
@@ -74,6 +89,7 @@ class TourController extends ChangeNotifier {
     _transitioning = true;
     _stepIndex++;
     _wrongTap = false;
+    _stepJustCompleted = false;
     _cachedTargetRect = null;
     _hidden = true;
     notifyListeners();
@@ -88,6 +104,7 @@ class TourController extends ChangeNotifier {
     _transitioning = true;
     _stepIndex--;
     _wrongTap = false;
+    _stepJustCompleted = false;
     _cachedTargetRect = null;
     _hidden = true;
     notifyListeners();
@@ -110,6 +127,7 @@ class TourController extends ChangeNotifier {
     _active = false;
     _hidden = false;
     _wrongTap = false;
+    _stepJustCompleted = false;
     _transitioning = false;
     notifyListeners();
     _onTourEnd?.call();
@@ -130,29 +148,28 @@ class TourController extends ChangeNotifier {
 
   // ── Event-driven completion ──────────────────────────────────
 
-  /// Called by the main shell whenever the PageView settles on a new tab.
+  /// PageView 換頁時呼叫（tab 索引）
   void notifyTabChanged(int newTab) {
-    _currentTab = newTab;
-    if (!_active || _transitioning || _finishing) return;
+    if (!_active || _transitioning || _finishing || _stepJustCompleted) return;
     final step = currentStep;
     if (step?.actionType == TourActionType.waitForTabChange &&
         newTab == step?.expectedTab) {
-      next();
+      _onActionCompleted();
     }
   }
 
-  /// Called by FAB/card handlers when they open a specific route.
+  /// FAB/卡片開啟特定頁面時呼叫
   /// [routeId]: 'addExpense' | 'addHolding' | 'accountPage'
   void notifyRouteOpened(String routeId) {
-    if (!_active || _transitioning || _finishing) return;
+    if (!_active || _transitioning || _finishing || _stepJustCompleted) return;
     final step = currentStep;
     if (step?.actionType == TourActionType.waitForRouteOpen &&
         step?.expectedRouteId == routeId) {
-      next();
+      _onActionCompleted();
     }
   }
 
-  /// Called by interactive blockers when user taps outside the spotlight.
+  /// 互動阻擋器：使用者點到 spotlight 外時呼叫
   void notifyWrongTap() {
     if (!_active || _finishing) return;
     if (_wrongTap) return;
@@ -163,6 +180,18 @@ class TourController extends ChangeNotifier {
       _wrongTap = false;
       notifyListeners();
     });
+  }
+
+  // ── Completion feedback + auto-advance ───────────────────────
+
+  /// 互動步驟完成：先顯示 ✓ 回饋 600ms，再推進下一步
+  Future<void> _onActionCompleted() async {
+    _stepJustCompleted = true;
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!_active || _finishing) return;
+    _stepJustCompleted = false;
+    await next();
   }
 
   // ── Step preparation ─────────────────────────────────────────

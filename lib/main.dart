@@ -36,6 +36,7 @@ import 'screens/account/account_page.dart';
 import 'screens/manage/category_management_page.dart';
 import 'screens/feedback/feedback_page.dart';
 import 'screens/onboarding/onboarding_service.dart';
+import 'screens/onboarding/onboarding_start_page.dart';
 import 'core/tour/tour_controller.dart';
 import 'core/tour/tour_keys.dart';
 import 'core/tour/tour_overlay.dart';
@@ -223,13 +224,56 @@ class _MainShellState extends State<MainShell> {
   Future<void> _checkOnboarding() async {
     final seen = await OnboardingService.isOnboardingSeen();
     if (!seen && mounted) {
-      context.read<TourController>().start(context);
+      _showOnboardingStart();
     }
+  }
+
+  /// 顯示新手導覽入口選擇畫面（三選一）
+  void _showOnboardingStart() {
+    if (!mounted) return;
+    final appState = context.read<AppState>();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => OnboardingStartPage(
+          onQuickStart: () {
+            Navigator.of(context).pop();
+            _launchMission(appState);
+          },
+          onFullSetup: () {
+            // 預留：目前與快速開始相同，架構已就位
+            Navigator.of(context).pop();
+            _launchMission(appState);
+          },
+          onDemo: () {
+            // 預留：目前與快速開始相同，架構已就位
+            Navigator.of(context).pop();
+            _launchMission(appState);
+          },
+          onSkip: () {
+            Navigator.of(context).pop();
+            OnboardingService.markOnboardingSeen();
+            _onTourSkipped();
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 以目前資料狀態啟動任務式導覽
+  void _launchMission(AppState appState) {
+    if (!mounted) return;
+    context.read<TourController>().startMission(
+      context,
+      hasAccounts: appState.accounts.isNotEmpty,
+      hasTransactions: appState.expenses.isNotEmpty,
+    );
   }
 
   void _onRewatchOnboarding() {
     if (!mounted) return;
-    context.read<TourController>().start(context);
+    final appState = context.read<AppState>();
+    _launchMission(appState);
   }
 
   Future<void> _onTourSkipped() async {
