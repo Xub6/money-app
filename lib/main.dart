@@ -216,11 +216,8 @@ class _MainShellState extends State<MainShell> {
 
   void _initTour() {
     final ctrl = context.read<TourController>();
-    final appState = context.read<AppState>();
     ctrl.init(
       goToTab: _goToTab,
-      onTourStart: appState.loadDemoData,
-      onTourEnd: appState.clearDemoData,
       onTourSkip: _onTourSkipped,
     );
     _tourEntry = OverlayEntry(
@@ -351,31 +348,15 @@ class _MainShellState extends State<MainShell> {
   void _fabTap() {
     s.hapticLight();
     final ctrl = context.read<TourController>();
-    final isInteractiveFab = ctrl.isActive &&
-        ctrl.isWaitingForInteraction &&
-        ctrl.currentStep?.targetKey == TourKeys.fab;
-
     switch (_tab) {
       case 2:
-        if (isInteractiveFab) {
-          ctrl.hide();
-          _openAddInvestment().then((_) {
-            if (mounted) ctrl.onInteractionComplete();
-          });
-        } else {
-          _openAddInvestment();
-        }
+        if (ctrl.isActive) ctrl.notifyRouteOpened('addHolding');
+        _openAddInvestment();
       case 3:
         _showManageFabMenu();
       default:
-        if (isInteractiveFab) {
-          ctrl.hide();
-          _openAdd().then((_) {
-            if (mounted) ctrl.onInteractionComplete();
-          });
-        } else {
-          _openAdd();
-        }
+        if (ctrl.isActive) ctrl.notifyRouteOpened('addExpense');
+        _openAdd();
     }
   }
 
@@ -504,7 +485,10 @@ class _MainShellState extends State<MainShell> {
       ),
       body: PageView(
         controller: _pageController,
-        onPageChanged: (i) => setState(() => _tab = i),
+        onPageChanged: (i) {
+          setState(() => _tab = i);
+          context.read<TourController>().notifyTabChanged(i);
+        },
         children: pages.map((p) => _KeepAlivePage(child: p)).toList(),
       ),
       floatingActionButton: FloatingActionButton(
@@ -530,17 +514,20 @@ class _MainShellState extends State<MainShell> {
         elevation: 8,
         child: Row(children: [
           _NavItem(
+              key: TourKeys.navDashboard,
               icon: Icons.pie_chart_rounded,
               label: AppLocalizations.of(context, 'dashboard'),
               selected: _tab == 0,
               onTap: () => _goToTab(0)),
           _NavItem(
+              key: TourKeys.navDetail,
               icon: Icons.list_alt_rounded,
               label: AppLocalizations.of(context, 'detail'),
               selected: _tab == 1,
               onTap: () => _goToTab(1)),
           const SizedBox(width: 56),
           _NavItem(
+              key: TourKeys.navInvest,
               icon: Icons.candlestick_chart_rounded,
               label: AppLocalizations.of(context, 'invest'),
               selected: _tab == 2,
@@ -1478,17 +1465,7 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   void _showItemMenu(ExpenseItem item) {
-    final ctrl = context.read<TourController>();
-    final isLongPressStep = ctrl.isActive &&
-        ctrl.isWaitingForInteraction &&
-        ctrl.currentStep?.targetKey == TourKeys.detailList;
-
-    // Hide the tour overlay before opening the action sheet so the two
-    // layers don't appear simultaneously.  The overlay stays hidden until
-    // onInteractionComplete() → next() reveals the next step.
-    if (isLongPressStep) ctrl.hide();
-
-    final future = showModalBottomSheet<dynamic>(
+    showModalBottomSheet<dynamic>(
       context: context,
       builder: (_) => Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1523,12 +1500,6 @@ class _DetailPageState extends State<DetailPage> {
         ),
       ),
     );
-
-    if (isLongPressStep) {
-      future.then((_) {
-        if (mounted) ctrl.onInteractionComplete();
-      });
-    }
   }
 }
 
@@ -1875,10 +1846,11 @@ class _ManagePageState extends State<ManagePage> {
           // 我的帳戶 — 核心功能入口
           GestureDetector(
             key: TourKeys.accountCard,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => AccountPage(state: widget.state))),
+            onTap: () {
+              context.read<TourController>().notifyRouteOpened('accountPage');
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => AccountPage(state: widget.state)));
+            },
             behavior: HitTestBehavior.opaque,
             child: Container(
               decoration: BoxDecoration(
@@ -2376,23 +2348,10 @@ class _ManagePageState extends State<ManagePage> {
                       style: const TextStyle(fontSize: 12)),
                   trailing:
                       const Icon(Icons.chevron_right, color: kGray, size: 18),
-                  onTap: () {
-                    final ctrl = context.read<TourController>();
-                    final isFeedbackStep = ctrl.isActive &&
-                        ctrl.isWaitingForInteraction &&
-                        ctrl.currentStep?.targetKey == TourKeys.feedbackTile;
-                    if (isFeedbackStep) ctrl.hide();
-                    final future = Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const FeedbackPage()),
-                    );
-                    if (isFeedbackStep) {
-                      future.then((_) {
-                        if (context.mounted) ctrl.onInteractionComplete();
-                      });
-                    }
-                  },
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FeedbackPage()),
+                  ),
                 ),
               ],
             ),

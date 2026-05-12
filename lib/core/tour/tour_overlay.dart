@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -43,26 +42,16 @@ class _TourOverlayState extends State<TourOverlay>
         final step = ctrl.currentStep;
         if (step == null) return const SizedBox.shrink();
 
-        // Use the pre-calculated rect from the controller.
-        // This was computed AFTER scroll + endOfFrame, so it is always the
-        // stable on-screen position — never a stale off-tab coordinate.
         final rawRect = ctrl.cachedTargetRect;
         final screen = MediaQuery.of(context).size;
         final safePad = MediaQuery.of(context).padding;
 
-        // When a widget spans more than 40 % of the screen height (e.g. an
-        // Expanded list or a tall card with many buttons), showing it as a
-        // full spotlight leaves almost no dark overlay and forces the tooltip
-        // into a centered fallback that overlaps the target.  Clip to the top
-        // 80 dp so the spotlight is a meaningful focal point and the tooltip
-        // has room to sit naturally below it.
+        // Clip oversized rects (tall lists etc.) to a focused top-80dp strip.
         Rect? effectiveRect = rawRect;
         if (rawRect != null && rawRect.height > screen.height * 0.4) {
-          effectiveRect = Rect.fromLTWH(
-              rawRect.left, rawRect.top, rawRect.width, 80.0);
+          effectiveRect = Rect.fromLTWH(rawRect.left, rawRect.top, rawRect.width, 80.0);
         }
 
-        // Clamp spotlight rect to screen bounds so the hole never escapes.
         Rect? spotRect;
         if (effectiveRect != null) {
           final inflated = effectiveRect.inflate(10.0);
@@ -75,12 +64,17 @@ class _TourOverlayState extends State<TourOverlay>
           if (spotRect.width < 1 || spotRect.height < 1) spotRect = null;
         }
 
+        // Panel goes to top when spotlight is in the lower 40% of screen
+        // (nav buttons, FAB) to avoid covering the target.
+        const panelH = 210.0;
+        final panelAtTop = spotRect != null &&
+            spotRect.center.dy > screen.height * 0.60;
+
         return Material(
           type: MaterialType.transparency,
           child: Stack(
             children: [
-              // ── Animated spotlight overlay ─────────────────────
-              // RepaintBoundary isolates 60 fps animation repaints.
+              // ── Dimmed overlay + spotlight hole ─────────────
               Positioned.fill(
                 child: RepaintBoundary(
                   child: IgnorePointer(
@@ -94,9 +88,9 @@ class _TourOverlayState extends State<TourOverlay>
                 ),
               ),
 
-              // ── Hit-testing layer ──────────────────────────────
-              if (ctrl.isWaitingForInteraction && spotRect != null)
-                ..._buildInteractiveBlockers(spotRect, screen)
+              // ── Hit-testing layer ────────────────────────────
+              if (step.isInteractive && spotRect != null)
+                ..._buildInteractiveBlockers(spotRect, screen, ctrl)
               else
                 Positioned.fill(
                   child: GestureDetector(
@@ -105,19 +99,20 @@ class _TourOverlayState extends State<TourOverlay>
                   ),
                 ),
 
-              // ── Tooltip card ───────────────────────────────────
-              _TourTooltip(
+              // ── Mission panel ────────────────────────────────
+              _MissionPanel(
                 step: step,
                 stepIndex: ctrl.stepIndex,
                 totalSteps: ctrl.totalSteps,
-                spotRect: spotRect,
-                screen: screen,
+                panelAtTop: panelAtTop,
+                panelH: panelH,
                 safePad: safePad,
-                isWaiting: ctrl.isWaitingForInteraction,
+                wrongTap: ctrl.showWrongTapHint,
                 isLast: ctrl.isLastStep,
                 onNext: ctrl.next,
                 onPrev: ctrl.prev,
-                onSkip: ctrl.skip,
+                onSkipStep: ctrl.skipStep,
+                onSkipAll: ctrl.skip,
               ),
             ],
           ),
@@ -126,20 +121,28 @@ class _TourOverlayState extends State<TourOverlay>
     );
   }
 
-  static List<Widget> _buildInteractiveBlockers(Rect spot, Size screen) {
+  static List<Widget> _buildInteractiveBlockers(
+      Rect spot, Size screen, TourController ctrl) {
+    onWrongTap() => ctrl.notifyWrongTap();
     const minH = 0.0;
     return [
       if (spot.top > 0)
         Positioned(
           top: 0, left: 0, right: 0,
           height: spot.top.clamp(minH, screen.height),
-          child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () {}),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onWrongTap,
+          ),
         ),
       if (spot.bottom < screen.height)
         Positioned(
           top: spot.bottom.clamp(0, screen.height),
           left: 0, right: 0, bottom: 0,
-          child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () {}),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onWrongTap,
+          ),
         ),
       if (spot.left > 0)
         Positioned(
@@ -147,7 +150,10 @@ class _TourOverlayState extends State<TourOverlay>
           left: 0,
           width: spot.left.clamp(0, screen.width),
           height: spot.height,
-          child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () {}),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onWrongTap,
+          ),
         ),
       if (spot.right < screen.width)
         Positioned(
@@ -155,7 +161,10 @@ class _TourOverlayState extends State<TourOverlay>
           left: spot.right.clamp(0, screen.width),
           right: 0,
           height: spot.height,
-          child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () {}),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onWrongTap,
+          ),
         ),
     ];
   }
@@ -165,17 +174,14 @@ class _TourOverlayState extends State<TourOverlay>
 
 class _SpotlightPainter extends CustomPainter {
   final Rect? spotRect;
-  final double glowValue; // 0.0–1.0 from animation
-
+  final double glowValue;
   const _SpotlightPainter(this.spotRect, this.glowValue);
 
   @override
   void paint(Canvas canvas, Size size) {
     final fullRect = Rect.fromLTWH(0, 0, size.width, size.height);
 
-    // Dark overlay with spotlight hole.
-    // Path.evenOdd avoids canvas.saveLayer — no offscreen GPU buffer needed.
-    final overlayPaint = Paint()..color = Colors.black.withValues(alpha: 0.70);
+    final overlayPaint = Paint()..color = Colors.black.withValues(alpha: 0.72);
     if (spotRect != null) {
       final path = Path()
         ..addRect(fullRect)
@@ -186,8 +192,8 @@ class _SpotlightPainter extends CustomPainter {
       canvas.drawRect(fullRect, overlayPaint);
     }
 
-    // Solid white border at the spotlight edge — makes the cutout clearly visible.
     if (spotRect != null) {
+      // Solid white border — makes the cutout clearly visible.
       canvas.drawRRect(
         RRect.fromRectAndRadius(spotRect!.inflate(1.5), const Radius.circular(17)),
         Paint()
@@ -195,10 +201,8 @@ class _SpotlightPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5,
       );
-    }
 
-    // Animated gold glow ring — sigma 8 for clear visibility on real devices.
-    if (spotRect != null) {
+      // Animated gold glow ring.
       final expand = 3.0 + 6.0 * glowValue;
       canvas.drawRRect(
         RRect.fromRectAndRadius(spotRect!.inflate(expand), const Radius.circular(22)),
@@ -216,192 +220,171 @@ class _SpotlightPainter extends CustomPainter {
       old.spotRect != spotRect || old.glowValue != glowValue;
 }
 
-// ─── Tooltip card ─────────────────────────────────────────────────────────────
+// ─── Mission panel ────────────────────────────────────────────────────────────
 
-class _TourTooltip extends StatelessWidget {
+class _MissionPanel extends StatelessWidget {
   final TourStep step;
   final int stepIndex, totalSteps;
-  final Rect? spotRect;
-  final Size screen;
+  final bool panelAtTop, wrongTap, isLast;
+  final double panelH;
   final EdgeInsets safePad;
-  final bool isWaiting, isLast;
-  final AsyncCallback onNext, onPrev, onSkip;
+  final AsyncCallback onNext, onPrev, onSkipStep, onSkipAll;
 
-  const _TourTooltip({
+  const _MissionPanel({
     required this.step,
     required this.stepIndex,
     required this.totalSteps,
-    required this.spotRect,
-    required this.screen,
+    required this.panelAtTop,
+    required this.panelH,
     required this.safePad,
-    required this.isWaiting,
+    required this.wrongTap,
     required this.isLast,
     required this.onNext,
     required this.onPrev,
-    required this.onSkip,
+    required this.onSkipStep,
+    required this.onSkipAll,
   });
 
   @override
   Widget build(BuildContext context) {
-    const hPad = 12.0; // horizontal margin from screen edge
-    const gap = 14.0;  // gap between spotlight and tooltip
-    const cardMaxH = 300.0;
-    final minTop = safePad.top + hPad;
-    final maxTop = screen.height - cardMaxH - hPad;
-
-    double cardTop;
-    if (spotRect == null) {
-      // No target visible — center tooltip on screen.
-      cardTop = (screen.height - cardMaxH) / 2;
-    } else {
-      final belowTop = spotRect!.bottom + gap;
-      final aboveTop = spotRect!.top - cardMaxH - gap;
-      // Prefer the side indicated by the step; fall back to opposite if no room.
-      final preferBelow = step.side == TooltipSide.below;
-      final roomBelow = belowTop + cardMaxH + hPad < screen.height;
-      final roomAbove = aboveTop > minTop;
-
-      if (preferBelow && roomBelow) {
-        cardTop = belowTop;
-      } else if (!preferBelow && roomAbove) {
-        cardTop = aboveTop;
-      } else if (roomBelow) {
-        cardTop = belowTop;
-      } else if (roomAbove) {
-        cardTop = aboveTop;
-      } else {
-        // Neither side has room — center tooltip.
-        cardTop = (screen.height - cardMaxH) / 2;
-      }
-    }
-
-    // Final clamp: tooltip must stay within safe area vertically.
-    cardTop = cardTop.clamp(minTop, maxTop.toDouble());
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final panelBg = isDark ? const Color(0xF2111111) : const Color(0xF8FFFFFF);
     final textColor = isDark ? Colors.white : Colors.black87;
     final subColor = isDark ? Colors.white60 : Colors.black54;
+    final divColor = isDark
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.black.withValues(alpha: 0.08);
 
-    return Positioned(
-      top: cardTop,
-      left: hPad,
-      right: hPad,
-      // Solid card replaces BackdropFilter — eliminates GPU framebuffer readback.
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xEE111111) : const Color(0xF8FFFFFF),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.10)
-                : Colors.black.withValues(alpha: 0.06),
-            width: 1,
+    // Direction hint: if panel is at top, target is below; if panel at bottom, target is above.
+    final hintKey = panelAtTop ? 'tour_action_hint_below' : 'tour_action_hint_above';
+    final hintText = AppLocalizations.of(context, wrongTap ? 'tour_wrong_tap' : hintKey);
+    final hintColor = wrongTap ? Colors.orange : AppColors.gold;
+
+    final borderRadius = panelAtTop
+        ? const BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          )
+        : const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          );
+
+    final panel = Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: panelBg,
+        borderRadius: borderRadius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.30),
+            blurRadius: 24,
+            offset: panelAtTop ? const Offset(0, 6) : const Offset(0, -6),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.28),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+        ],
+      ),
+      child: SafeArea(
+        top: panelAtTop,
+        bottom: !panelAtTop,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Skip button ────────────────────────────────
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: onSkip,
-                  child: Text(
-                    AppLocalizations.of(context, 'tour_skip'),
-                    style: TextStyle(color: subColor, fontSize: 12),
+              // ── Header: step badge + skip all ─────────────
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${stepIndex + 1} / $totalSteps',
+                      style: const TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
-                ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: onSkipAll,
+                    child: Text(
+                      AppLocalizations.of(context, 'tour_skip'),
+                      style: TextStyle(color: subColor, fontSize: 12),
+                    ),
+                  ),
+                ],
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
+              Divider(height: 1, color: divColor),
+              const SizedBox(height: 10),
 
               // ── Title ─────────────────────────────────────
               Text(
                 step.title,
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: textColor,
                 ),
               ),
-
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
 
               // ── Body ──────────────────────────────────────
               Text(
                 step.body,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: subColor,
-                  height: 1.55,
-                ),
+                style: TextStyle(fontSize: 13, color: subColor, height: 1.5),
               ),
 
-              // ── Interactive hint (left gold stripe) ────────
-              if (isWaiting && step.hint != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
-                  decoration: BoxDecoration(
-                    color: AppColors.gold.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(10),
-                    border: const Border(
-                      left: BorderSide(color: AppColors.gold, width: 3),
-                    ),
-                  ),
-                  child: Text(
-                    step.hint!,
-                    style: const TextStyle(
-                      color: AppColors.gold,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
+              const SizedBox(height: 10),
+              Divider(height: 1, color: divColor),
+              const SizedBox(height: 10),
 
-              const SizedBox(height: 18),
-
-              // ── Navigation row ────────────────────────────
+              // ── Footer row ────────────────────────────────
               Row(
                 children: [
-                  if (stepIndex > 0)
-                    _NavButton(
+                  // Left: skip step or back
+                  if (step.allowSkipStep && step.isInteractive)
+                    _TextBtn(
+                      label: AppLocalizations.of(context, 'tour_skip_step'),
+                      color: subColor,
+                      onTap: onSkipStep,
+                    )
+                  else if (!step.isInteractive && stepIndex > 0)
+                    _TextBtn(
                       label: AppLocalizations.of(context, 'tour_prev'),
+                      color: subColor,
                       onTap: onPrev,
-                      filled: false,
-                      textColor: subColor,
                     )
                   else
-                    const SizedBox(width: 72),
+                    const SizedBox(width: 60),
 
                   const Spacer(),
 
-                  _DotProgress(current: stepIndex, total: totalSteps),
-
-                  const Spacer(),
-
-                  if (!isWaiting)
-                    _NavButton(
+                  // Right: action hint or next/done button
+                  if (step.isInteractive)
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 300),
+                      style: TextStyle(
+                        color: hintColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      child: Text(hintText),
+                    )
+                  else
+                    _FilledBtn(
                       label: isLast
                           ? AppLocalizations.of(context, 'tour_done')
                           : AppLocalizations.of(context, 'tour_next'),
                       onTap: onNext,
-                      filled: true,
-                      textColor: Colors.white,
-                    )
-                  else
-                    const SizedBox(width: 72),
+                    ),
                 ],
               ),
             ],
@@ -409,88 +392,65 @@ class _TourTooltip extends StatelessWidget {
         ),
       ),
     );
+
+    if (panelAtTop) {
+      return Positioned(top: 0, left: 0, right: 0, child: panel);
+    } else {
+      return Positioned(bottom: 0, left: 0, right: 0, child: panel);
+    }
   }
 }
 
-// ─── Dot progress indicator ───────────────────────────────────────────────────
+// ─── Reusable button widgets ──────────────────────────────────────────────────
 
-class _DotProgress extends StatelessWidget {
-  final int current, total;
-  const _DotProgress({required this.current, required this.total});
+class _TextBtn extends StatelessWidget {
+  final String label;
+  final Color color;
+  final AsyncCallback onTap;
+  const _TextBtn({required this.label, required this.color, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(total, (i) {
-        final active = i == current;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          width: active ? 14.0 : 5.0,
-          height: 5.0,
-          decoration: BoxDecoration(
-            color: active
-                ? AppColors.gold
-                : AppColors.gold.withValues(alpha: 0.28),
-            borderRadius: BorderRadius.circular(3),
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            label,
+            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600),
           ),
-        );
-      }),
-    );
-  }
+        ),
+      );
 }
 
-// ─── Navigation button ────────────────────────────────────────────────────────
-
-class _NavButton extends StatelessWidget {
+class _FilledBtn extends StatelessWidget {
   final String label;
   final AsyncCallback onTap;
-  final bool filled;
-  final Color textColor;
-
-  const _NavButton({
-    required this.label,
-    required this.onTap,
-    required this.filled,
-    required this.textColor,
-  });
+  const _FilledBtn({required this.label, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-        decoration: BoxDecoration(
-          color: filled ? AppColors.gold : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: filled
-              ? null
-              : Border.all(
-                  color: textColor.withValues(alpha: 0.4),
-                  width: 1,
-                ),
-          boxShadow: filled
-              ? [
-                  BoxShadow(
-                    color: AppColors.gold.withValues(alpha: 0.45),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+          decoration: BoxDecoration(
+            color: AppColors.gold,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.gold.withValues(alpha: 0.40),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
 }

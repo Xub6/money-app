@@ -9,21 +9,15 @@ class TourController extends ChangeNotifier {
   bool _active = false;
   bool _hidden = false;
   int _stepIndex = 0;
-  bool _waitingForInteraction = false;
   bool _finishing = false;
   bool _transitioning = false;
+  bool _wrongTap = false;
+  int _currentTab = 0;
 
-  // Pre-calculated target rect — set after scroll+layout settle, never stale.
-  // Overlay reads this instead of calling _findRect() in build(), which
-  // prevents spotlights from appearing at off-screen / off-tab positions.
   Rect? _cachedTargetRect;
-
-  // Tracks which tab was active when the last step was prepared so we can
-  // wait for the full PageView animation (300 ms) on tab changes.
   int _lastPreparedTab = -1;
 
   void Function(int tab)? _goToTab;
-  VoidCallback? _onTourStart;
   VoidCallback? _onTourEnd;
   VoidCallback? _onTourSkip;
 
@@ -33,11 +27,8 @@ class TourController extends ChangeNotifier {
   bool get isHidden => _hidden;
   int get stepIndex => _stepIndex;
   int get totalSteps => _steps.length;
-  bool get isWaitingForInteraction => _waitingForInteraction;
   bool get isLastStep => _stepIndex == _steps.length - 1;
-
-  /// Stable target rect calculated after layout.  Null during transitions and
-  /// when the target widget cannot be located on-screen.
+  bool get showWrongTapHint => _wrongTap;
   Rect? get cachedTargetRect => _cachedTargetRect;
 
   TourStep? get currentStep =>
@@ -49,12 +40,10 @@ class TourController extends ChangeNotifier {
 
   void init({
     required void Function(int tab) goToTab,
-    VoidCallback? onTourStart,
     VoidCallback? onTourEnd,
     VoidCallback? onTourSkip,
   }) {
     _goToTab = goToTab;
-    _onTourStart = onTourStart;
     _onTourEnd = onTourEnd;
     _onTourSkip = onTourSkip;
   }
@@ -62,18 +51,18 @@ class TourController extends ChangeNotifier {
   // ── Tour lifecycle ───────────────────────────────────────────
 
   Future<void> start(BuildContext context) async {
-    _onTourStart?.call();
     _steps = buildTourSteps(context);
     _stepIndex = 0;
     _active = true;
-    _hidden = true; // keep hidden until position is ready
+    _hidden = true;
     _finishing = false;
     _transitioning = false;
+    _wrongTap = false;
     _cachedTargetRect = null;
-    _lastPreparedTab = -1; // force full wait on first step
-    await _prepareStep(); // calculates _cachedTargetRect
+    _lastPreparedTab = -1;
+    await _prepareStep();
     _hidden = false;
-    notifyListeners(); // single reveal at correct position
+    notifyListeners();
   }
 
   Future<void> next() async {
@@ -84,21 +73,7 @@ class TourController extends ChangeNotifier {
     }
     _transitioning = true;
     _stepIndex++;
-    _waitingForInteraction = false;
-    _cachedTargetRect = null;
-    _hidden = true; // hide overlay — prevents showing at stale / off-tab position
-    notifyListeners(); // overlay disappears cleanly
-    await _prepareStep(); // tab switch → scroll → endOfFrame → rect calc
-    _hidden = false;
-    _transitioning = false;
-    notifyListeners(); // single reveal at stable position
-  }
-
-  Future<void> prev() async {
-    if (_finishing || !_active || _stepIndex == 0 || _transitioning) return;
-    _transitioning = true;
-    _stepIndex--;
-    _waitingForInteraction = false;
+    _wrongTap = false;
     _cachedTargetRect = null;
     _hidden = true;
     notifyListeners();
@@ -107,6 +82,22 @@ class TourController extends ChangeNotifier {
     _transitioning = false;
     notifyListeners();
   }
+
+  Future<void> prev() async {
+    if (_finishing || !_active || _stepIndex == 0 || _transitioning) return;
+    _transitioning = true;
+    _stepIndex--;
+    _wrongTap = false;
+    _cachedTargetRect = null;
+    _hidden = true;
+    notifyListeners();
+    await _prepareStep();
+    _hidden = false;
+    _transitioning = false;
+    notifyListeners();
+  }
+
+  Future<void> skipStep() async => next();
 
   Future<void> skip() async {
     await finish();
@@ -118,7 +109,7 @@ class TourController extends ChangeNotifier {
     _finishing = true;
     _active = false;
     _hidden = false;
-    _waitingForInteraction = false;
+    _wrongTap = false;
     _transitioning = false;
     notifyListeners();
     _onTourEnd?.call();
@@ -137,81 +128,85 @@ class TourController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Called by interactive target widgets after the user completes the action.
-  void onInteractionComplete() {
-    if (!_waitingForInteraction) return;
-    _waitingForInteraction = false;
-    notifyListeners();
-    Future.delayed(const Duration(milliseconds: 500), next);
+  // ── Event-driven completion ──────────────────────────────────
+
+  /// Called by the main shell whenever the PageView settles on a new tab.
+  void notifyTabChanged(int newTab) {
+    _currentTab = newTab;
+    if (!_active || _transitioning || _finishing) return;
+    final step = currentStep;
+    if (step?.actionType == TourActionType.waitForTabChange &&
+        newTab == step?.expectedTab) {
+      next();
+    }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────
+  /// Called by FAB/card handlers when they open a specific route.
+  /// [routeId]: 'addExpense' | 'addHolding' | 'accountPage'
+  void notifyRouteOpened(String routeId) {
+    if (!_active || _transitioning || _finishing) return;
+    final step = currentStep;
+    if (step?.actionType == TourActionType.waitForRouteOpen &&
+        step?.expectedRouteId == routeId) {
+      next();
+    }
+  }
+
+  /// Called by interactive blockers when user taps outside the spotlight.
+  void notifyWrongTap() {
+    if (!_active || _finishing) return;
+    if (_wrongTap) return;
+    _wrongTap = true;
+    notifyListeners();
+    Future.delayed(const Duration(milliseconds: 1600), () {
+      if (!_wrongTap) return;
+      _wrongTap = false;
+      notifyListeners();
+    });
+  }
+
+  // ── Step preparation ─────────────────────────────────────────
 
   Future<void> _prepareStep() async {
     if (_steps.isEmpty || _stepIndex >= _steps.length) return;
     final step = _steps[_stepIndex];
 
-    // 1. Switch to the correct tab.
     final tabChanged = _lastPreparedTab != step.tab;
     _goToTab?.call(step.tab);
     _lastPreparedTab = step.tab;
 
-    // 2. Wait for layout.  When the tab changes, the PageView animates over
-    //    300 ms — wait 350 ms to ensure the animation is fully complete before
-    //    reading widget positions.  Same-tab steps only need a short settle.
     await Future.delayed(Duration(milliseconds: tabChanged ? 350 : 150));
 
-    // 3. Scroll the target widget into view if it is inside a Scrollable.
-    //    Widgets not in a Scrollable (AppBar, FAB, BottomAppBar) throw — caught
-    //    silently since those are always visible.
-    final ctx = step.targetKey.currentContext;
+    final ctx = step.targetKey?.currentContext;
     if (ctx != null) {
       try {
-        final alignment = step.side == TooltipSide.above ? 0.6 : 0.1;
         await Scrollable.ensureVisible(
           ctx,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          alignment: alignment,
+          alignment: 0.2,
         );
-        // Short settle time after scroll animation ends.
         await Future.delayed(const Duration(milliseconds: 60));
       } catch (_) {}
     }
 
-    // 4. Wait for the current frame to fully paint before reading RenderBox.
-    //    This ensures localToGlobal() returns the post-scroll final position.
     await WidgetsBinding.instance.endOfFrame;
 
-    // 5. Calculate rect.  Retry up to 2 extra frames for widgets that need
-    //    a post-frame callback to finish their own layout (e.g. lazy builders).
     _cachedTargetRect = _findRectOnScreen(step.targetKey);
     for (int retry = 0; retry < 2 && _cachedTargetRect == null; retry++) {
       await WidgetsBinding.instance.endOfFrame;
       _cachedTargetRect = _findRectOnScreen(step.targetKey);
     }
-    // If still null, overlay shows full dark overlay with centered tooltip as fallback.
-
-    _waitingForInteraction = step.isInteractive;
   }
 
-  /// Reads the on-screen bounding rect of [key]'s widget.
-  ///
-  /// Returns null when:
-  ///   - the context is not yet mounted
-  ///   - the RenderBox is detached or has no size
-  ///   - the position is clearly off-screen (e.g. widget belongs to an
-  ///     adjacent PageView page whose global-x is several screen-widths away)
-  static Rect? _findRectOnScreen(GlobalKey key) {
+  static Rect? _findRectOnScreen(GlobalKey? key) {
+    if (key == null) return null;
     try {
       final ctx = key.currentContext;
       if (ctx == null) return null;
       final box = ctx.findRenderObject() as RenderBox?;
       if (box == null || !box.attached || !box.hasSize) return null;
       final pos = box.localToGlobal(Offset.zero);
-      // Sanity-check: reject positions that are grossly off-screen.
-      // PageView keeps adjacent pages rendered at ±screenWidth offset; using
-      // a ±600 dp guard catches those without needing the actual screen size.
       if (pos.dx < -600 || pos.dy < -600 || pos.dx > 4000 || pos.dy > 4000) {
         return null;
       }

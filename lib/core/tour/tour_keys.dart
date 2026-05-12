@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 
 /// Central registry of all GlobalKeys used by the guided tour.
-/// Every key maps to exactly one target widget in the app.
 class TourKeys {
   TourKeys._();
 
@@ -14,17 +13,22 @@ class TourKeys {
   // ── FAB (all tabs) ────────────────────────────────
   static final fab           = GlobalKey(debugLabel: 'tour_fab');
 
+  // ── Bottom nav items ──────────────────────────────
+  static final navDashboard  = GlobalKey(debugLabel: 'tour_navDashboard');
+  static final navDetail     = GlobalKey(debugLabel: 'tour_navDetail');
+  static final navInvest     = GlobalKey(debugLabel: 'tour_navInvest');
+  static final navManage     = GlobalKey(debugLabel: 'tour_navManage');
+
   // ── Tab 1: Detail ─────────────────────────────────
   static final detailList    = GlobalKey(debugLabel: 'tour_detailList');
 
   // ── Tab 2: Invest ─────────────────────────────────
   static final investHeader  = GlobalKey(debugLabel: 'tour_investHeader');
-  static final investRefresh = GlobalKey(debugLabel: 'tour_investRefresh');
 
   // ── Tab 3: Manage ─────────────────────────────────
-  static final navManage     = GlobalKey(debugLabel: 'tour_navManage');
   static final accountCard   = GlobalKey(debugLabel: 'tour_accountCard');
   static final backupCard    = GlobalKey(debugLabel: 'tour_backupCard');
-  static final feedbackTile  = GlobalKey(debugLabel: 'tour_feedbackTile');
   static final rewatchTile   = GlobalKey(debugLabel: 'tour_rewatchTile');
+  static final feedbackTile  = GlobalKey(debugLabel: 'tour_feedbackTile');
+  static final investRefresh = GlobalKey(debugLabel: 'tour_investRefresh');
 }
