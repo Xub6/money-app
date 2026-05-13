@@ -78,7 +78,9 @@ class _TourOverlayState extends State<TourOverlay>
                 : step.body;
 
             // fullPageInteraction: actionRequired but no spotlight target
-            // (e.g. fill-in-form steps) — show panel hint only, zero blocking
+            // (e.g. fill-in-form steps). Panel is placed at the TOP so it
+            // does not overlap the calculator BottomSheet or bottom form elements.
+            // The NavigatorObserver hides the overlay entirely during BottomSheets.
             final isFullPageInteraction =
                 step.isActionRequired && spotRect == null;
 
@@ -90,7 +92,7 @@ class _TourOverlayState extends State<TourOverlay>
                     bodyText: bodyText,
                     stepIndex: ctrl.stepIndex,
                     totalSteps: ctrl.totalSteps,
-                    panelAtTop: false,
+                    panelAtTop: false, // bottom panel keeps AppBar save button accessible
                     panelH: panelH,
                     safePad: safePad,
                     wrongTap: ctrl.showWrongTapHint,

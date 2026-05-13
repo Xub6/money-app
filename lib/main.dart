@@ -71,6 +71,31 @@ void main() async {
   runApp(const MoneyApp());
 }
 
+// ─── NavigatorObserver: hide TourOverlay during ModalBottomSheet ───────────────
+// Prevents the mission panel from covering bottom-sheet content (calculator, etc.)
+class _TourNavigatorObserver extends NavigatorObserver {
+  final TourController _ctrl;
+  _TourNavigatorObserver(this._ctrl);
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (!_ctrl.isActive) return;
+    if (route is ModalBottomSheetRoute) _ctrl.notifyBottomSheetOpened();
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (!_ctrl.isActive) return;
+    if (route is ModalBottomSheetRoute) _ctrl.notifyBottomSheetClosed();
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (!_ctrl.isActive) return;
+    if (route is ModalBottomSheetRoute) _ctrl.notifyBottomSheetClosed();
+  }
+}
+
 /// Main app widget with providers
 class MoneyApp extends StatefulWidget {
   const MoneyApp({super.key});
@@ -83,6 +108,7 @@ class _MoneyAppState extends State<MoneyApp> {
   final _appState = AppState();
   final _themeProvider = ThemeProvider();
   final _tourController = TourController();
+  late final _tourNavObserver = _TourNavigatorObserver(_tourController);
 
   @override
   void dispose() {
@@ -117,6 +143,7 @@ class _MoneyAppState extends State<MoneyApp> {
             darkTheme: themeProvider.darkTheme,
             themeMode:
                 themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            navigatorObservers: [_tourNavObserver],
             // TourOverlay above Navigator so spotlight works inside pushed routes
             builder: (_, child) => Stack(
               children: [
@@ -229,16 +256,15 @@ class _MainShellState extends State<MainShell> {
       onTourEnd: _handleTourEnd,
       onTourSkip: _handleTourSkip,
       popToMain: () {
-        if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+        if (!mounted) return;
+        // Pop all pushed routes until the root (MainShell) is visible.
+        final nav = Navigator.of(context);
+        nav.popUntil((route) => route.isFirst);
       },
       onShowSuccess: (locKey) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(AppLocalizations.of(context, locKey)),
-            backgroundColor: AppColors.success,
-            duration: const Duration(seconds: 2),
-          ));
-        }
+        if (!mounted) return;
+        final message = AppLocalizations.of(context, locKey);
+        _showTourToast(message);
       },
     );
   }
@@ -390,6 +416,55 @@ class _MainShellState extends State<MainShell> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+  }
+
+  /// Shows a floating overlay toast that does NOT affect Scaffold layout.
+  /// This prevents the SnackBar from pushing the FAB up before spotlight detection.
+  void _showTourToast(String message) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        top: MediaQuery.of(ctx).padding.top + 56,
+        left: 20,
+        right: 20,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.success,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [
+                BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 8,
+                    offset: Offset(0, 3)),
+              ],
+            ),
+            child: Row(children: [
+              const Icon(Icons.check_circle_outline,
+                  color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(entry);
+    Future.delayed(const Duration(milliseconds: 2200), () {
+      try { entry.remove(); } catch (_) {}
+    });
   }
 
   DateTime get _displayMonth {

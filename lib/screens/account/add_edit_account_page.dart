@@ -120,30 +120,27 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
             _GroupCard(
                 cs: cs,
                 child: Column(children: [
-                  // 帳戶類型
+                  // 帳戶類型 — 整列都可點擊（InkWell 包住整個 _RowItem）
                   _RowItem(
                     label: AppLocalizations.of(context, 'account_type'),
                     cs: cs,
-                    child: GestureDetector(
-                      onTap: _pickType,
-                      behavior: HitTestBehavior.opaque,
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        if (_selectedType != null) ...[
-                          Text(_selectedType!.icon,
-                              style: const TextStyle(fontSize: 16)),
-                          const SizedBox(width: 6),
-                          Text(_selectedType!.name,
-                              style: TextStyle(
-                                  color: cs.onSurface,
-                                  fontWeight: FontWeight.w600)),
-                        ] else
-                          Text(AppLocalizations.of(context, 'please_select'),
-                              style: TextStyle(color: cs.onSurfaceVariant)),
-                        const SizedBox(width: 4),
-                        Icon(Icons.chevron_right,
-                            color: cs.onSurfaceVariant, size: 18),
-                      ]),
-                    ),
+                    onTap: _pickType,
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      if (_selectedType != null) ...[
+                        Text(_selectedType!.icon,
+                            style: const TextStyle(fontSize: 16)),
+                        const SizedBox(width: 6),
+                        Text(_selectedType!.name,
+                            style: TextStyle(
+                                color: cs.onSurface,
+                                fontWeight: FontWeight.w600)),
+                      ] else
+                        Text(AppLocalizations.of(context, 'please_select'),
+                            style: TextStyle(color: cs.onSurfaceVariant)),
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right,
+                          color: cs.onSurfaceVariant, size: 18),
+                    ]),
                   ),
                   Divider(height: 1, color: cs.outlineVariant),
                   // 自訂名稱
@@ -293,19 +290,27 @@ class _RowItem extends StatelessWidget {
   final String label;
   final Widget child;
   final ColorScheme cs;
-  const _RowItem({required this.label, required this.child, required this.cs});
+  final VoidCallback? onTap;
+  const _RowItem({required this.label, required this.child, required this.cs, this.onTap});
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: 52,
-        child: Row(children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: cs.onSurface)),
-          const SizedBox(width: 12),
-          Expanded(
-              child: Align(alignment: Alignment.centerRight, child: child)),
-        ]),
-      );
+  Widget build(BuildContext context) {
+    final content = SizedBox(
+      height: 52,
+      child: Row(children: [
+        Text(label,
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: cs.onSurface)),
+        const SizedBox(width: 12),
+        Expanded(child: Align(alignment: Alignment.centerRight, child: child)),
+      ]),
+    );
+    if (onTap == null) return content;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: content,
+    );
+  }
 }

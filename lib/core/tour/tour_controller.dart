@@ -18,6 +18,8 @@ class TourController extends ChangeNotifier {
   bool _stepJustCompleted = false;
   bool _currentStepCompleted = false;
   OnboardingMode _mode = OnboardingMode.quickStart;
+  // Tracks number of open ModalBottomSheets; overlay is hidden while > 0
+  int _bottomSheetDepth = 0;
 
   Rect? _cachedTargetRect;
   int _lastPreparedTab = -1;
@@ -252,6 +254,26 @@ class TourController extends ChangeNotifier {
     _checkCurrentStepPredicate();
   }
 
+  /// Called by NavigatorObserver when a ModalBottomSheet is pushed.
+  /// Hides the overlay so bottom-sheet content is not obscured by the panel.
+  void notifyBottomSheetOpened() {
+    _bottomSheetDepth++;
+    if (!_hidden) {
+      _hidden = true;
+      notifyListeners();
+    }
+  }
+
+  /// Called by NavigatorObserver when a ModalBottomSheet is popped.
+  /// Restores the overlay once all sheets are closed.
+  void notifyBottomSheetClosed() {
+    if (_bottomSheetDepth > 0) _bottomSheetDepth--;
+    if (_bottomSheetDepth == 0 && _active && !_finishing && _hidden) {
+      _hidden = false;
+      notifyListeners();
+    }
+  }
+
   void notifyWrongTap() {
     if (!_active || _finishing) return;
     if (_wrongTap) return;
@@ -295,7 +317,12 @@ class TourController extends ChangeNotifier {
     await Future.delayed(const Duration(milliseconds: 600));
     if (!_active || _finishing) return;
     _stepJustCompleted = false;
-    await _handleStepCompletionSideEffects();
+    try {
+      await _handleStepCompletionSideEffects();
+    } catch (e) {
+      dev.log('[Tour] _handleStepCompletionSideEffects error: $e');
+    }
+    if (!_active || _finishing) return;
     await next(); // guard in next() passes because _currentStepCompleted == true
   }
 
@@ -304,13 +331,24 @@ class TourController extends ChangeNotifier {
   Future<void> _handleStepCompletionSideEffects() async {
     final step = currentStep;
     if (step == null) return;
-    // After account created: pop AccountPage → switch to tab 0 → success snackbar
+    dev.log('[Tour] sideEffects: step=${step.id}');
+    // After account created: pop back to MainShell → switch to tab 0 → success toast
     if (step.id == 'qs_s4' || step.id == 'fs_s2') {
+      // Pop AccountPage (and any other pushed routes) back to root.
+      // _popToMain uses Navigator.popUntil(isFirst) captured at MainShell context.
       _popToMain?.call();
-      await Future.delayed(const Duration(milliseconds: 350));
+      dev.log('[Tour] popToMain called for ${step.id}');
+      // Wait for pop animation to complete (default Flutter pop animation ≈ 300ms)
+      await Future.delayed(const Duration(milliseconds: 420));
+      // Switch to dashboard tab and await the page-switch animation
       await _goToTab?.call(0);
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Wait one stable frame after tab switch
+      await WidgetsBinding.instance.endOfFrame;
+      await Future.delayed(const Duration(milliseconds: 80));
+      // Show success toast — uses overlay toast (not SnackBar) so FAB stays at bottom
       _showSuccessMsg?.call('tour_account_created_success');
+      // Give the toast one frame to render before _prepareStep reads FAB rect
+      await WidgetsBinding.instance.endOfFrame;
     }
   }
 
