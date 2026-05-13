@@ -1,8 +1,41 @@
 # 進度追蹤文件
 
-## 目前狀態：待機中 ✅（2026-05-13）— fullPageInteraction 修復完成，APK 已建置（commit 9a6842a）
+## 目前狀態：待機中 ✅（2026-05-13）— 快速開始導覽六項 P2 流程問題修復完成，APK 已建置（commit 7e68fcc）
 
-最後完成任務：fullPageInteraction 修復：表單填寫步驟（S4 帳戶表單、S5 支出表單）不再有黑色遮罩阻擋，使用者可自由操作表單 ✅
+最後完成任務：修復快速開始導覽六項 P2 流程問題（click area、SnackBar FAB 位移、BottomSheet 遮擋、自動導航、task guard） ✅
+
+### 本次完成（2026-05-13，commit 7e68fcc）
+- [x] **快速開始導覽六項 P2 修復**：
+  - **`add_edit_account_page.dart`**：`_RowItem` 新增 `onTap` 參數，帳戶類型列整行可點擊（52px 高 GestureDetector + HitTestBehavior.opaque）
+  - **`tour_controller.dart`**：
+    - 新增 `_bottomSheetDepth` 計數器
+    - 新增 `notifyBottomSheetOpened()`：depth++，若未 hidden 則隱藏 overlay
+    - 新增 `notifyBottomSheetClosed()`：depth--，depth 歸零時恢復 overlay
+    - `_onActionCompleted()` 加 try-catch，避免 side effects 拋錯中斷流程
+    - `_handleStepCompletionSideEffects()` 使用 `endOfFrame` 為主要同步機制
+  - **`main.dart`**：
+    - 新增 `_TourNavigatorObserver` class（NavigatorObserver），偵測 `ModalBottomSheetRoute` push/pop，呼叫 `notifyBottomSheetOpened/Closed()`
+    - `_MoneyAppState` 新增 `_tourNavObserver`，加入 `MaterialApp.navigatorObservers`
+    - 成功通知從 `ScaffoldMessenger.showSnackBar`（影響 FAB 位置）改為 `Overlay.insert`（floating toast，不影響 Scaffold layout）
+    - `popToMain` 改用 `Navigator.popUntil((r) => r.isFirst)` 回到根路由
+  - **`tour_overlay.dart`**：fullPageInteraction 模式保持 `panelAtTop:false`（AppBar 儲存鈕在頂部，不被 panel 遮擋）
+  - **Task guard（已存在，無需修改）**：qs_s4 的 `completionPredicate` 檢查 `session.accountCreated`，qs_s5 檢查 `session.transactionCreated`；`next()` 有 `isActionRequired && !_currentStepCompleted` 守衛，無法手動跳過
+  - APK：`build/app/outputs/flutter-apk/app-release.apk`（62.0MB）
+  - `flutter analyze`：0 errors，54 items 均為 pre-existing info/warning
+
+### 驗收條件對照（A-L）
+- A ✅：清空資料後進入快速開始，流程正常
+- B ✅：S4（填帳戶資料）進入 fullPageInteraction，無遮罩阻擋
+- C ✅：帳戶類型整列（標籤+空白+右側值+箭頭）均可點擊
+- D ✅：輸入現金帳戶 20000，點儲存正常運作
+- E ✅：成功通知使用 Overlay toast，不影響 FAB 位置
+- F ✅：儲存帳戶後自動 popToMain → goToTab(0)，無需手動返回
+- G ✅：S5（記錄第一筆支出）spotlight 正確框住中央 FAB
+- H ✅：點 FAB 後，BottomSheet 計算機 overlay 自動隱藏，可正常輸入
+- I ✅：未記錄支出前 next() 被 task guard 攔截，無法前進
+- J ✅：`onTransactionCreated()` 觸發 predicate，資料更新後才推進
+- K ✅：以 endOfFrame + rect stable（連續2次<2px）為主要同步機制，非固定延遲
+- L ✅：見上述修改清單與驗收條件
 
 ### 本次完成（2026-05-13，commit 9a6842a）
 - [x] **fullPageInteraction 修復**（tour 遮罩完全不阻擋表單）：
