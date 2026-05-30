@@ -35,7 +35,6 @@ class _LoginCardState extends State<LoginCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.ofParam(context, 'welcome_name', {'name': p.displayName})),
-          backgroundColor: AppColors.gold,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -132,14 +131,12 @@ class _LoginCardState extends State<LoginCard> {
             child: ElevatedButton(
               onPressed: _loading ? null : _signIn,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.gold,
-                foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               child: _loading
-                  ? const SizedBox(width: 18, height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                  ? SizedBox(width: 18, height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
                   : Text(AppLocalizations.of(context, 'google_signin'), style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
           ),
@@ -164,10 +161,10 @@ class _LoginCardState extends State<LoginCard> {
               CircleAvatar(
                 radius: 22,
                 backgroundImage: p.photoUrl != null ? NetworkImage(p.photoUrl!) : null,
-                backgroundColor: AppColors.gold.withValues(alpha: 0.3),
+                backgroundColor: cs.primaryContainer,
                 child: p.photoUrl == null
                     ? Text(p.displayName.isNotEmpty ? p.displayName[0].toUpperCase() : 'U',
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.gold))
+                        style: TextStyle(fontWeight: FontWeight.w700, color: cs.primary))
                     : null,
               ),
               const SizedBox(width: 12),
@@ -193,7 +190,6 @@ class _LoginCardState extends State<LoginCard> {
               style: TextStyle(fontSize: 11, color: cs.onSurface.withValues(alpha: 0.45))),
           value: p.marketingOptIn,
           onChanged: _toggleOptIn,
-          activeThumbColor: AppColors.gold,
         ),
         Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
         TextButton(

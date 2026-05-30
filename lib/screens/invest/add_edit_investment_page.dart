@@ -250,14 +250,14 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
             style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context, 'cancel'), style: const TextStyle(color: AppColors.gold)),
+          child: Text(AppLocalizations.of(context, 'cancel'), style: TextStyle(color: Theme.of(context).colorScheme.primary)),
         ),
         actions: [
           TextButton(
             onPressed: _save,
             child: Text(isEdit ? AppLocalizations.of(context, 'update') : AppLocalizations.of(context, 'save_label'),
-                style: const TextStyle(
-                    color: AppColors.gold,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w800,
                     fontSize: 16)),
           ),
@@ -335,13 +335,13 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                       ),
                       const SizedBox(width: 8),
                       _fetching
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 36,
                               height: 36,
                               child: Padding(
-                                padding: EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(8),
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: AppColors.gold),
+                                    strokeWidth: 2, color: cs.primary),
                               ))
                           : GestureDetector(
                               onTap: _fetchPrice,
@@ -349,12 +349,12 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 14, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.gold,
+                                  color: cs.primary,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(AppLocalizations.of(context, 'query_price'),
-                                    style: const TextStyle(
-                                        color: Colors.white,
+                                    style: TextStyle(
+                                        color: cs.onPrimary,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 13)),
                               ),
@@ -368,17 +368,17 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: AppColors.gold.withValues(alpha: 0.1),
+                          color: cs.primaryContainer,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(children: [
-                          const Icon(Icons.check_circle_rounded,
-                              color: AppColors.gold, size: 16),
+                          Icon(Icons.check_circle_rounded,
+                              color: cs.primary, size: 16),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(_fetchedName!,
-                                style: const TextStyle(
-                                    color: AppColors.gold,
+                                style: TextStyle(
+                                    color: cs.primary,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 13)),
                           ),
@@ -387,8 +387,8 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                               _isTwd
                                   ? 'NT\$ ${_priceCtrl.text}'
                                   : 'US\$ ${_priceCtrl.text}',
-                              style: const TextStyle(
-                                  color: AppColors.gold,
+                              style: TextStyle(
+                                  color: cs.primary,
                                   fontWeight: FontWeight.w800,
                                   fontSize: 14),
                             ),
@@ -451,14 +451,14 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                         ),
                       ),
                     if (_loadingSuggestions)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Center(
                             child: SizedBox(
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: AppColors.gold))),
+                                    strokeWidth: 2, color: cs.primary))),
                       ),
                   ]),
             ),
@@ -507,9 +507,9 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                       return Padding(
                         padding: const EdgeInsets.only(top: 8, bottom: 4),
                         child: Row(children: [
-                          const Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.gold),
+                          Icon(Icons.warning_amber_rounded, size: 14, color: cs.primary),
                           const SizedBox(width: 6),
-                          Expanded(child: Text(AppLocalizations.of(context, 'currency_mismatch_warning'), style: const TextStyle(fontSize: 11, color: AppColors.gold))),
+                          Expanded(child: Text(AppLocalizations.of(context, 'currency_mismatch_warning'), style: TextStyle(fontSize: 11, color: cs.primary))),
                         ]),
                       );
                     }),
@@ -932,7 +932,7 @@ class _NoteRow extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
+                borderSide: BorderSide(color: cs.primary, width: 1.5),
               ),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -960,7 +960,7 @@ class _CurrencyChip extends StatelessWidget {
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: selected ? AppColors.gold : cs.surfaceContainerHighest,
+              color: selected ? cs.primary : cs.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
@@ -997,12 +997,12 @@ class _DeductChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.gold.withValues(alpha: 0.12)
+                ? cs.primaryContainer
                 : cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: selected
-                  ? (mismatch ? Colors.orange : AppColors.gold)
+                  ? (mismatch ? Colors.orange : cs.primary)
                   : cs.outlineVariant,
               width: selected ? 1.5 : 1,
             ),
@@ -1012,7 +1012,7 @@ class _DeductChip extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: selected
-                      ? (mismatch ? Colors.orange : AppColors.gold)
+                      ? (mismatch ? Colors.orange : cs.primary)
                       : cs.onSurfaceVariant)),
         ),
       );
