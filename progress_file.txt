@@ -1,24 +1,22 @@
 # 進度追蹤文件
 
-## 目前狀態：上架衝刺中 🚀（2026-05-30）— AAB v2.1.0+3 已建置，等待 Sean 在 Play Console 建立 App
+## 目前狀態：待 Sean 真機測試 ✅（2026-05-30）— AAB v2.2.0+4 完成，含 4 項缺失修復，等 Sean 確認後上架
 
-最後完成任務：版本升級至 v2.1.0+3，AAB 重建（含所有 tour 修復，commit f97942a）✅
+最後完成任務：MP-01 四項缺失全部實作完成（commit c647726）✅
 
-### 本次完成（2026-05-30）
-- [x] **版本 bump**：2.0.0+2 → 2.1.0+3（涵蓋 2026-05-11~13 所有 tour 修復）
-- [x] **AAB v2.1.0+3 建置**：49.7MB，`build/app/outputs/bundle/release/app-release.aab`
-- [x] **pubspec.yaml commit + push**：commit f97942a，main 分支
+### 本次完成（2026-05-30，commit c647726）
+- [x] **主題顏色多樣性**：新增 5 色 accent（金/靛藍/青綠/玫瑰/森林綠），ManagePage 顯示圓形色板選擇器，深色模式金色保留原精緻 palette，其餘 accent 使用 Material3 fromSeed
+- [x] **手續費入口提示（item 2）**：手續費欄位旁新增 `?` help icon，點擊顯示「開啟券商 App → 我的帳戶 → 手續費優惠方案」說明 dialog，4 語言 i18n
+- [x] **最低手續費 1 元（item 3）**：`StockHolding` 新增 `minFee` 欄位（預設 1.0），台股券商 preset 自動帶入 minFee=1，淨現值計算更新（max(gross×rate, minFee)），broker 清單顯示「最低N元」標籤，新增 minFee 輸入欄（台股才顯示）
+- [x] **單日支出總合（item 4）**：`AppState.todayTotal()` 計算當日支出，Dashboard 月份卡 subtitle 顯示「今日 NT$X」（當月才顯示，有數字時用主色高亮）
+- [x] **AAB v2.2.0+4 建置**：49.7MB，`build/app/outputs/bundle/release/app-release.aab`
 
 ### 上架里程碑
 - [x] Google Play Console 身分驗證 ✅（2026-05-10）
 - [x] Google Play Console 電話驗證 ✅（2026-05-10）
-- [x] AAB v2.1.0+3 建置完成 ✅（2026-05-30）
-- [ ] **Sean：在 Play Console 建立 App**（填套件名 com.qoryva.moneyapp / App 名稱 / 類別）
-- [ ] 上傳 AAB v2.1.0+3
-- [ ] 填寫商店資訊（描述、截圖、Feature Graphic）
-- [ ] 填寫資料安全表單
-- [ ] 內容分級問卷
+- [x] AAB v2.2.0+4 建置完成 ✅（2026-05-30）
+- [ ] **Sean：真機測試 4 項新功能確認 OK**
+- [ ] **Sean：在 Play Console 建立 App**（套件名：com.qoryva.moneymanager）
+- [ ] 上傳 AAB v2.2.0+4
+- [ ] 填寫商店資訊
 - [ ] 送審
-
-### 下一步
-Sean 登入 Play Console → 建立新 App（套件名稱：查 AndroidManifest.xml）→ 告知 AI → AI 接手後續全部步驟
