@@ -92,26 +92,26 @@ const _palettes = <int, _Palette>{
     dOutline:          Color(0xFF3A5552),
     dOutlineVariant:   Color(0xFF2A3534),
   ),
-  // ── ROSE / BLUSH CREAM ───────────────────────────────────────────────────
+  // ── ROSE / 奶霧櫻花粉 / 草莓牛奶 ─────────────────────────────────────────
   3: _Palette(
-    // light: white → warm blush → creamy rose-white
-    lSurface:          Color(0xFFFFF8FA),
-    lLowest:           Color(0xFFFFF4F7),
-    lLow:              Color(0xFFFFEBF2), // cards: warm blush
-    lContainer:        Color(0xFFFCE3EC),
-    lHigh:             Color(0xFFF9D9E6),
-    lHighest:          Color(0xFFF5CEDF),
-    lOutline:          Color(0xFFEEB0CB), // soft rose border
-    lOutlineVariant:   Color(0xFFFADFEB),
-    // dark: #111 with barely-there rose undertone
-    dSurface:          Color(0xFF161011),
-    dLowest:           Color(0xFF100B0C),
-    dLow:              Color(0xFF221A1D),
-    dContainer:        Color(0xFF2A2024),
-    dHigh:             Color(0xFF32262B),
-    dHighest:          Color(0xFF3B2C32),
-    dOutline:          Color(0xFF5A3A46),
-    dOutlineVariant:   Color(0xFF32262B),
+    // light: 精確色票（用戶提供）
+    lSurface:          Color(0xFFFFF9FC), // App Background
+    lLowest:           Color(0xFFFFF9FC), // 同 App Background
+    lLow:              Color(0xFFFDECF3), // Card Background
+    lContainer:        Color(0xFFFBE6EF), // Soft Surface
+    lHigh:             Color(0xFFF8DDE9), // 過渡層
+    lHighest:          Color(0xFFF5D4E2), // chip / 選中 alt
+    lOutline:          Color(0xFFF1C8D8), // Border
+    lOutlineVariant:   Color(0xFFEFD9E3), // Soft Divider
+    // dark: 微染玫瑰底，維持 iOS 深色舒適感
+    dSurface:          Color(0xFF18100F),
+    dLowest:           Color(0xFF110A09),
+    dLow:              Color(0xFF251A1C),
+    dContainer:        Color(0xFF2D2025),
+    dHigh:             Color(0xFF36262C),
+    dHighest:          Color(0xFF402D34),
+    dOutline:          Color(0xFF6A3A4A),
+    dOutlineVariant:   Color(0xFF36262C),
   ),
   // ── FOREST GREEN / SAGE ──────────────────────────────────────────────────
   4: _Palette(
@@ -152,7 +152,7 @@ class ThemeProvider extends ChangeNotifier {
     Color(0xFFC59B63), // 金（預設）
     Color(0xFF5C6BC0), // 靛藍
     Color(0xFF009688), // 青綠
-    Color(0xFFE91E63), // 玫瑰
+    Color(0xFFF3A6C2), // 玫瑰（奶霧櫻花粉）
     Color(0xFF43A047), // 森林綠
   ];
 
@@ -190,10 +190,16 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   // ── Global component themes (FAB, Switch, Buttons) ──────────────────────
-  static ThemeData _applyComponents(ThemeData base) {
+  static ThemeData _applyComponents(
+    ThemeData base, {
+    Color? switchThumb,
+    Color? switchTrack,
+  }) {
     final p = base.colorScheme.primary;
     final onP = base.colorScheme.onPrimary;
     final pc = base.colorScheme.primaryContainer;
+    final sThumb = switchThumb ?? p;
+    final sTrack = switchTrack ?? p.withOpacity(0.38);
     return base.copyWith(
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: p,
@@ -203,10 +209,10 @@ class ThemeProvider extends ChangeNotifier {
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? p : null,
+          (s) => s.contains(WidgetState.selected) ? sThumb : null,
         ),
         trackColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? p.withOpacity(0.38) : null,
+          (s) => s.contains(WidgetState.selected) ? sTrack : null,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -242,8 +248,125 @@ class ThemeProvider extends ChangeNotifier {
     );
   }
 
+  // ── Rose theme constants ─────────────────────────────────────────────────
+  // 奶霧櫻花粉 / 草莓牛奶 / 棉花糖 — fully hand-crafted
+  static const _rosePrimary          = Color(0xFFD97FA4); // Switch Thumb / main interactive
+  static const _rosePrimaryDeep      = Color(0xFFE58FB2); // hover/focus
+  static const _rosePrimaryContainer = Color(0xFFFFE8F1); // Icon Soft Bg / badge
+  static const _roseSwitchTrack      = Color(0xFFF6CDD9); // Switch Track On
+  static const _roseSwitchThumb      = Color(0xFFD97FA4); // Switch Thumb On
+  static const _roseSecondary        = Color(0xFFC4A8D4); // #EBDCF2 family
+  static const _roseSecondaryContainer = Color(0xFFF0E6F7);
+  static const _roseFabBg            = Color(0xFFE58FB2); // FAB slightly deeper
+
+  static ThemeData _buildRoseLightTheme() {
+    final p = _palettes[3]!;
+    const cs = ColorScheme(
+      brightness:               Brightness.light,
+      // ── Surfaces ──
+      surface:                  Color(0xFFFFF9FC),   // App Background
+      surfaceContainerLowest:   Color(0xFFFFF9FC),
+      surfaceContainerLow:      Color(0xFFFDECF3),   // Card Background
+      surfaceContainer:         Color(0xFFFBE6EF),   // Soft Surface
+      surfaceContainerHigh:     Color(0xFFF8DDE9),
+      surfaceContainerHighest:  Color(0xFFF5D4E2),
+      surfaceTint:              Colors.transparent,
+      // ── Primary ──
+      primary:                  Color(0xFFD97FA4),   // Primary Deep (contrast OK on light)
+      onPrimary:                Color(0xFFFFFFFF),
+      primaryContainer:         Color(0xFFFFE8F1),   // Icon Soft Background
+      onPrimaryContainer:       Color(0xFF7A2848),
+      // ── Secondary (lavender / 紫粉陰影) ──
+      secondary:                Color(0xFFC4A8D4),
+      onSecondary:              Color(0xFFFFFFFF),
+      secondaryContainer:       Color(0xFFF0E6F7),   // #EBDCF2
+      onSecondaryContainer:     Color(0xFF5C3A70),
+      // ── Tertiary (keep green for income) ──
+      tertiary:                 Color(0xFF5DAD7C),
+      onTertiary:               Color(0xFFFFFFFF),
+      tertiaryContainer:        Color(0xFFD4EDDD),
+      onTertiaryContainer:      Color(0xFF1A4A2E),
+      // ── Error ──
+      error:                    Color(0xFFBA1A1A),
+      onError:                  Color(0xFFFFFFFF),
+      errorContainer:           Color(0xFFFFDAD6),
+      onErrorContainer:         Color(0xFF410002),
+      // ── Text ──
+      onSurface:                Color(0xFF2D1A24),   // warm dark plum
+      onSurfaceVariant:         Color(0xFF9B6070),   // medium plum
+      // ── Borders ──
+      outline:                  Color(0xFFF1C8D8),   // Border
+      outlineVariant:           Color(0xFFEFD9E3),   // Soft Divider
+      // ── Inverse ──
+      inverseSurface:           Color(0xFF3D1A2A),
+      onInverseSurface:         Color(0xFFFFF0F5),
+      inversePrimary:           Color(0xFFF8C7D9),   // Primary Soft
+      shadow:                   Color(0xFF000000),
+      scrim:                    Color(0xFF000000),
+    );
+    final base = ThemeData(useMaterial3: true, colorScheme: cs);
+    return _applyComponents(
+      base,
+      switchThumb: _roseSwitchThumb,
+      switchTrack: _roseSwitchTrack,
+    ).copyWith(
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: _roseFabBg,
+        foregroundColor: Color(0xFFFFFFFF),
+        elevation: 4,
+        shape: CircleBorder(),
+      ),
+    );
+  }
+
+  static ThemeData _buildRoseDarkTheme() {
+    final p = _palettes[3]!;
+    const cs = ColorScheme(
+      brightness:               Brightness.dark,
+      surface:                  Color(0xFF18100F),
+      surfaceContainerLowest:   Color(0xFF110A09),
+      surfaceContainerLow:      Color(0xFF251A1C),
+      surfaceContainer:         Color(0xFF2D2025),
+      surfaceContainerHigh:     Color(0xFF36262C),
+      surfaceContainerHighest:  Color(0xFF402D34),
+      surfaceTint:              Color(0xFFF3A6C2),
+      primary:                  Color(0xFFF8C7D9),   // Primary Soft — bright on dark
+      onPrimary:                Color(0xFF5A1A30),
+      primaryContainer:         Color(0xFF7A2848),
+      onPrimaryContainer:       Color(0xFFFFD9E6),
+      secondary:                Color(0xFFDABEE8),
+      onSecondary:              Color(0xFF40265A),
+      secondaryContainer:       Color(0xFF583872),
+      onSecondaryContainer:     Color(0xFFF0E0FF),
+      tertiary:                 Color(0xFF8ED4A8),
+      onTertiary:               Color(0xFF003820),
+      tertiaryContainer:        Color(0xFF1A5035),
+      onTertiaryContainer:      Color(0xFFB4EDCA),
+      error:                    Color(0xFFFF8C8C),
+      onError:                  Color(0xFF5A0000),
+      errorContainer:           Color(0xFF7A0000),
+      onErrorContainer:         Color(0xFFFFDAD6),
+      onSurface:                Color(0xFFF5DDE6),
+      onSurfaceVariant:         Color(0xFFD4A8B8),
+      outline:                  Color(0xFF6A3A4A),
+      outlineVariant:           Color(0xFF36262C),
+      inverseSurface:           Color(0xFFF5DDE6),
+      onInverseSurface:         Color(0xFF18100F),
+      inversePrimary:           Color(0xFFD97FA4),
+      shadow:                   Color(0xFF000000),
+      scrim:                    Color(0xFF000000),
+    );
+    final base = ThemeData(useMaterial3: true, colorScheme: cs);
+    return _applyComponents(
+      base,
+      switchThumb: const Color(0xFFF8C7D9),
+      switchTrack: const Color(0xFF7A2848),
+    );
+  }
+
   // ── Light theme ──────────────────────────────────────────────────────────
   ThemeData get lightTheme {
+    if (_accentIndex == 3) return _buildRoseLightTheme();
     if (_accentIndex == 0) {
       // Gold: let fromSeed generate the warm cream surfaces naturally
       final base = ThemeData(
@@ -282,6 +405,7 @@ class ThemeProvider extends ChangeNotifier {
 
   // ── Dark theme ───────────────────────────────────────────────────────────
   ThemeData get darkTheme {
+    if (_accentIndex == 3) return _buildRoseDarkTheme();
     if (_accentIndex == 0) return _buildDarkGoldTheme();
     return _buildDarkTheme(accentColors[_accentIndex], _accentIndex);
   }
