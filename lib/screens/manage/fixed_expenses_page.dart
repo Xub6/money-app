@@ -42,12 +42,12 @@ class FixedExpensesPage extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          color: AppColors.gold,
+          color: cs.primary,
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: AppColors.gold, size: 26),
+            icon: Icon(Icons.add, color: cs.primary, size: 26),
             onPressed: () => _openDialog(context),
           ),
         ],
@@ -85,9 +85,9 @@ class FixedExpensesPage extends StatelessWidget {
                             fontSize: 13, color: cs.onSurfaceVariant)),
                     const Spacer(),
                     Text('NT\$ ${_fmtF(state.fixedTotal)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.gold,
+                            color: cs.primary,
                             fontWeight: FontWeight.w700)),
                   ]),
                 );
@@ -192,7 +192,7 @@ class _FixedItemTile extends StatelessWidget {
                     Icon(Icons.receipt_long,
                         color: completed
                             ? cs.onSurfaceVariant
-                            : AppColors.gold,
+                            : cs.primary,
                         size: 18),
                     const SizedBox(width: 10),
                     Expanded(
@@ -211,14 +211,14 @@ class _FixedItemTile extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                            color: AppColors.gold.withValues(alpha: 0.15),
+                            color: cs.primary.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6)),
                         child: Text(
                           AppLocalizations.ofParam(context,
                               'debit_day_value', {'day': item.debitDay}),
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 10,
-                              color: AppColors.gold,
+                              color: cs.primary,
                               fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -226,8 +226,8 @@ class _FixedItemTile extends StatelessWidget {
                     ],
                     GestureDetector(
                       onTap: onEdit,
-                      child: const Icon(Icons.edit_outlined,
-                          color: AppColors.gold, size: 18),
+                      child: Icon(Icons.edit_outlined,
+                          color: cs.primary, size: 18),
                     ),
                   ]),
                   if (item.totalPeriods != null) ...[
@@ -258,14 +258,14 @@ class _FixedItemTile extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
-                              color: AppColors.gold.withValues(alpha: 0.15),
+                              color: cs.primary.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6)),
                           child: Text(
                             AppLocalizations.ofParam(context,
                                 'periods_remaining_label', {'n': remaining}),
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.gold,
+                                color: cs.primary,
                                 fontWeight: FontWeight.w700),
                           ),
                         ),
@@ -283,7 +283,7 @@ class _FixedItemTile extends StatelessWidget {
                         backgroundColor: cs.surfaceContainerHighest,
                         valueColor: AlwaysStoppedAnimation(completed
                             ? cs.onSurfaceVariant
-                            : AppColors.gold),
+                            : cs.primary),
                       ),
                     ),
                   ],

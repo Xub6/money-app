@@ -96,14 +96,14 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
             style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context, 'cancel'), style: const TextStyle(color: AppColors.gold)),
+          child: Text(AppLocalizations.of(context, 'cancel'), style: TextStyle(color: cs.primary)),
         ),
         actions: [
           TextButton(
             onPressed: _save,
             child: Text(isEdit ? AppLocalizations.of(context, 'update') : AppLocalizations.of(context, 'save_label'),
-                style: const TextStyle(
-                    color: AppColors.gold,
+                style: TextStyle(
+                    color: cs.primary,
                     fontWeight: FontWeight.w800,
                     fontSize: 16)),
           ),
@@ -246,7 +246,7 @@ class _AddEditAccountPageState extends State<AddEditAccountPage> {
                         Vibration.vibrate(duration: 40, amplitude: 80);
                         setState(() => _countInTotal = v);
                       },
-                      activeThumbColor: AppColors.gold,
+                      activeThumbColor: cs.primary,
                     ),
                   ),
                 ])),

@@ -41,14 +41,14 @@ class _CategoryManagementPageState extends State<CategoryManagementPage>
         title: Text(AppLocalizations.of(context, 'category_management_title'), style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          color: AppColors.gold,
+          color: cs.primary,
           onPressed: () => Navigator.pop(context),
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.gold,
+          labelColor: cs.primary,
           unselectedLabelColor: cs.onSurfaceVariant,
-          indicatorColor: AppColors.gold,
+          indicatorColor: cs.primary,
           tabs: [
             Tab(text: AppLocalizations.of(context, 'expense_categories')),
             Tab(text: AppLocalizations.of(context, 'income_categories')),
@@ -64,7 +64,7 @@ class _CategoryManagementPageState extends State<CategoryManagementPage>
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addCategory,
-        backgroundColor: AppColors.gold,
+        backgroundColor: cs.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: Text(AppLocalizations.of(context, 'add_category'), style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -355,7 +355,7 @@ class _UnifiedCategoryRow extends StatelessWidget {
             ),
             // 編輯
             IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.gold),
+              icon: Icon(Icons.edit_outlined, size: 20, color: cs.primary),
               onPressed: () {
                 if (item.isPredefined) {
                   onEditPredefined(item.predefined!);
@@ -508,7 +508,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
+              borderSide: BorderSide(color: cs.primary, width: 1.5),
             ),
           ),
         ),
@@ -604,7 +604,7 @@ class _CategoryEditorState extends State<_CategoryEditor> {
           child: ElevatedButton(
             onPressed: _save,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.gold,
+              backgroundColor: cs.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 0,
@@ -780,7 +780,7 @@ class _PredefinedCategoryEditorState extends State<_PredefinedCategoryEditor> {
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.gold,
+              backgroundColor: cs.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 0,

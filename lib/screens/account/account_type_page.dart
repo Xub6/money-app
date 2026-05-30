@@ -78,7 +78,7 @@ class AccountTypePage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           onPressed: () => Navigator.pop(context),
-          color: AppColors.gold,
+          color: cs.primary,
         ),
       ),
       body: SingleChildScrollView(

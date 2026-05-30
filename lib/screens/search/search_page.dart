@@ -151,7 +151,7 @@ class _SearchPageState extends State<SearchPage> {
               onChanged: (_) => _performSearch(),
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context, 'search_hint'),
-                prefixIcon: const Icon(Icons.search, color: AppColors.gold),
+                prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.primary),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -237,8 +237,8 @@ class _SearchPageState extends State<SearchPage> {
           // Results
           Expanded(
             child: _isSearching
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.gold))
+                ? Center(
+                    child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
                 : _results.isEmpty
                     ? Center(
                         child: Text(
@@ -319,7 +319,7 @@ class _SearchPageState extends State<SearchPage> {
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           child:
-              const Icon(Icons.receipt_long, color: AppColors.gold, size: 20),
+              Icon(Icons.receipt_long, color: Theme.of(context).colorScheme.primary, size: 20),
         ),
         title: Text(item.title,
             style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -341,6 +341,7 @@ class _SearchPageState extends State<SearchPage> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            final cs = Theme.of(context).colorScheme;
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -401,7 +402,7 @@ class _SearchPageState extends State<SearchPage> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.gold,
+                        backgroundColor: cs.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

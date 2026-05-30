@@ -35,16 +35,16 @@ class OnboardingStartPage extends StatelessWidget {
                   width: 76,
                   height: 76,
                   decoration: BoxDecoration(
-                    color: AppColors.gold.withValues(alpha: 0.12),
+                    color: cs.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.35),
+                      color: cs.primary.withValues(alpha: 0.35),
                       width: 1.5,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.account_balance_wallet_rounded,
-                    color: AppColors.gold,
+                    color: cs.primary,
                     size: 36,
                   ),
                 ),
@@ -81,7 +81,7 @@ class OnboardingStartPage extends StatelessWidget {
               // ── 快速開始（主推）──────────────────────────
               _OptionCard(
                 icon: Icons.flash_on_rounded,
-                iconColor: AppColors.gold,
+                iconColor: cs.primary,
                 title: AppLocalizations.of(context, 'onboarding_quick_title'),
                 desc: AppLocalizations.of(context, 'onboarding_quick_desc'),
                 isHighlight: true,
@@ -158,7 +158,7 @@ class _OptionCard extends StatelessWidget {
 
     return Material(
       color: isHighlight
-          ? AppColors.gold.withValues(alpha: 0.07)
+          ? cs.primary.withValues(alpha: 0.07)
           : cs.surfaceContainerLow,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
@@ -170,7 +170,7 @@ class _OptionCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: isHighlight
-                  ? AppColors.gold.withValues(alpha: 0.55)
+                  ? cs.primary.withValues(alpha: 0.55)
                   : cs.outlineVariant.withValues(alpha: 0.25),
               width: isHighlight ? 1.5 : 1,
             ),

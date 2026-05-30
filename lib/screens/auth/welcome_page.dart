@@ -31,7 +31,7 @@ class _WelcomePageState extends State<WelcomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.ofParam(context, 'welcome_user', {'name': p.displayName})),
-          backgroundColor: AppColors.gold,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -96,7 +96,7 @@ class _WelcomePageState extends State<WelcomePage> {
                   child: ElevatedButton(
                     onPressed: _loading ? null : _signIn,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.gold,
+                      backgroundColor: cs.primary,
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),

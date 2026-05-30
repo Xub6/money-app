@@ -9,7 +9,6 @@ import 'add_edit_investment_page.dart';
 import '../../core/tour/tour_keys.dart';
 import '../../config/localization.dart';
 
-const _kGold = AppColors.gold;
 const _kGreen = AppColors.success;
 const _kRed = AppColors.error;
 
@@ -125,6 +124,7 @@ class _InvestPageState extends State<InvestPage> {
 
   void _showRateEditor() {
     final ctrl = TextEditingController(text: s.usdTwdRate.toStringAsFixed(2));
+    final cs = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -150,7 +150,7 @@ class _InvestPageState extends State<InvestPage> {
               }
             },
             child: Text(AppLocalizations.of(context, 'confirm'),
-                style: const TextStyle(color: _kGold, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: cs.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -213,6 +213,7 @@ class _InvestPageState extends State<InvestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final holdings = s.holdings;
     final groups = _buildGroups(holdings);
     final totalValue = s.totalPortfolioValue;
@@ -241,18 +242,16 @@ class _InvestPageState extends State<InvestPage> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
+                        color: cs.surfaceContainerHighest,
                         shape: BoxShape.circle,
                       ),
                       child: _refreshing
-                          ? const Padding(
-                              padding: EdgeInsets.all(8),
+                          ? Padding(
+                              padding: const EdgeInsets.all(8),
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: _kGold))
-                          : const Icon(Icons.refresh_rounded,
-                              color: _kGold, size: 20),
+                                  strokeWidth: 2, color: cs.primary))
+                          : Icon(Icons.refresh_rounded,
+                              color: cs.primary, size: 20),
                     ),
                   ),
                 ),
@@ -533,7 +532,7 @@ class _HoldingDetailSheet extends StatelessWidget {
                     ]),
               ),
               IconButton(
-                  icon: const Icon(Icons.edit_outlined, color: _kGold),
+                  icon: Icon(Icons.edit_outlined, color: cs.primary),
                   onPressed: onEdit),
               IconButton(
                   icon: const Icon(Icons.delete_outline, color: _kRed),
@@ -665,11 +664,11 @@ class _GroupCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: _kGold.withValues(alpha: 0.12),
+                      color: cs.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(AppLocalizations.ofParam(context, 'transaction_count', {'n': g.lots.length}),
-                        style: const TextStyle(color: _kGold, fontSize: 10, fontWeight: FontWeight.w700)),
+                        style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w700)),
                   ),
                 ],
               ]),
@@ -683,11 +682,11 @@ class _GroupCard extends StatelessWidget {
                   margin: const EdgeInsets.only(top: 2, bottom: 2),
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: _kGold.withValues(alpha: 0.10),
+                    color: cs.primary.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(accountName!,
-                      style: const TextStyle(color: _kGold, fontSize: 10, fontWeight: FontWeight.w600)),
+                      style: TextStyle(color: cs.primary, fontSize: 10, fontWeight: FontWeight.w600)),
                 ),
               const SizedBox(height: 2),
               if (g.currentPrice > 0) ...[
@@ -812,7 +811,7 @@ class _GroupDetailSheet extends StatelessWidget {
                       ]),
                     ),
                     IconButton(
-                        icon: const Icon(Icons.edit_outlined, color: _kGold, size: 20),
+                        icon: Icon(Icons.edit_outlined, color: cs.primary, size: 20),
                         onPressed: () => onEditLot(h)),
                     IconButton(
                         icon: const Icon(Icons.delete_outline, color: _kRed, size: 20),

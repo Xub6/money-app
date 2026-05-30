@@ -7,7 +7,6 @@ import '../../data/models/loan_record.dart';
 import '../../data/models/loan_payment.dart';
 import '../../data/repositories/app_state.dart';
 
-const kGold = AppColors.gold;
 const kRed = AppColors.error;
 const kGray = AppColors.textSecondary;
 const kGreen = AppColors.success;
@@ -29,13 +28,13 @@ class LoanPage extends StatelessWidget {
         title: Text(AppLocalizations.of(context, 'loan_records'), style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          color: kGold,
+          color: cs.primary,
           onPressed: () => Navigator.pop(context),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addLoan(context),
-        backgroundColor: kGold,
+        backgroundColor: cs.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: Text(AppLocalizations.of(context, 'add_loan'), style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -120,7 +119,7 @@ class _LoanCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: isCompleted
               ? Border.all(color: cs.outlineVariant.withValues(alpha: 0.5))
-              : Border.all(color: kGold.withValues(alpha: 0.3), width: 1.5),
+              : Border.all(color: cs.primary.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -129,12 +128,12 @@ class _LoanCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isCompleted
                     ? cs.surfaceContainerHighest
-                    : kGold.withValues(alpha: 0.12),
+                    : cs.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 isCompleted ? Icons.check_circle_outline : Icons.handshake_rounded,
-                color: isCompleted ? cs.onSurfaceVariant : kGold,
+                color: isCompleted ? cs.onSurfaceVariant : cs.primary,
                 size: 20,
               ),
             ),
@@ -166,7 +165,7 @@ class _LoanCard extends StatelessWidget {
               value: pct / 100,
               minHeight: 5,
               backgroundColor: cs.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation(isCompleted ? kGreen : kGold),
+              valueColor: AlwaysStoppedAnimation(isCompleted ? kGreen : cs.primary),
             ),
           ),
           const SizedBox(height: 6),
@@ -199,7 +198,7 @@ class LoanDetailPage extends StatelessWidget {
         title: Text(loan.borrowerName, style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          color: kGold,
+          color: cs.primary,
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -213,7 +212,7 @@ class LoanDetailPage extends StatelessWidget {
           ? null
           : FloatingActionButton.extended(
               onPressed: () => _addPayment(context),
-              backgroundColor: kGold,
+              backgroundColor: cs.primary,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
               label: Text(AppLocalizations.of(context, 'add_payment'), style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -239,7 +238,7 @@ class LoanDetailPage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: kGold.withValues(alpha: 0.3), width: 1.5),
+                  border: Border.all(color: cs.primary.withValues(alpha: 0.3), width: 1.5),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
@@ -262,7 +261,7 @@ class LoanDetailPage extends StatelessWidget {
                       value: pct / 100,
                       minHeight: 8,
                       backgroundColor: cs.surfaceContainerHighest,
-                      valueColor: AlwaysStoppedAnimation(currentLoan.isCompleted ? kGreen : kGold),
+                      valueColor: AlwaysStoppedAnimation(currentLoan.isCompleted ? kGreen : cs.primary),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -425,7 +424,7 @@ class _PaymentRow extends StatelessWidget {
                     style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
               if (payment.interest > 0)
                 Text(AppLocalizations.ofParam(context, 'interest_label', {'amount': NumberFormat('#,##0.00', 'en_US').format(payment.interest)}),
-                    style: TextStyle(fontSize: 12, color: kGold)),
+                    style: TextStyle(fontSize: 12, color: cs.primary)),
               if (payment.notes != null && payment.notes!.isNotEmpty)
                 Text(payment.notes!, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
             ]),
@@ -493,7 +492,7 @@ class _AddLoanPageState extends State<AddLoanPage> {
           TextButton(
             onPressed: _save,
             child: Text(AppLocalizations.of(context, 'save_label'),
-                style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: cs.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -515,9 +514,9 @@ class _AddLoanPageState extends State<AddLoanPage> {
                 label: Text(c),
                 selected: sel,
                 onSelected: (_) => setState(() => _currency = c),
-                selectedColor: kGold.withValues(alpha: 0.2),
+                selectedColor: cs.primary.withValues(alpha: 0.2),
                 labelStyle: TextStyle(
-                    color: sel ? kGold : cs.onSurface,
+                    color: sel ? cs.primary : cs.onSurface,
                     fontWeight: sel ? FontWeight.w700 : FontWeight.normal),
               );
             }).toList(),
@@ -533,7 +532,7 @@ class _AddLoanPageState extends State<AddLoanPage> {
                 label: Text(AppLocalizations.of(context, 'not_specified')),
                 selected: _accountId == null,
                 onSelected: (_) => setState(() => _accountId = null),
-                selectedColor: kGold.withValues(alpha: 0.2),
+                selectedColor: cs.primary.withValues(alpha: 0.2),
               ),
               ...accounts.map((a) {
                 final sel = _accountId == a.id;
@@ -541,9 +540,9 @@ class _AddLoanPageState extends State<AddLoanPage> {
                   label: Text(a.displayName),
                   selected: sel,
                   onSelected: (_) => setState(() => _accountId = a.id),
-                  selectedColor: kGold.withValues(alpha: 0.2),
+                  selectedColor: cs.primary.withValues(alpha: 0.2),
                   labelStyle: TextStyle(
-                      color: sel ? kGold : cs.onSurface,
+                      color: sel ? cs.primary : cs.onSurface,
                       fontWeight: sel ? FontWeight.w700 : FontWeight.normal),
                 );
               }),
@@ -562,7 +561,7 @@ class _AddLoanPageState extends State<AddLoanPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(children: [
-                const Icon(Icons.calendar_today_outlined, size: 18, color: kGold),
+                Icon(Icons.calendar_today_outlined, size: 18, color: cs.primary),
                 const SizedBox(width: 10),
                 Text(DateFormat('yyyy/MM/dd').format(_date),
                     style: const TextStyle(fontSize: 15)),
@@ -597,7 +596,7 @@ class _AddLoanPageState extends State<AddLoanPage> {
               borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: kGold, width: 1.5)),
+              borderSide: BorderSide(color: cs.primary, width: 1.5)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
@@ -686,7 +685,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
           TextButton(
             onPressed: _save,
             child: Text(AppLocalizations.of(context, 'save_label'),
-                style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: cs.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -697,12 +696,12 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
             padding: const EdgeInsets.all(14),
             margin: const EdgeInsets.only(bottom: 18),
             decoration: BoxDecoration(
-              color: kGold.withValues(alpha: 0.1),
+              color: cs.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
               '${widget.loan.borrowerName}・${AppLocalizations.ofParam(context, 'loan_remaining_info', {'currency': widget.loan.currency, 'amount': fmt.format(widget.loan.remaining)})}',
-              style: const TextStyle(fontWeight: FontWeight.w700, color: kGold),
+              style: TextStyle(fontWeight: FontWeight.w700, color: cs.primary),
             ),
           ),
 
@@ -720,7 +719,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                 label: Text(AppLocalizations.of(context, 'not_specified')),
                 selected: _accountId == null,
                 onSelected: (_) => setState(() => _accountId = null),
-                selectedColor: kGold.withValues(alpha: 0.2),
+                selectedColor: cs.primary.withValues(alpha: 0.2),
               ),
               ...accounts.map((a) {
                 final sel = _accountId == a.id;
@@ -728,9 +727,9 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                   label: Text(a.displayName),
                   selected: sel,
                   onSelected: (_) => setState(() => _accountId = a.id),
-                  selectedColor: kGold.withValues(alpha: 0.2),
+                  selectedColor: cs.primary.withValues(alpha: 0.2),
                   labelStyle: TextStyle(
-                      color: sel ? kGold : cs.onSurface,
+                      color: sel ? cs.primary : cs.onSurface,
                       fontWeight: sel ? FontWeight.w700 : FontWeight.normal),
                 );
               }),
@@ -749,7 +748,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(children: [
-                const Icon(Icons.calendar_today_outlined, size: 18, color: kGold),
+                Icon(Icons.calendar_today_outlined, size: 18, color: cs.primary),
                 const SizedBox(width: 10),
                 Text(DateFormat('yyyy/MM/dd').format(_date),
                     style: const TextStyle(fontSize: 15)),
@@ -784,7 +783,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
               borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: kGold, width: 1.5)),
+              borderSide: BorderSide(color: cs.primary, width: 1.5)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),

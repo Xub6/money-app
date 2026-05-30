@@ -132,11 +132,11 @@ class _LanguagePickerPageState extends State<LanguagePickerPage> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: isSelected
-                                        ? AppColors.gold
+                                        ? cs.primary
                                         : Colors.transparent,
                                     border: Border.all(
                                       color: isSelected
-                                          ? AppColors.gold
+                                          ? cs.primary
                                           : cs.onSurface.withValues(alpha: 0.25),
                                       width: 2,
                                     ),
@@ -169,9 +169,9 @@ class _LanguagePickerPageState extends State<LanguagePickerPage> {
                 child: ElevatedButton(
                   onPressed: _selected == null ? null : _confirm,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.gold,
+                    backgroundColor: cs.primary,
                     disabledBackgroundColor:
-                        AppColors.gold.withValues(alpha: 0.3),
+                        cs.primary.withValues(alpha: 0.3),
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),

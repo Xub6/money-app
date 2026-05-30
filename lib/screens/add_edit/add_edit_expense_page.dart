@@ -174,21 +174,21 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
         elevation: 0,
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context, 'cancel'), style: const TextStyle(color: AppColors.gold)),
+          child: Text(AppLocalizations.of(context, 'cancel'), style: TextStyle(color: cs.primary)),
         ),
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _save,
             child: _isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.gold),
+                        strokeWidth: 2, color: cs.primary),
                   )
                 : Text(isEdit ? AppLocalizations.of(context, 'update') : AppLocalizations.of(context, 'save_label'),
-                    style: const TextStyle(
-                        color: AppColors.gold,
+                    style: TextStyle(
+                        color: cs.primary,
                         fontWeight: FontWeight.w800,
                         fontSize: 16)),
           ),
@@ -395,19 +395,19 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.gold.withValues(alpha: 0.12),
+                color: cs.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.4)),
               ),
               child: Row(children: [
-                const Icon(Icons.schedule_rounded,
-                    size: 14, color: AppColors.gold),
+                Icon(Icons.schedule_rounded,
+                    size: 14, color: cs.primary),
                 const SizedBox(width: 6),
                 Text(
                   AppLocalizations.of(context, 'pending_hint'),
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.gold,
+                      color: cs.primary,
                       fontWeight: FontWeight.w600),
                 ),
               ]),
@@ -423,7 +423,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: !_isNamedDate(_selectedDate)
-                      ? AppColors.gold
+                      ? cs.primary
                       : cs.outlineVariant,
                   width: 1.5,
                 ),
@@ -436,7 +436,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
                   DateFormat('MMM d, yyyy').format(_selectedDate),
                   style: TextStyle(
                     color: !_isNamedDate(_selectedDate)
-                        ? AppColors.gold
+                        ? cs.primary
                         : cs.onSurfaceVariant,
                     fontSize: 14,
                   ),
@@ -579,7 +579,7 @@ class _AddEditExpensePageState extends State<AddEditExpensePage> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _save,
               style: ElevatedButton.styleFrom(
-                backgroundColor: isIncome ? AppColors.success : AppColors.gold,
+                backgroundColor: isIncome ? AppColors.success : cs.primary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16)),
@@ -677,7 +677,7 @@ class _DateBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final activeColor =
-        isPending ? AppColors.gold.withValues(alpha: 0.7) : AppColors.gold;
+        isPending ? cs.primary.withValues(alpha: 0.7) : cs.primary;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -699,7 +699,7 @@ class _DateBtn extends StatelessWidget {
                 color: selected
                     ? Colors.white
                     : isPending
-                        ? AppColors.gold.withValues(alpha: 0.7)
+                        ? cs.primary.withValues(alpha: 0.7)
                         : cs.onSurfaceVariant,
               )),
           Text(sub,

@@ -134,7 +134,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       child: ElevatedButton(
                         onPressed: _nextPage,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.gold,
+                          backgroundColor: cs.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14)),
@@ -174,7 +174,7 @@ class _Dot extends StatelessWidget {
       height: 8,
       decoration: BoxDecoration(
         color: active
-            ? AppColors.gold
+            ? Theme.of(context).colorScheme.primary
             : Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(4),
       ),

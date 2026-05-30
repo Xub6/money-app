@@ -106,8 +106,8 @@ class _TransferPageState extends State<TransferPage> {
           TextButton(
             onPressed: _saving ? null : _save,
             child: Text(AppLocalizations.of(context, 'confirm'),
-                style: const TextStyle(
-                    color: AppColors.gold,
+                style: TextStyle(
+                    color: cs.primary,
                     fontWeight: FontWeight.w700,
                     fontSize: 15)),
           ),
@@ -200,8 +200,8 @@ class _TransferPageState extends State<TransferPage> {
                             fontWeight: FontWeight.w500)),
                     const Spacer(),
                     Text(DateFormat('yyyy/MM/dd').format(_date),
-                        style: const TextStyle(
-                            color: AppColors.gold,
+                        style: TextStyle(
+                            color: cs.primary,
                             fontWeight: FontWeight.w600,
                             fontSize: 15)),
                     const SizedBox(width: 4),
@@ -241,7 +241,7 @@ class _TransferPageState extends State<TransferPage> {
               child: ElevatedButton(
                 onPressed: _saving ? null : _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
+                  backgroundColor: cs.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
@@ -284,7 +284,7 @@ class _TransferPageState extends State<TransferPage> {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Center(
           child: Icon(Icons.arrow_downward_rounded,
-              size: 20, color: AppColors.gold.withValues(alpha: 0.6)),
+              size: 20, color: cs.primary.withValues(alpha: 0.6)),
         ),
       );
 
@@ -324,8 +324,8 @@ class _TransferPageState extends State<TransferPage> {
                   style: const TextStyle(fontSize: 16)),
               const SizedBox(width: 6),
               Text(sel.displayName,
-                  style: const TextStyle(
-                      color: AppColors.gold,
+                  style: TextStyle(
+                      color: cs.primary,
                       fontWeight: FontWeight.w600,
                       fontSize: 14)),
               const SizedBox(width: 2),
@@ -377,7 +377,7 @@ class _TransferPageState extends State<TransferPage> {
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
               ),
               trailing: selected == a.id
-                  ? const Icon(Icons.check, color: AppColors.gold)
+                  ? Icon(Icons.check, color: cs.primary)
                   : null,
               onTap: () {
                 onChanged(a.id);

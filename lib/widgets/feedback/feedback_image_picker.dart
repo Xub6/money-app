@@ -91,13 +91,13 @@ class _AddTile extends StatelessWidget {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: AppColors.gold.withAlpha(100),
+              color: Theme.of(context).colorScheme.primary.withAlpha(100),
               width: 1.5,
             ),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.add_photo_alternate_outlined,
-            color: AppColors.gold,
+            color: Theme.of(context).colorScheme.primary,
             size: 28,
           ),
         ),

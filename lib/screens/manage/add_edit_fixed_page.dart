@@ -111,8 +111,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                       Navigator.pop(ctx);
                     },
                     child: Text(AppLocalizations.of(context, 'confirm'),
-                        style: const TextStyle(
-                            color: AppColors.gold,
+                        style: TextStyle(
+                            color: cs.primary,
                             fontWeight: FontWeight.w700)),
                   ),
                 ]),
@@ -125,10 +125,10 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                       child: Container(
                         height: itemExtent,
                         decoration: BoxDecoration(
-                          color: AppColors.gold.withValues(alpha: 0.12),
+                          color: cs.primary.withValues(alpha: 0.12),
                           border: Border.symmetric(
                             horizontal: BorderSide(
-                                color: AppColors.gold.withValues(alpha: 0.45),
+                                color: cs.primary.withValues(alpha: 0.45),
                                 width: 1),
                           ),
                         ),
@@ -248,7 +248,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.gold
+                        ? cs.primary
                         : cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -407,7 +407,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
               selectedAccount?.displayName ?? AppLocalizations.of(context, 'not_selected'),
               style: TextStyle(
                 fontSize: 14,
-                color: selected != null ? AppColors.gold : cs.onSurfaceVariant,
+                color: selected != null ? cs.primary : cs.onSurfaceVariant,
                 fontWeight: selected != null ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -447,7 +447,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
             title: Text(AppLocalizations.of(context, 'not_linked'),
                 style: TextStyle(color: cs.onSurface)),
             trailing: selected == null
-                ? Icon(Icons.check, color: AppColors.gold)
+                ? Icon(Icons.check, color: cs.primary)
                 : null,
             onTap: () {
               onPicked(null);
@@ -465,7 +465,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
               ),
               trailing: selected == a.id
-                  ? Icon(Icons.check, color: AppColors.gold)
+                  ? Icon(Icons.check, color: cs.primary)
                   : null,
               onTap: () {
                 onPicked(a.id);
@@ -513,8 +513,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
           TextButton(
             onPressed: _save,
             child: Text(AppLocalizations.of(context, 'save_label'),
-                style: const TextStyle(
-                    color: AppColors.gold,
+                style: TextStyle(
+                    color: cs.primary,
                     fontWeight: FontWeight.w700,
                     fontSize: 15)),
           ),
@@ -624,8 +624,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                             : AppLocalizations.of(context, 'no_debit_day'),
                         style: TextStyle(
                           color: _debitDay > 0
-                              ? AppColors.gold
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                              ? cs.primary
+                              : cs.onSurfaceVariant,
                           fontWeight: _debitDay > 0
                               ? FontWeight.w600
                               : FontWeight.normal,
@@ -635,7 +635,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                       const SizedBox(width: 4),
                       Icon(Icons.chevron_right,
                           size: 18,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          color: cs.onSurfaceVariant),
                     ],
                   ),
                 ),
@@ -649,7 +649,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                       context, 'auto_debit_note', {'day': _debitDay}),
                   style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      color: cs.onSurfaceVariant),
                 ),
               ),
 
@@ -664,8 +664,8 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(_startMonthLabel,
-                          style: const TextStyle(
-                              color: AppColors.gold,
+                          style: TextStyle(
+                              color: cs.primary,
                               fontWeight: FontWeight.w600,
                               fontSize: 15)),
                       const SizedBox(width: 4),
@@ -683,7 +683,7 @@ class _AddEditFixedPageState extends State<AddEditFixedPage> {
                   children: [
                     Switch.adaptive(
                       value: _hasPeriods,
-                      activeThumbColor: AppColors.gold,
+                      activeThumbColor: cs.primary,
                       onChanged: (v) {
                         Provider.of<AppState>(context, listen: false).hapticLight();
                         setState(() {

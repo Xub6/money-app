@@ -120,8 +120,8 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   }
 
   Color _pressedBg(String k, Color bg, ColorScheme cs) {
-    if ('+-×÷'.contains(k)) return AppColors.gold.withValues(alpha: 0.30);
-    if (k == '=') return AppColors.gold.withValues(alpha: 0.42);
+    if ('+-×÷'.contains(k)) return cs.primary.withValues(alpha: 0.30);
+    if (k == '=') return cs.primary.withValues(alpha: 0.42);
     return Color.alphaBlend(cs.onSurface.withValues(alpha: 0.14), bg);
   }
 
@@ -226,7 +226,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
               ),
               if (showPreview)
                 Text('= ${_fmt(previewValue ?? 0)}',
-                    style: const TextStyle(fontSize: 16, color: AppColors.gold, fontWeight: FontWeight.w600)),
+                    style: TextStyle(fontSize: 16, color: cs.primary, fontWeight: FontWeight.w600)),
             ]),
           ),
           const SizedBox(height: 12),
@@ -270,14 +270,14 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     Color bg;
     Color fg;
     if (k == '=') {
-      bg = AppColors.gold.withValues(alpha: 0.15);
-      fg = AppColors.gold;
+      bg = cs.primary.withValues(alpha: 0.15);
+      fg = cs.primary;
     } else if ('C⌫'.contains(k)) {
       bg = cs.surfaceContainerHighest;
-      fg = AppColors.gold;
+      fg = cs.primary;
     } else if ('+-×÷'.contains(k)) {
-      bg = AppColors.gold.withValues(alpha: 0.1);
-      fg = AppColors.gold;
+      bg = cs.primary.withValues(alpha: 0.1);
+      fg = cs.primary;
     } else {
       bg = cs.surfaceContainerLow;
       fg = cs.onSurface;
@@ -351,7 +351,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
         duration: isPressed ? Duration.zero : const Duration(milliseconds: 100),
         height: 64,
         decoration: BoxDecoration(
-          color: isPressed ? Color.alphaBlend(const Color(0x33000000), AppColors.gold) : AppColors.gold,
+          color: isPressed ? Color.alphaBlend(const Color(0x33000000), cs.primary) : cs.primary,
           borderRadius: BorderRadius.circular(14),
         ),
         transform: isPressed ? (Matrix4.identity()..scale(0.95)) : Matrix4.identity(),
