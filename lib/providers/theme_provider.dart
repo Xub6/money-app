@@ -54,13 +54,36 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  ThemeData get lightTheme => ThemeData(
+  ThemeData get lightTheme {
+    if (_accentIndex == 0) {
+      return ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: accentColor,
+          seedColor: accentColors[0],
           brightness: Brightness.light,
         ),
       );
+    }
+    return _buildLightAccentTheme(accentColor);
+  }
+
+  static ThemeData _buildLightAccentTheme(Color accent) {
+    final seed = ColorScheme.fromSeed(seedColor: accent, brightness: Brightness.light);
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: seed.copyWith(
+        surface: Colors.white,
+        surfaceContainerLowest: const Color(0xFFFAFAFA),
+        surfaceContainerLow: const Color(0xFFF6F6F6),
+        surfaceContainer: const Color(0xFFF0F0F0),
+        surfaceContainerHigh: const Color(0xFFEAEAEA),
+        surfaceContainerHighest: const Color(0xFFE3E3E3),
+        surfaceTint: Colors.transparent,
+        onSurface: const Color(0xFF1C1C1E),
+        onSurfaceVariant: const Color(0xFF636366),
+      ),
+    );
+  }
 
   ThemeData get darkTheme {
     if (_accentIndex == 0) return _darkGoldTheme;
