@@ -320,7 +320,6 @@ class _MainShellState extends State<MainShell> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: kGold),
             child: Text(AppLocalizations.of(ctx, 'tour_demo_exit_keep')),
           ),
         ],
@@ -392,7 +391,6 @@ class _MainShellState extends State<MainShell> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context, 'onboarding_rewatch_notice')),
-          backgroundColor: kGold,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 3),
         ),
@@ -572,11 +570,11 @@ class _MainShellState extends State<MainShell> {
             leading: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: kGold.withValues(alpha: 0.12),
+                color: cs.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.playlist_add_rounded,
-                  color: kGold, size: 22),
+              child: Icon(Icons.playlist_add_rounded,
+                  color: cs.primary, size: 22),
             ),
             title: Text(AppLocalizations.of(context, 'add_fixed_expense'),
                 style: const TextStyle(
@@ -590,11 +588,11 @@ class _MainShellState extends State<MainShell> {
             leading: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: kGold.withValues(alpha: 0.12),
+                color: cs.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.account_balance_wallet_rounded,
-                  color: kGold, size: 22),
+              child: Icon(Icons.account_balance_wallet_rounded,
+                  color: cs.primary, size: 22),
             ),
             title: Text(AppLocalizations.of(context, 'edit_my_accounts'),
                 style: const TextStyle(
@@ -685,10 +683,6 @@ class _MainShellState extends State<MainShell> {
       floatingActionButton: FloatingActionButton(
         key: TourKeys.fab,
         onPressed: _fabTap,
-        backgroundColor: kGold,
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        elevation: 4,
         tooltip: _fabTooltip(context),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
@@ -825,8 +819,8 @@ class _DashboardPageState extends State<DashboardPage> {
         TextSpan(text: AppLocalizations.ofParam(context, 'period_spending_prefix', {'period': _periodLabel(context)})),
         TextSpan(
             text: 'NT\$ ${_fmt(total)}',
-            style: const TextStyle(
-                fontWeight: FontWeight.w800, color: kGold)),
+            style: TextStyle(
+                fontWeight: FontWeight.w800, color: cs.primary)),
         if (prevTotal > 0) ...[
           TextSpan(text: AppLocalizations.of(context, 'vs_last_period')),
           TextSpan(
@@ -890,7 +884,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: _AnnualStat(
                         label: AppLocalizations.of(context, 'annual_budget'),
                         value: 'NT\$ ${_fmt(annualBudget)}',
-                        color: kGold)),
+                        color: Theme.of(context).colorScheme.primary)),
               ]),
               const SizedBox(height: 16),
               ClipRRect(
@@ -930,7 +924,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               .colorScheme
                               .surfaceContainerHighest,
                           valueColor: AlwaysStoppedAnimation(
-                              v > state.budget ? kRed : kGold),
+                              v > state.budget ? kRed : Theme.of(context).colorScheme.primary),
                         ),
                       ),
                     ),
@@ -948,6 +942,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final dynamic_ = state.dynamicTotal(displayMonth);
     final used = _includeFixed ? state.usedTotal(displayMonth) : dynamic_;
     final remain = state.budget - used;
@@ -1031,7 +1026,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.chevron_left_rounded, size: 28),
-                      color: kGold,
+                      color: cs.primary,
                       onPressed: onPrev,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -1096,7 +1091,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               Text(
                                 AppLocalizations.of(context, 'tap_to_current_month'),
                                 style: TextStyle(
-                                  color: kGold.withValues(alpha: 0.75),
+                                  color: cs.primary.withValues(alpha: 0.75),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -1108,7 +1103,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.chevron_right_rounded, size: 28),
-                      color: kGold,
+                      color: cs.primary,
                       onPressed: onNext,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -1270,7 +1265,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                          color: kGold,
+                          color: cs.primary,
                           borderRadius: BorderRadius.circular(16)),
                       child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1348,10 +1343,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                         Column(mainAxisSize: MainAxisSize.min, children: [
                           Text('$chartCount',
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 34,
                                   fontWeight: FontWeight.w800,
-                                  color: kGold)),
+                                  color: cs.primary)),
                           Text(AppLocalizations.of(context, 'transactions'),
                               style: TextStyle(
                                   fontSize: 12,
@@ -1508,22 +1503,22 @@ class _DetailPageState extends State<DetailPage> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: kGold.withValues(alpha: 0.12),
+                  color: cs.primary.withValues(alpha: 0.12),
                   border: Border.all(
-                      color: kGold.withValues(alpha: 0.55), width: 1),
+                      color: cs.primary.withValues(alpha: 0.55), width: 1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   Text(
                     DateFormat('yyyy/MM').format(widget.displayMonth),
-                    style: const TextStyle(
-                        color: kGold,
+                    style: TextStyle(
+                        color: cs.primary,
                         fontWeight: FontWeight.w700,
                         fontSize: 15),
                   ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down_rounded,
-                      color: kGold, size: 18),
+                  Icon(Icons.keyboard_arrow_down_rounded,
+                      color: cs.primary, size: 18),
                 ]),
               ),
             ),
@@ -1568,7 +1563,7 @@ class _DetailPageState extends State<DetailPage> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: sel
-                        ? kGold
+                        ? cs.primary
                         : cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -1843,8 +1838,7 @@ class _ManagePageState extends State<ManagePage> {
                 child: Text(AppLocalizations.of(context, 'cancel'))),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: Text(AppLocalizations.of(context, 'restore_label'),
-                  style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+              child: Text(AppLocalizations.of(context, 'restore_label')),
             ),
           ],
         ),
@@ -1940,7 +1934,7 @@ class _ManagePageState extends State<ManagePage> {
             TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context, 'cancel'))),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: Text(AppLocalizations.of(context, 'restore_label'), style: const TextStyle(color: kGold, fontWeight: FontWeight.w700)),
+              child: Text(AppLocalizations.of(context, 'restore_label')),
             ),
           ],
         ),
@@ -2010,11 +2004,11 @@ class _ManagePageState extends State<ManagePage> {
               title: Text(o.$2,
                   style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? kGold : null)),
+                      color: isSelected ? Theme.of(context).colorScheme.primary : null)),
               subtitle:
                   o.$3.isNotEmpty ? Text(o.$3, style: const TextStyle(fontSize: 12)) : null,
               trailing: isSelected
-                  ? const Icon(Icons.check_rounded, color: kGold)
+                  ? Icon(Icons.check_rounded, color: Theme.of(context).colorScheme.primary)
                   : null,
               onTap: () {
                 themeProvider.setLocale(o.$1);
@@ -2031,6 +2025,7 @@ class _ManagePageState extends State<ManagePage> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final cs = Theme.of(context).colorScheme;
     return SafeArea(
       child: SingleChildScrollView(
         controller: widget.scrollController,
@@ -2055,10 +2050,10 @@ class _ManagePageState extends State<ManagePage> {
             behavior: HitTestBehavior.opaque,
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                color: cs.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(
-                    color: kGold.withValues(alpha: 0.35), width: 1.5),
+                    color: cs.primary.withValues(alpha: 0.35), width: 1.5),
               ),
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -2069,12 +2064,12 @@ class _ManagePageState extends State<ManagePage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: kGold.withValues(alpha: 0.12),
+                      color: cs.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                         Icons.account_balance_wallet_rounded,
-                        color: kGold,
+                        color: cs.primary,
                         size: 22),
                   ),
                   const SizedBox(width: 12),
@@ -2102,17 +2097,17 @@ class _ManagePageState extends State<ManagePage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: kGold.withValues(alpha: 0.1),
+                      color: cs.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Text(AppLocalizations.of(context, 'manage'),
-                          style: const TextStyle(
-                              color: kGold,
+                          style: TextStyle(
+                              color: cs.primary,
                               fontWeight: FontWeight.w700,
                               fontSize: 13)),
                       const SizedBox(width: 2),
-                      const Icon(Icons.chevron_right, color: kGold, size: 15),
+                      Icon(Icons.chevron_right, color: cs.primary, size: 15),
                     ]),
                   ),
                 ]),
@@ -2216,7 +2211,7 @@ class _ManagePageState extends State<ManagePage> {
               ),
               borderRadius: BorderRadius.circular(22),
               child: Row(children: [
-                const Icon(Icons.category_rounded, color: kGold),
+                Icon(Icons.category_rounded, color: cs.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -2234,7 +2229,7 @@ class _ManagePageState extends State<ManagePage> {
           // 外觀設定
           _AppCard(
               child: Row(children: [
-            const Icon(Icons.dark_mode_rounded, color: kGold),
+            Icon(Icons.dark_mode_rounded, color: cs.primary),
             const SizedBox(width: 12),
             Expanded(
                 child: Column(
@@ -2251,7 +2246,6 @@ class _ManagePageState extends State<ManagePage> {
                 widget.state.hapticLight();
                 themeProvider.toggleTheme();
               },
-              activeThumbColor: kGold,
             ),
           ])),
           const SizedBox(height: 16),
@@ -2262,7 +2256,7 @@ class _ManagePageState extends State<ManagePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 Row(children: [
-                  const Icon(Icons.palette_rounded, color: kGold),
+                  Icon(Icons.palette_rounded, color: cs.primary),
                   const SizedBox(width: 12),
                   Expanded(child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2314,7 +2308,7 @@ class _ManagePageState extends State<ManagePage> {
               child: ListenableBuilder(
             listenable: widget.state,
             builder: (_, __) => Row(children: [
-              const Icon(Icons.vibration_rounded, color: kGold),
+              Icon(Icons.vibration_rounded, color: cs.primary),
               const SizedBox(width: 12),
               Expanded(
                   child: Column(
@@ -2332,7 +2326,6 @@ class _ManagePageState extends State<ManagePage> {
                   Vibration.vibrate(duration: 40, amplitude: 80);
                   widget.state.setHapticEnabled(v);
                 },
-                activeThumbColor: kGold,
               ),
             ]),
           )),
@@ -2344,7 +2337,7 @@ class _ManagePageState extends State<ManagePage> {
             onTap: () => _showLanguagePicker(context, themeProvider),
             borderRadius: BorderRadius.circular(22),
             child: Row(children: [
-              const Icon(Icons.language_rounded, color: kGold),
+              Icon(Icons.language_rounded, color: cs.primary),
               const SizedBox(width: 12),
               Expanded(
                   child: Column(
@@ -2377,14 +2370,6 @@ class _ManagePageState extends State<ManagePage> {
                     onPressed: _doBackup,
                     icon: const Icon(Icons.backup),
                     label: Text(AppLocalizations.of(context, 'backup_data')),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kGold,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      elevation: 0,
-                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -2394,13 +2379,6 @@ class _ManagePageState extends State<ManagePage> {
                     onPressed: _doShareBackup,
                     icon: const Icon(Icons.share_rounded),
                     label: Text(AppLocalizations.of(context, 'share_backup_label')),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: kGold),
-                      foregroundColor: kGold,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -2410,13 +2388,6 @@ class _ManagePageState extends State<ManagePage> {
                     onPressed: _doExportCsv,
                     icon: const Icon(Icons.download_rounded),
                     label: Text(AppLocalizations.of(context, 'export_csv')),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: kGold),
-                      foregroundColor: kGold,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -2426,13 +2397,6 @@ class _ManagePageState extends State<ManagePage> {
                     onPressed: _doExportExcel,
                     icon: const Icon(Icons.table_chart_rounded),
                     label: Text(AppLocalizations.of(context, 'export_excel')),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: kGold),
-                      foregroundColor: kGold,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -2442,13 +2406,6 @@ class _ManagePageState extends State<ManagePage> {
                     onPressed: _doRestore,
                     icon: const Icon(Icons.restore_rounded),
                     label: Text(AppLocalizations.of(context, 'restore_backup')),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: kGold),
-                      foregroundColor: kGold,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -2458,13 +2415,6 @@ class _ManagePageState extends State<ManagePage> {
                     onPressed: _doRestoreFromFile,
                     icon: const Icon(Icons.file_open_rounded),
                     label: Text(AppLocalizations.of(context, 'restore_from_file')),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: kGold),
-                      foregroundColor: kGold,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
                   ),
                 ),
               ])),
@@ -2580,7 +2530,7 @@ class _ManagePageState extends State<ManagePage> {
                 ListTile(
                   key: TourKeys.rewatchTile,
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.help_outline_rounded, color: kGold),
+                  leading: Icon(Icons.help_outline_rounded, color: cs.primary),
                   title: Text(AppLocalizations.of(context, 'rewatch_tour'),
                       style:
                           const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
@@ -2594,7 +2544,7 @@ class _ManagePageState extends State<ManagePage> {
                 ListTile(
                   key: TourKeys.feedbackTile,
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.feedback_outlined, color: kGold),
+                  leading: Icon(Icons.feedback_outlined, color: cs.primary),
                   title: Text(AppLocalizations.of(context, 'report_issue'),
                       style:
                           const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
@@ -2803,7 +2753,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color:
-                        isSel ? kGold : cs.surfaceContainerHighest,
+                        isSel ? cs.primary : cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(10),
                     border: isSel
                         ? null
@@ -2874,7 +2824,7 @@ class _NavItem extends StatelessWidget {
       required this.onTap});
   @override
   Widget build(BuildContext context) {
-    final activeColor = AppColors.gold;
+    final activeColor = Theme.of(context).colorScheme.primary;
     final inactiveColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final color = selected ? activeColor : inactiveColor;
     return Expanded(
@@ -2882,8 +2832,8 @@ class _NavItem extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          splashColor: AppColors.gold.withValues(alpha: 0.18),
-          highlightColor: AppColors.gold.withValues(alpha: 0.10),
+          splashColor: activeColor.withValues(alpha: 0.18),
+          highlightColor: activeColor.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(12),
           // SizedBox.expand is a SingleChildRenderObjectWidget — its RenderObject
           // is found directly by findRenderObject(), giving the correct nav-item rect.
@@ -2896,7 +2846,7 @@ class _NavItem extends StatelessWidget {
                 height: 2.5,
                 width: selected ? 24.0 : 0.0,
                 decoration: BoxDecoration(
-                  color: AppColors.gold,
+                  color: activeColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2936,7 +2886,7 @@ class _DetailTypeChip extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    final activeColor = color ?? kGold;
+    final activeColor = color ?? Theme.of(context).colorScheme.primary;
     final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
@@ -2982,7 +2932,7 @@ class _PeriodChip extends StatelessWidget {
               const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           decoration: BoxDecoration(
             color: selected
-                ? kGold
+                ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(20),
           ),
@@ -3040,8 +2990,8 @@ class _CategoryRow extends StatelessWidget {
               width: 46,
               child: Text('${pct.toStringAsFixed(1)}%',
                   textAlign: TextAlign.end,
-                  style: const TextStyle(
-                      color: kGold,
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w700,
                       fontSize: 13)),
             ),
@@ -3256,7 +3206,7 @@ class _BackupPickerSheetState extends State<_BackupPickerSheet> {
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading:
-                    const Icon(Icons.restore_rounded, color: kGold),
+                    Icon(Icons.restore_rounded, color: cs.primary),
                 title: Text(
                   DateFormat('yyyy/MM/dd HH:mm').format(b.timestamp),
                   style: const TextStyle(fontWeight: FontWeight.w700),
@@ -3265,11 +3215,11 @@ class _BackupPickerSheetState extends State<_BackupPickerSheet> {
                 onTap:
                     busy ? null : () => Navigator.pop(context, b.filename),
                 trailing: busy
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: kGold),
+                            strokeWidth: 2, color: cs.primary),
                       )
                     : IconButton(
                         icon: const Icon(

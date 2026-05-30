@@ -54,22 +54,70 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Component themes — applied to every ThemeData variant ──────────────
+  static ThemeData _applyComponents(ThemeData base) {
+    final p = base.colorScheme.primary;
+    final onP = base.colorScheme.onPrimary;
+    return base.copyWith(
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: p,
+        foregroundColor: onP,
+        elevation: 4,
+        shape: const CircleBorder(),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? p : null,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? p.withOpacity(0.4) : null,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: p,
+          foregroundColor: onP,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: p,
+          side: BorderSide(color: p),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: p),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: p,
+        contentTextStyle: TextStyle(color: onP),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: p),
+    );
+  }
+
   ThemeData get lightTheme {
     if (_accentIndex == 0) {
-      return ThemeData(
+      final base = ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: accentColors[0],
           brightness: Brightness.light,
         ),
       );
+      return _applyComponents(base);
     }
     return _buildLightAccentTheme(accentColor);
   }
 
   static ThemeData _buildLightAccentTheme(Color accent) {
     final seed = ColorScheme.fromSeed(seedColor: accent, brightness: Brightness.light);
-    return ThemeData(
+    final base = ThemeData(
       useMaterial3: true,
       colorScheme: seed.copyWith(
         surface: Colors.white,
@@ -83,16 +131,57 @@ class ThemeProvider extends ChangeNotifier {
         onSurfaceVariant: const Color(0xFF636366),
       ),
     );
+    return _applyComponents(base);
   }
 
   ThemeData get darkTheme {
-    if (_accentIndex == 0) return _darkGoldTheme;
+    if (_accentIndex == 0) return _buildDarkGoldTheme();
     return _buildDarkAccentTheme(accentColor);
+  }
+
+  static ThemeData _buildDarkGoldTheme() {
+    const cs = ColorScheme(
+      brightness: Brightness.dark,
+      surface: Color(0xFF111111),
+      surfaceContainerLowest: Color(0xFF0A0A0A),
+      surfaceContainerLow: Color(0xFF1C1C1E),
+      surfaceContainer: Color(0xFF242426),
+      surfaceContainerHigh: Color(0xFF2C2C2E),
+      surfaceContainerHighest: Color(0xFF3A3A3C),
+      primary: Color(0xFFD4AA70),
+      onPrimary: Color(0xFF1A1000),
+      primaryContainer: Color(0xFF3D2C00),
+      onPrimaryContainer: Color(0xFFFFDFA0),
+      onSurface: Color(0xFFE5E5E7),
+      onSurfaceVariant: Color(0xFF8E8E93),
+      outline: Color(0xFF48484A),
+      outlineVariant: Color(0xFF2C2C2E),
+      error: Color(0xFFFF453A),
+      onError: Color(0xFF1A0000),
+      errorContainer: Color(0xFF4A0010),
+      onErrorContainer: Color(0xFFFFDAD6),
+      secondary: Color(0xFFAEAEB2),
+      onSecondary: Color(0xFF1C1C1E),
+      secondaryContainer: Color(0xFF2C2C2E),
+      onSecondaryContainer: Color(0xFFE5E5E7),
+      tertiary: Color(0xFF30D158),
+      onTertiary: Color(0xFF001A08),
+      tertiaryContainer: Color(0xFF003811),
+      onTertiaryContainer: Color(0xFFB7F1C8),
+      inverseSurface: Color(0xFFE5E5E7),
+      onInverseSurface: Color(0xFF111111),
+      inversePrimary: Color(0xFF7A5C2E),
+      shadow: Color(0xFF000000),
+      scrim: Color(0xFF000000),
+      surfaceTint: Color(0xFFD4AA70),
+    );
+    final base = ThemeData(useMaterial3: true, colorScheme: cs);
+    return _applyComponents(base);
   }
 
   static ThemeData _buildDarkAccentTheme(Color accent) {
     final seed = ColorScheme.fromSeed(seedColor: accent, brightness: Brightness.dark);
-    return ThemeData(
+    final base = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme(
         brightness: Brightness.dark,
@@ -130,44 +219,6 @@ class ThemeProvider extends ChangeNotifier {
         surfaceTint: accent,
       ),
     );
+    return _applyComponents(base);
   }
-
-  static final ThemeData _darkGoldTheme = ThemeData(
-    useMaterial3: true,
-    colorScheme: const ColorScheme(
-      brightness: Brightness.dark,
-      surface: Color(0xFF111111),
-      surfaceContainerLowest: Color(0xFF0A0A0A),
-      surfaceContainerLow: Color(0xFF1C1C1E),
-      surfaceContainer: Color(0xFF242426),
-      surfaceContainerHigh: Color(0xFF2C2C2E),
-      surfaceContainerHighest: Color(0xFF3A3A3C),
-      primary: Color(0xFFD4AA70),
-      onPrimary: Color(0xFF1A1000),
-      primaryContainer: Color(0xFF3D2C00),
-      onPrimaryContainer: Color(0xFFFFDFA0),
-      onSurface: Color(0xFFE5E5E7),
-      onSurfaceVariant: Color(0xFF8E8E93),
-      outline: Color(0xFF48484A),
-      outlineVariant: Color(0xFF2C2C2E),
-      error: Color(0xFFFF453A),
-      onError: Color(0xFF1A0000),
-      errorContainer: Color(0xFF4A0010),
-      onErrorContainer: Color(0xFFFFDAD6),
-      secondary: Color(0xFFAEAEB2),
-      onSecondary: Color(0xFF1C1C1E),
-      secondaryContainer: Color(0xFF2C2C2E),
-      onSecondaryContainer: Color(0xFFE5E5E7),
-      tertiary: Color(0xFF30D158),
-      onTertiary: Color(0xFF001A08),
-      tertiaryContainer: Color(0xFF003811),
-      onTertiaryContainer: Color(0xFFB7F1C8),
-      inverseSurface: Color(0xFFE5E5E7),
-      onInverseSurface: Color(0xFF111111),
-      inversePrimary: Color(0xFF7A5C2E),
-      shadow: Color(0xFF000000),
-      scrim: Color(0xFF000000),
-      surfaceTint: Color(0xFFD4AA70),
-    ),
-  );
 }

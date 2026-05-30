@@ -125,8 +125,8 @@ class _AccountPageState extends State<AccountPage> {
                       borderSide: BorderSide.none),
                   focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                          color: AppColors.gold, width: 1.5)),
+                      borderSide: BorderSide(
+                          color: Theme.of(ctx).colorScheme.primary, width: 1.5)),
                 ),
               ),
             ),
@@ -144,15 +144,6 @@ class _AccountPageState extends State<AccountPage> {
                   ));
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.gold,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 16),
-                elevation: 0,
-              ),
               child: Text(AppLocalizations.of(context, 'update'),
                   style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
@@ -185,10 +176,10 @@ class _AccountPageState extends State<AccountPage> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: 0.12),
+              color: cs.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: AppColors.gold, size: 20),
+            child: Icon(icon, color: cs.primary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -203,7 +194,7 @@ class _AccountPageState extends State<AccountPage> {
                       fontSize: 12, color: cs.onSurfaceVariant)),
             ]),
           ),
-          Icon(Icons.chevron_right, color: AppColors.gold, size: 18),
+          Icon(Icons.chevron_right, color: cs.primary, size: 18),
         ]),
       ),
     );
@@ -223,13 +214,13 @@ class _AccountPageState extends State<AccountPage> {
         title: Text(AppLocalizations.of(context, 'accounts'), style: const TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          color: AppColors.gold,
+          color: cs.primary,
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
             key: TourKeys.accountAddBtn,
-            icon: const Icon(Icons.add, color: AppColors.gold, size: 26),
+            icon: Icon(Icons.add, color: cs.primary, size: 26),
             onPressed: _openAdd,
           ),
         ],
@@ -255,15 +246,15 @@ class _AccountPageState extends State<AccountPage> {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    color: AppColors.gold.withValues(alpha: 0.12),
+                    color: cs.primary.withValues(alpha: 0.12),
                     child: Row(children: [
-                      const Icon(Icons.north_east_rounded, color: AppColors.gold, size: 18),
+                      Icon(Icons.north_east_rounded, color: cs.primary, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           AppLocalizations.of(context, 'tour_account_hint'),
-                          style: const TextStyle(
-                            color: AppColors.gold,
+                          style: TextStyle(
+                            color: cs.primary,
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
                           ),
@@ -345,7 +336,7 @@ class _AccountPageState extends State<AccountPage> {
                             const SizedBox(height: 12),
                             Row(children: [
                               Icon(Icons.show_chart_rounded,
-                                  size: 16, color: AppColors.gold),
+                                  size: 16, color: cs.primary),
                               const SizedBox(width: 6),
                               Text(
                                 AppLocalizations.of(context, 'stock_portfolio'),
@@ -358,7 +349,7 @@ class _AccountPageState extends State<AccountPage> {
                                 style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.gold),
+                                    color: cs.primary),
                               ),
                             ]),
                             const SizedBox(height: 10),
@@ -369,7 +360,7 @@ class _AccountPageState extends State<AccountPage> {
                                     horizontal: 10, vertical: 5),
                                 decoration: BoxDecoration(
                                   color: _includeStock
-                                      ? AppColors.gold
+                                      ? cs.primary
                                       : cs.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -418,7 +409,7 @@ class _AccountPageState extends State<AccountPage> {
                         color: cs.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: AppColors.gold.withValues(alpha: 0.3),
+                            color: cs.primary.withValues(alpha: 0.3),
                             width: 1),
                       ),
                       padding: const EdgeInsets.symmetric(
@@ -428,11 +419,11 @@ class _AccountPageState extends State<AccountPage> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: AppColors.gold.withValues(alpha: 0.12),
+                            color: cs.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.swap_horiz_rounded,
-                              color: AppColors.gold, size: 20),
+                          child: Icon(Icons.swap_horiz_rounded,
+                              color: cs.primary, size: 20),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -456,7 +447,7 @@ class _AccountPageState extends State<AccountPage> {
                           ]),
                         ),
                         Icon(Icons.chevron_right,
-                            color: AppColors.gold, size: 18),
+                            color: cs.primary, size: 18),
                       ]),
                     ),
                   ),
