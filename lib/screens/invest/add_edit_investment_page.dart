@@ -10,41 +10,43 @@ import '../../services/stock_service.dart';
 class _BrokerPreset {
   final String name;
   final double feeRate;
-  const _BrokerPreset(this.name, this.feeRate);
+  final double minFee; // 最低手續費（元），0 = 無限制
+  const _BrokerPreset(this.name, this.feeRate, {this.minFee = 0});
   String get feeLabel {
     if (feeRate == 0) return '0%';
     final pct = feeRate * 100;
     return '${pct.toStringAsFixed(4).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '')}%';
   }
+  String get minFeeLabel => minFee > 0 ? '最低${minFee.toStringAsFixed(0)}元' : '';
 }
 
-// 台股券商（手續費上限 0.1425%，加交易稅 0.3%）
+// 台股券商（手續費上限 0.1425%，加交易稅 0.3%，最低手續費 1 元）
 const _twdBrokers = [
-  _BrokerPreset('元大證券', 0.000855), // e-Leader 6折
-  _BrokerPreset('富邦證券', 0.0007), // e點通
-  _BrokerPreset('永豐金證券', 0.001425), // iSmartStock 標準
-  _BrokerPreset('凱基證券', 0.0007), // 行動達人
-  _BrokerPreset('國泰證券', 0.0007),
-  _BrokerPreset('中信證券', 0.0007),
-  _BrokerPreset('群益證券', 0.0007),
-  _BrokerPreset('台新證券', 0.0007),
-  _BrokerPreset('玉山證券', 0.0007),
-  _BrokerPreset('統一證券', 0.0007),
-  _BrokerPreset('兆豐證券', 0.001425),
-  _BrokerPreset('華南永昌', 0.001425),
+  _BrokerPreset('元大證券', 0.000855, minFee: 1),
+  _BrokerPreset('富邦證券', 0.0007, minFee: 1),
+  _BrokerPreset('永豐金證券', 0.001425, minFee: 1),
+  _BrokerPreset('凱基證券', 0.0007, minFee: 1),
+  _BrokerPreset('國泰證券', 0.0007, minFee: 1),
+  _BrokerPreset('中信證券', 0.0007, minFee: 1),
+  _BrokerPreset('群益證券', 0.0007, minFee: 1),
+  _BrokerPreset('台新證券', 0.0007, minFee: 1),
+  _BrokerPreset('玉山證券', 0.0007, minFee: 1),
+  _BrokerPreset('統一證券', 0.0007, minFee: 1),
+  _BrokerPreset('兆豐證券', 0.001425, minFee: 1),
+  _BrokerPreset('華南永昌', 0.001425, minFee: 1),
 ];
 
 // 美股券商（無交易稅）
 const _usdBrokers = [
-  _BrokerPreset('複委託 標準', 0.005), // 各台灣券商複委託標準
-  _BrokerPreset('元大複委託', 0.005),
-  _BrokerPreset('富邦複委託', 0.005),
-  _BrokerPreset('永豐複委託', 0.005),
-  _BrokerPreset('凱基複委託', 0.005),
-  _BrokerPreset('第一證券 Firstrade', 0.0), // 零手續費
-  _BrokerPreset('嘉信理財 Schwab', 0.0), // 零手續費
-  _BrokerPreset('富途牛牛 Futu', 0.0008), // ~0.08%
-  _BrokerPreset('Interactive Brokers', 0.0008), // ~0.08%
+  _BrokerPreset('複委託 標準', 0.005, minFee: 0),
+  _BrokerPreset('元大複委託', 0.005, minFee: 0),
+  _BrokerPreset('富邦複委託', 0.005, minFee: 0),
+  _BrokerPreset('永豐複委託', 0.005, minFee: 0),
+  _BrokerPreset('凱基複委託', 0.005, minFee: 0),
+  _BrokerPreset('第一證券 Firstrade', 0.0, minFee: 0),
+  _BrokerPreset('嘉信理財 Schwab', 0.0, minFee: 0),
+  _BrokerPreset('富途牛牛 Futu', 0.0008, minFee: 0),
+  _BrokerPreset('Interactive Brokers', 0.0008, minFee: 0),
 ];
 
 String _fmtRate(double r) {
@@ -80,6 +82,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
   bool _loadingSuggestions = false;
   late final TextEditingController _brokerCtrl;
   late final TextEditingController _feeRateCtrl;
+  late final TextEditingController _minFeeCtrl;
   List<_BrokerPreset> _brokerSuggestions = [];
   String _selectedBroker = '';
   String? _selectedDeductAccountId;
@@ -103,8 +106,11 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
     _selectedDeductAccountId = e?.deductAccountId;
     if (e?.name.isNotEmpty == true) _fetchedName = e!.name;
     final existingRate = e?.feeRate ?? 0.001425;
+    final existingMinFee = e?.minFee ?? 1.0;
     _brokerCtrl = TextEditingController();
     _feeRateCtrl = TextEditingController(text: _fmtRate(existingRate));
+    _minFeeCtrl = TextEditingController(
+        text: existingMinFee > 0 ? existingMinFee.toStringAsFixed(0) : '0');
   }
 
   @override
@@ -117,6 +123,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
     _strategyCtrl.dispose();
     _brokerCtrl.dispose();
     _feeRateCtrl.dispose();
+    _minFeeCtrl.dispose();
     super.dispose();
   }
 
@@ -197,6 +204,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
       return;
     }
     final feeRate = (double.tryParse(_feeRateCtrl.text.trim()) ?? 0.1425) / 100;
+    final minFee = double.tryParse(_minFeeCtrl.text.trim()) ?? 0.0;
     Navigator.pop(
       context,
       StockHolding(
@@ -212,6 +220,7 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
         sellStrategy: _strategyCtrl.text.trim(),
         createdAt: widget.existing?.createdAt,
         feeRate: feeRate.clamp(0, 0.01),
+        minFee: minFee.clamp(0, 999),
         broker: _selectedBroker,
         deductAccountId: _selectedDeductAccountId,
       ),
@@ -582,6 +591,9 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                                           _selectedBroker = b.name;
                                           _feeRateCtrl.text =
                                               _fmtRate(b.feeRate);
+                                          _minFeeCtrl.text = b.minFee > 0
+                                              ? b.minFee.toStringAsFixed(0)
+                                              : '0';
                                           _brokerSuggestions = [];
                                         });
                                         FocusScope.of(context).unfocus();
@@ -598,10 +610,13 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                                                     fontSize: 14,
                                                     color: cs.onSurface)),
                                           ),
-                                          Text(AppLocalizations.ofParam(context, 'fee_label_fmt', {'fee': b.feeLabel}),
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: cs.onSurfaceVariant)),
+                                          Text(
+                                            b.minFeeLabel.isNotEmpty
+                                                ? '${AppLocalizations.ofParam(context, 'fee_label_fmt', {'fee': b.feeLabel})}  ${b.minFeeLabel}'
+                                                : AppLocalizations.ofParam(context, 'fee_label_fmt', {'fee': b.feeLabel}),
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: cs.onSurfaceVariant)),
                                         ]),
                                       ),
                                     ))
@@ -610,7 +625,25 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                         ),
                       Divider(height: 1, color: cs.outlineVariant),
                       _InlineRow(
-                        label: AppLocalizations.of(context, 'fee_rate'),
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(AppLocalizations.of(context, 'fee_rate'),
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: cs.onSurface)),
+                            const SizedBox(width: 4),
+                            GestureDetector(
+                              onTap: () => showDialog(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: Text(AppLocalizations.of(context, 'fee_where_to_find')),
+                                  content: Text(AppLocalizations.of(context, 'fee_help_body')),
+                                  actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+                                ),
+                              ),
+                              child: Icon(Icons.help_outline_rounded, size: 16, color: cs.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
                         cs: cs,
                         child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -642,6 +675,32 @@ class _AddEditInvestmentPageState extends State<AddEditInvestmentPage> {
                                       fontWeight: FontWeight.w600)),
                             ]),
                       ),
+                      if (_isTwd) ...[
+                        Divider(height: 1, color: cs.outlineVariant),
+                        _InlineRow(
+                          label: AppLocalizations.of(context, 'min_commission'),
+                          cs: cs,
+                          child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                            SizedBox(
+                              width: 60,
+                              child: TextField(
+                                controller: _minFeeCtrl,
+                                textAlign: TextAlign.right,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                                style: TextStyle(fontWeight: FontWeight.w700, color: cs.onSurface),
+                                decoration: InputDecoration(
+                                  hintText: '1',
+                                  hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ),
+                            Text(' 元', style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                          ]),
+                        ),
+                      ],
                       if (_isTwd) ...[
                         Divider(height: 1, color: cs.outlineVariant),
                         _InlineRow(
@@ -816,7 +875,7 @@ class _GroupCard extends StatelessWidget {
 }
 
 class _InlineRow extends StatelessWidget {
-  final String label;
+  final dynamic label; // String or Widget
   final Widget child;
   final ColorScheme cs;
   const _InlineRow(
@@ -825,11 +884,13 @@ class _InlineRow extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
         height: 52,
         child: Row(children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: cs.onSurface)),
+          label is Widget
+              ? label as Widget
+              : Text(label as String,
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: cs.onSurface)),
           const SizedBox(width: 12),
           Expanded(child: child),
         ]),

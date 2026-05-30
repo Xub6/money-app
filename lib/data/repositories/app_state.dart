@@ -378,6 +378,15 @@ class AppState extends ChangeNotifier {
   int remaining(DateTime m) => budget - usedTotal(m);
   double usedRate(DateTime m) => (usedTotal(m) / budget).clamp(0.0, 1.0);
 
+  int todayTotal() {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return expenses
+        .where((e) =>
+            e.type == TransactionType.expense &&
+            DateFormat('yyyy-MM-dd').format(e.date) == today)
+        .fold(0, (s, e) => s + _toTwd(e.amount, e.currency));
+  }
+
   int dailyAvg(DateTime m) {
     final now = DateTime.now();
     final days =

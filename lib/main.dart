@@ -1082,6 +1082,14 @@ class _DashboardPageState extends State<DashboardPage> {
                                 if (isNow) ...[
                                   const TextSpan(text: '  ·  '),
                                   TextSpan(text: AppLocalizations.ofParam(context, 'day_of_month', {'day': n.day})),
+                                  const TextSpan(text: '  ·  '),
+                                  TextSpan(
+                                    text: '${AppLocalizations.of(context, 'today_spending')} ${_fmt(state.todayTotal())}',
+                                    style: TextStyle(
+                                      color: state.todayTotal() > 0 ? cs.primary : cs.onSurfaceVariant,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ],
                               ]),
                               textAlign: TextAlign.center,
@@ -2245,6 +2253,59 @@ class _ManagePageState extends State<ManagePage> {
               activeThumbColor: kGold,
             ),
           ])),
+          const SizedBox(height: 16),
+
+          // 主題顏色
+          _AppCard(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Row(children: [
+                  const Icon(Icons.palette_rounded, color: kGold),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(AppLocalizations.of(context, 'theme_color'),
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(AppLocalizations.of(context, 'theme_color_subtitle'),
+                        style: const TextStyle(color: kGray, fontSize: 12)),
+                  ])),
+                ]),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(ThemeProvider.accentColors.length, (i) {
+                    final color = ThemeProvider.accentColors[i];
+                    final selected = themeProvider.accentIndex == i;
+                    return GestureDetector(
+                      onTap: () {
+                        widget.state.hapticLight();
+                        themeProvider.setAccent(i);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: selected
+                              ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3)
+                              : Border.all(color: Colors.transparent, width: 3),
+                          boxShadow: selected
+                              ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)]
+                              : null,
+                        ),
+                        child: selected
+                            ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
+                            : null,
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 4),
+              ])),
           const SizedBox(height: 16),
 
           // 震動回饋

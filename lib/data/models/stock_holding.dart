@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:uuid/uuid.dart';
 
 enum StockCurrency { twd, usd }
@@ -15,6 +16,7 @@ class StockHolding {
   final String sellStrategy;
   final DateTime createdAt;
   final double feeRate;
+  final double minFee;       // 每筆最低手續費（台幣元），0 = 無限制
   final String? accountId;   // 券商股票帳戶 ID（自動建立）
   final String broker;       // 券商名稱
   final String? deductAccountId; // 購買時從哪個帳戶扣款（非股票帳戶）
@@ -32,6 +34,7 @@ class StockHolding {
     this.sellStrategy = '',
     DateTime? createdAt,
     this.feeRate = 0.001425,
+    this.minFee = 1.0,
     this.accountId,
     this.broker = '',
     this.deductAccountId,
@@ -48,7 +51,8 @@ class StockHolding {
   double netCurrentValueTwd(double usdTwd) {
     final gross = currentValueTwd(usdTwd);
     if (currency == StockCurrency.twd) {
-      return gross * (1 - feeRate - _twdTxTaxRate);
+      final fee = minFee > 0 ? math.max(gross * feeRate, minFee) : gross * feeRate;
+      return gross - fee - gross * _twdTxTaxRate;
     }
     return gross;
   }
@@ -73,6 +77,7 @@ class StockHolding {
         'sellStrategy': sellStrategy,
         'createdAt': createdAt.toIso8601String(),
         'feeRate': feeRate,
+        'minFee': minFee,
         'accountId': accountId,
         'broker': broker,
         'deductAccountId': deductAccountId,
@@ -92,6 +97,7 @@ class StockHolding {
         sellStrategy: j['sellStrategy'] as String? ?? '',
         createdAt: DateTime.parse(j['createdAt'] as String),
         feeRate: (j['feeRate'] as num?)?.toDouble() ?? 0.001425,
+        minFee: (j['minFee'] as num?)?.toDouble() ?? 1.0,
         accountId: j['accountId'] as String?,
         broker: j['broker'] as String? ?? '',
         deductAccountId: j['deductAccountId'] as String?,
@@ -119,6 +125,7 @@ class StockHolding {
         sellStrategy: sellStrategy,
         createdAt: createdAt,
         feeRate: feeRate,
+        minFee: minFee,
         accountId: accountId ?? this.accountId,
         broker: broker ?? this.broker,
         deductAccountId: deductAccountId ?? this.deductAccountId,

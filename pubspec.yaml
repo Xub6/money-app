@@ -1,7 +1,7 @@
 name: money_app
 description: "錢錢管家 - 個人記帳 App"
 publish_to: 'none'
-version: 2.1.0+3
+version: 2.2.0+4
 
 environment:
   sdk: ^3.5.0
