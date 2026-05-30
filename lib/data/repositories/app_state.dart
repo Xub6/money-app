@@ -387,6 +387,14 @@ class AppState extends ChangeNotifier {
         .fold(0, (s, e) => s + _toTwd(e.amount, e.currency));
   }
 
+  List<ExpenseItem> todayExpenses() {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return expenses
+        .where((e) => DateFormat('yyyy-MM-dd').format(e.date) == today)
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+  }
+
   int dailyAvg(DateTime m) {
     final now = DateTime.now();
     final days =

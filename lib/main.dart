@@ -1082,14 +1082,6 @@ class _DashboardPageState extends State<DashboardPage> {
                                 if (isNow) ...[
                                   const TextSpan(text: '  ·  '),
                                   TextSpan(text: AppLocalizations.ofParam(context, 'day_of_month', {'day': n.day})),
-                                  const TextSpan(text: '  ·  '),
-                                  TextSpan(
-                                    text: '${AppLocalizations.of(context, 'today_spending')} ${_fmt(state.todayTotal())}',
-                                    style: TextStyle(
-                                      color: state.todayTotal() > 0 ? cs.primary : cs.onSurfaceVariant,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
                                 ],
                               ]),
                               textAlign: TextAlign.center,
@@ -1125,6 +1117,15 @@ class _DashboardPageState extends State<DashboardPage> {
                 );
               })),
           const SizedBox(height: 16),
+
+          // 今日支出（只在當月顯示）
+          if (now.year == displayMonth.year && now.month == displayMonth.month) ...[
+            _TodayExpensesCard(
+              state: state,
+              onGoDetail: widget.onGoDetail,
+            ),
+            const SizedBox(height: 16),
+          ],
 
           // 預算進度
           _AppCard(
@@ -2611,6 +2612,91 @@ class _ManagePageState extends State<ManagePage> {
           ),
         ]),
       ),
+    );
+  }
+}
+
+// ─── 今日支出卡片 ───
+class _TodayExpensesCard extends StatelessWidget {
+  final AppState state;
+  final VoidCallback? onGoDetail;
+  const _TodayExpensesCard({required this.state, this.onGoDetail});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final items = state.todayExpenses();
+    final total = state.todayTotal();
+
+    return _AppCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Text(AppLocalizations.of(context, 'today_card_title'),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+          const Spacer(),
+          if (total > 0)
+            Text('NT\$ ${_fmt(total)}',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: cs.primary)),
+          if (items.isNotEmpty) ...[
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: onGoDetail,
+              child: Row(children: [
+                Text(AppLocalizations.of(context, 'view_more'),
+                    style: const TextStyle(color: kGray, fontSize: 13)),
+                const Icon(Icons.chevron_right, color: kGray, size: 18),
+              ]),
+            ),
+          ],
+        ]),
+        const SizedBox(height: 12),
+        if (items.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: Text(AppLocalizations.of(context, 'no_records'),
+                  style: const TextStyle(color: Colors.grey, fontSize: 14)),
+            ),
+          )
+        else
+          ...items.map((item) {
+            final cat = categoryOf(item.category);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Card(
+                elevation: 0,
+                color: cs.surfaceContainer,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                child: ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                  leading: CircleAvatar(
+                    backgroundColor: cat.color.withOpacity(0.15),
+                    child: Icon(cat.icon, color: cat.color, size: 20),
+                  ),
+                  title: Text(item.title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 14)),
+                  subtitle: Text(
+                      AppLocalizations.translateCategory(context, item.category),
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  trailing: Text(
+                      '${item.type == TransactionType.income ? "+" : "-"}NT\$ ${_fmt(item.amount)}',
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: item.type == TransactionType.income
+                              ? kGreen
+                              : kRed)),
+                ),
+              ),
+            );
+          }),
+      ]),
     );
   }
 }

@@ -63,13 +63,48 @@ class ThemeProvider extends ChangeNotifier {
       );
 
   ThemeData get darkTheme {
-    // Gold accent keeps the hand-crafted iOS-style dark palette
     if (_accentIndex == 0) return _darkGoldTheme;
+    return _buildDarkAccentTheme(accentColor);
+  }
+
+  static ThemeData _buildDarkAccentTheme(Color accent) {
+    final seed = ColorScheme.fromSeed(seedColor: accent, brightness: Brightness.dark);
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: accentColor,
+      colorScheme: ColorScheme(
         brightness: Brightness.dark,
+        surface: const Color(0xFF111111),
+        surfaceContainerLowest: const Color(0xFF0A0A0A),
+        surfaceContainerLow: const Color(0xFF1C1C1E),
+        surfaceContainer: const Color(0xFF242426),
+        surfaceContainerHigh: const Color(0xFF2C2C2E),
+        surfaceContainerHighest: const Color(0xFF3A3A3C),
+        primary: seed.primary,
+        onPrimary: seed.onPrimary,
+        primaryContainer: seed.primaryContainer,
+        onPrimaryContainer: seed.onPrimaryContainer,
+        secondary: seed.secondary,
+        onSecondary: seed.onSecondary,
+        secondaryContainer: seed.secondaryContainer,
+        onSecondaryContainer: seed.onSecondaryContainer,
+        tertiary: const Color(0xFF30D158),
+        onTertiary: const Color(0xFF001A08),
+        tertiaryContainer: const Color(0xFF003811),
+        onTertiaryContainer: const Color(0xFFB7F1C8),
+        error: const Color(0xFFFF453A),
+        onError: const Color(0xFF1A0000),
+        errorContainer: const Color(0xFF4A0010),
+        onErrorContainer: const Color(0xFFFFDAD6),
+        onSurface: const Color(0xFFE5E5E7),
+        onSurfaceVariant: const Color(0xFF8E8E93),
+        outline: const Color(0xFF48484A),
+        outlineVariant: const Color(0xFF2C2C2E),
+        inverseSurface: const Color(0xFFE5E5E7),
+        onInverseSurface: const Color(0xFF111111),
+        inversePrimary: seed.inversePrimary,
+        shadow: const Color(0xFF000000),
+        scrim: const Color(0xFF000000),
+        surfaceTint: accent,
       ),
     );
   }
