@@ -71,6 +71,8 @@ class _TourOverlayState extends State<TourOverlay>
             const panelH = 210.0;
             final panelAtTop = spotRect != null &&
                 spotRect.center.dy > screen.height * 0.60;
+            // Demo Banner height: status bar + 2px padding + text (~14px) + 4px bottom
+            final demoBannerH = ctrl.isDemoMode ? safePad.top + 20.0 : 0.0;
 
             // Resolve dynamic body text
             final bodyText = (step.dynamicBody != null && ctrl.session != null)
@@ -95,6 +97,7 @@ class _TourOverlayState extends State<TourOverlay>
                     panelAtTop: false, // bottom panel keeps AppBar save button accessible
                     panelH: panelH,
                     safePad: safePad,
+                    demoBannerH: demoBannerH,
                     wrongTap: ctrl.showWrongTapHint,
                     stepJustCompleted: ctrl.stepJustCompleted,
                     isCurrentStepCompleted: ctrl.isCurrentStepCompleted,
@@ -173,6 +176,7 @@ class _TourOverlayState extends State<TourOverlay>
                     panelAtTop: panelAtTop,
                     panelH: panelH,
                     safePad: safePad,
+                    demoBannerH: demoBannerH,
                     wrongTap: ctrl.showWrongTapHint,
                     stepJustCompleted: ctrl.stepJustCompleted,
                     isCurrentStepCompleted: ctrl.isCurrentStepCompleted,
@@ -321,6 +325,8 @@ class _MissionPanel extends StatelessWidget {
       isLast;
   final double panelH;
   final EdgeInsets safePad;
+  // Height of the Demo Banner (safePad.top + text + padding). 0 when not demo mode.
+  final double demoBannerH;
   final AsyncCallback onNext, onPrev, onSkipAll;
 
   const _MissionPanel({
@@ -331,6 +337,7 @@ class _MissionPanel extends StatelessWidget {
     required this.panelAtTop,
     required this.panelH,
     required this.safePad,
+    required this.demoBannerH,
     required this.wrongTap,
     required this.stepJustCompleted,
     required this.isCurrentStepCompleted,
@@ -375,7 +382,9 @@ class _MissionPanel extends StatelessWidget {
         ],
       ),
       child: SafeArea(
-        top: panelAtTop,
+        // In demo mode with panel at top, SafeArea top is skipped because the
+        // panel is positioned below the banner (demoBannerH already clears status bar).
+        top: panelAtTop && demoBannerH == 0,
         bottom: !panelAtTop,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
@@ -447,7 +456,9 @@ class _MissionPanel extends StatelessWidget {
     );
 
     if (panelAtTop) {
-      return Positioned(top: 0, left: 0, right: 0, child: panel);
+      // When demo banner is active, start panel below the banner so it is not covered.
+      final top = demoBannerH > 0 ? demoBannerH : 0.0;
+      return Positioned(top: top, left: 0, right: 0, child: panel);
     } else {
       return Positioned(bottom: 0, left: 0, right: 0, child: panel);
     }

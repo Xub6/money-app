@@ -20,6 +20,8 @@ class TourController extends ChangeNotifier {
   OnboardingMode _mode = OnboardingMode.quickStart;
   // Tracks number of open ModalBottomSheets; overlay is hidden while > 0
   int _bottomSheetDepth = 0;
+  // Set when a PageRoute push/pop occurs; _prepareStep waits for layout
+  bool _routeTransitionPending = false;
 
   Rect? _cachedTargetRect;
   int _lastPreparedTab = -1;
@@ -114,6 +116,7 @@ class TourController extends ChangeNotifier {
     _stepJustCompleted = false;
     _currentStepCompleted = false;
     _cachedTargetRect = null;
+    _routeTransitionPending = false;
     _lastPreparedTab = -1;
     _currentTab = 0;
 
@@ -256,6 +259,24 @@ class TourController extends ChangeNotifier {
 
   /// Called by NavigatorObserver when a ModalBottomSheet is pushed.
   /// Hides the overlay so bottom-sheet content is not obscured by the panel.
+  /// Called by NavigatorObserver when a regular PageRoute is pushed.
+  /// Clears stale rect immediately; _prepareStep will wait for new layout.
+  void notifyPageRoutePushed() {
+    if (!_active || _finishing) return;
+    _routeTransitionPending = true;
+    _cachedTargetRect = null;
+    notifyListeners();
+  }
+
+  /// Called by NavigatorObserver when a regular PageRoute is popped.
+  /// Clears stale rect immediately; _prepareStep will wait for new layout.
+  void notifyPageRoutePopped() {
+    if (!_active || _finishing) return;
+    _routeTransitionPending = true;
+    _cachedTargetRect = null;
+    notifyListeners();
+  }
+
   void notifyBottomSheetOpened() {
     _bottomSheetDepth++;
     if (!_hidden) {
@@ -368,6 +389,13 @@ class TourController extends ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 80));
     }
 
+    // Wait for route animation to complete before measuring rects.
+    // Cleared after waiting so subsequent _prepareStep calls are not delayed.
+    if (_routeTransitionPending) {
+      _routeTransitionPending = false;
+      await Future.delayed(const Duration(milliseconds: 380));
+    }
+
     final ctx = step.targetKey?.currentContext;
     if (ctx != null) {
       try {
@@ -381,10 +409,12 @@ class TourController extends ChangeNotifier {
       } catch (_) {}
     }
 
-    // Stability-based rect detection: require 2 consecutive readings < 2px diff
+    // Stability-based rect detection: require 2 consecutive readings < 2px diff.
+    // No fallback to stale rects — if target is mid-animation or not yet mounted,
+    // keep _cachedTargetRect null so the overlay does not display a wrong spotlight.
     Rect? prevRect;
     _cachedTargetRect = null;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
       await WidgetsBinding.instance.endOfFrame;
       await Future.delayed(const Duration(milliseconds: 16));
       final curr = _findRectOnScreen(step.targetKey);
@@ -397,7 +427,20 @@ class TourController extends ChangeNotifier {
         }
       }
       prevRect = curr;
-      if (curr != null) _cachedTargetRect = curr;
+      // Intentionally no fallback: don't assign _cachedTargetRect unless stable.
+    }
+
+    // If still null after stability loop, schedule a post-frame retry so that
+    // widgets becoming mounted on the next frame are caught without extra delay.
+    if (_cachedTargetRect == null && step.targetKey != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_active || _finishing || _transitioning) return;
+        final rect = _findRectOnScreen(step.targetKey);
+        if (rect != null) {
+          _cachedTargetRect = rect;
+          notifyListeners();
+        }
+      });
     }
   }
 

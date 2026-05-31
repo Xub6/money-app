@@ -80,13 +80,23 @@ class _TourNavigatorObserver extends NavigatorObserver {
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (!_ctrl.isActive) return;
-    if (route is ModalBottomSheetRoute) _ctrl.notifyBottomSheetOpened();
+    if (route is ModalBottomSheetRoute) {
+      _ctrl.notifyBottomSheetOpened();
+    } else if (route is PageRoute) {
+      // Clear stale rect so the overlay never shows old-page coordinates
+      // after a route transition. _prepareStep will wait for the new layout.
+      _ctrl.notifyPageRoutePushed();
+    }
   }
 
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (!_ctrl.isActive) return;
-    if (route is ModalBottomSheetRoute) _ctrl.notifyBottomSheetClosed();
+    if (route is ModalBottomSheetRoute) {
+      _ctrl.notifyBottomSheetClosed();
+    } else if (route is PageRoute) {
+      _ctrl.notifyPageRoutePopped();
+    }
   }
 
   @override
@@ -2286,10 +2296,10 @@ class _ManagePageState extends State<ManagePage> {
                           color: color,
                           shape: BoxShape.circle,
                           border: selected
-                              ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3)
+                              ? Border.all(color: ThemeProvider.selectedRingColor(i), width: 3)
                               : Border.all(color: Colors.transparent, width: 3),
                           boxShadow: selected
-                              ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)]
+                              ? [BoxShadow(color: ThemeProvider.selectedRingColor(i).withValues(alpha: 0.35), blurRadius: 10, spreadRadius: 1)]
                               : null,
                         ),
                         child: selected

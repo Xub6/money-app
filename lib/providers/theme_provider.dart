@@ -6,12 +6,16 @@ class _Palette {
   // light surfaces
   final Color lSurface;
   final Color lLowest;
-  final Color lLow;       // card / _AppCard background
-  final Color lContainer; // inner sections
+  final Color lLow;          // card / _AppCard background
+  final Color lContainer;    // nav bar, drawer (surfaceContainer)
   final Color lHigh;
-  final Color lHighest;   // chips, disabled, selected-alt
+  final Color lHighest;      // chips, disabled, selected-alt
   final Color lOutline;
   final Color lOutlineVariant;
+  // light accent (overrides fromSeed primary for non-gold/non-rose themes)
+  final Color lAccentPrimary;  // buttons, FAB, active tab, toggle
+  final Color lAccentSoft;     // primaryContainer, icon bg
+  final Color lSwitchTrack;    // switch track active
   // dark surfaces  (keep near #111 but with subtle hue tint)
   final Color dSurface;
   final Color dLowest;
@@ -31,6 +35,9 @@ class _Palette {
     required this.lHighest,
     required this.lOutline,
     required this.lOutlineVariant,
+    required this.lAccentPrimary,
+    required this.lAccentSoft,
+    required this.lSwitchTrack,
     required this.dSurface,
     required this.dLowest,
     required this.dLow,
@@ -52,15 +59,18 @@ class _Palette {
 const _palettes = <int, _Palette>{
   // ── INDIGO / MISTY BLUE ──────────────────────────────────────────────────
   1: _Palette(
-    // light: white → fog-blue-white → soft steel-lavender
-    lSurface:          Color(0xFFF8F9FF),
+    // light: 霧藍月光 — 安定、乾淨、高級
+    lSurface:          Color(0xFFF8F9FF), // page bg
     lLowest:           Color(0xFFF5F6FF),
-    lLow:              Color(0xFFEEF0FB), // cards: very light blue-grey white
-    lContainer:        Color(0xFFE6E9F6),
-    lHigh:             Color(0xFFDDE0F0),
-    lHighest:          Color(0xFFD3D8EC),
-    lOutline:          Color(0xFFC0C8E8), // soft blue border
-    lOutlineVariant:   Color(0xFFDFE3F8),
+    lLow:              Color(0xFFEEF1FC), // card bg
+    lContainer:        Color(0xFFE9EDFA), // nav bar / drawer
+    lHigh:             Color(0xFFDCE2F7), // modal bg / accentSoft level
+    lHighest:          Color(0xFFD3D8EC), // chips, selected-alt
+    lOutline:          Color(0xFFC8D2EE), // border
+    lOutlineVariant:   Color(0xFFDCE2F7), // soft divider
+    lAccentPrimary:    Color(0xFF5C6BC0), // 沉穩藍紫
+    lAccentSoft:       Color(0xFFDCE2F7), // light blue-grey for icon bg
+    lSwitchTrack:      Color(0xFFB8C4E8), // switch track active
     // dark: #111 with barely-there indigo undertone
     dSurface:          Color(0xFF111116),
     dLowest:           Color(0xFF0B0B10),
@@ -71,17 +81,20 @@ const _palettes = <int, _Palette>{
     dOutline:          Color(0xFF40446A),
     dOutlineVariant:   Color(0xFF2C2E3E),
   ),
-  // ── TEAL / MINT CELADON ──────────────────────────────────────────────────
+  // ── TEAL / SEA GLASS ─────────────────────────────────────────────────────
   2: _Palette(
-    // light: white → barely-there mint → soft celadon
-    lSurface:          Color(0xFFF4FFFE),
-    lLowest:           Color(0xFFF0FFFD),
-    lLow:              Color(0xFFE4F4F2), // cards: soft mint-white
-    lContainer:        Color(0xFFD8EEEB),
-    lHigh:             Color(0xFFCBE8E4),
-    lHighest:          Color(0xFFBCE1DC),
-    lOutline:          Color(0xFFA0CCC8), // soft teal border
-    lOutlineVariant:   Color(0xFFD2EDEA),
+    // light: 海玻璃、玉石、薄荷奶霜
+    lSurface:          Color(0xFFF6FCFB), // page bg
+    lLowest:           Color(0xFFF1F8F7),
+    lLow:              Color(0xFFE7F5F3), // card bg
+    lContainer:        Color(0xFFDDF1EF), // nav bar / drawer
+    lHigh:             Color(0xFFCDEBE7), // modal bg / accentSoft level
+    lHighest:          Color(0xFFBCE1DC), // chips, selected-alt
+    lOutline:          Color(0xFFB8DEDA), // border
+    lOutlineVariant:   Color(0xFFCDEBE7), // soft divider
+    lAccentPrimary:    Color(0xFF0F938B), // 乾淨玉石青綠
+    lAccentSoft:       Color(0xFFCDEBE7), // soft mint for icon bg
+    lSwitchTrack:      Color(0xFFABD8D4), // switch track active
     // dark: #111 with barely-there teal undertone
     dSurface:          Color(0xFF0F1413),
     dLowest:           Color(0xFF090E0E),
@@ -92,38 +105,20 @@ const _palettes = <int, _Palette>{
     dOutline:          Color(0xFF3A5552),
     dOutlineVariant:   Color(0xFF2A3534),
   ),
-  // ── ROSE / 奶霧櫻花粉 / 草莓牛奶 ─────────────────────────────────────────
-  3: _Palette(
-    // light: 精確色票（用戶提供）
-    lSurface:          Color(0xFFFFF9FC), // App Background
-    lLowest:           Color(0xFFFFF9FC), // 同 App Background
-    lLow:              Color(0xFFFDECF3), // Card Background
-    lContainer:        Color(0xFFFBE6EF), // Soft Surface
-    lHigh:             Color(0xFFF8DDE9), // 過渡層
-    lHighest:          Color(0xFFF5D4E2), // chip / 選中 alt
-    lOutline:          Color(0xFFF1C8D8), // Border
-    lOutlineVariant:   Color(0xFFEFD9E3), // Soft Divider
-    // dark: 微染玫瑰底，維持 iOS 深色舒適感
-    dSurface:          Color(0xFF18100F),
-    dLowest:           Color(0xFF110A09),
-    dLow:              Color(0xFF251A1C),
-    dContainer:        Color(0xFF2D2025),
-    dHigh:             Color(0xFF36262C),
-    dHighest:          Color(0xFF402D34),
-    dOutline:          Color(0xFF6A3A4A),
-    dOutlineVariant:   Color(0xFF36262C),
-  ),
-  // ── FOREST GREEN / SAGE ──────────────────────────────────────────────────
+  // ── SAGE GREEN / BOTANICAL ───────────────────────────────────────────────
   4: _Palette(
-    // light: white → sage-white → soft botanical grey-green
-    lSurface:          Color(0xFFF5FBF5),
-    lLowest:           Color(0xFFF1F9F1),
-    lLow:              Color(0xFFE7F3E8), // cards: soft sage-white
-    lContainer:        Color(0xFFDCEDDD),
-    lHigh:             Color(0xFFD0E7D2),
-    lHighest:          Color(0xFFC4E1C6),
-    lOutline:          Color(0xFFAAD0AC), // soft green border
-    lOutlineVariant:   Color(0xFFD4ECDA),
+    // light: 鼠尾草、草本、柔葉、自然療癒
+    lSurface:          Color(0xFFF8FCF8), // page bg
+    lLowest:           Color(0xFFF1F7F1),
+    lLow:              Color(0xFFEAF5EB), // card bg
+    lContainer:        Color(0xFFE2F0E3), // nav bar / drawer
+    lHigh:             Color(0xFFD4E9D5), // modal bg / accentSoft level
+    lHighest:          Color(0xFFC4E1C6), // chips, selected-alt
+    lOutline:          Color(0xFFBDD9C0), // border
+    lOutlineVariant:   Color(0xFFD4E9D5), // soft divider
+    lAccentPrimary:    Color(0xFF4A9A55), // 自然葉綠
+    lAccentSoft:       Color(0xFFD4E9D5), // soft sage for icon bg
+    lSwitchTrack:      Color(0xFFB5D4B8), // switch track active
     // dark: #111 with barely-there botanical undertone
     dSurface:          Color(0xFF111611),
     dLowest:           Color(0xFF0B100B),
@@ -157,6 +152,17 @@ class ThemeProvider extends ChangeNotifier {
   ];
 
   Color get accentColor => accentColors[_accentIndex];
+
+  // Per-theme selected ring color (accentStrong) — avoids jarring black ring
+  static const List<Color> _accentStrongColors = [
+    Color(0xFFA0794C), // Gold strong
+    Color(0xFF47569E), // Blue strong
+    Color(0xFF087B74), // Teal strong
+    Color(0xFFB65382), // Rose/Pink strong — selectedRing, 4.61:1 white contrast
+    Color(0xFF367640), // Green strong
+  ];
+  static Color selectedRingColor(int index) =>
+      _accentStrongColors[index.clamp(0, _accentStrongColors.length - 1)];
 
   ThemeProvider() { _init(); }
 
@@ -249,37 +255,36 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   // ── Rose theme constants ─────────────────────────────────────────────────
-  // 奶霧櫻花粉 / 草莓牛奶 / 棉花糖 — fully hand-crafted
-  static const _rosePrimary          = Color(0xFFD97FA4); // Switch Thumb / main interactive
-  static const _rosePrimaryDeep      = Color(0xFFE58FB2); // hover/focus
-  static const _rosePrimaryContainer = Color(0xFFFFE8F1); // Icon Soft Bg / badge
-  static const _roseSwitchTrack      = Color(0xFFF6CDD9); // Switch Track On
-  static const _roseSwitchThumb      = Color(0xFFD97FA4); // Switch Thumb On
-  static const _roseSecondary        = Color(0xFFC4A8D4); // #EBDCF2 family
-  static const _roseSecondaryContainer = Color(0xFFF0E6F7);
-  static const _roseFabBg            = Color(0xFFE58FB2); // FAB slightly deeper
+  // 草莓牛奶 / 棉花糖 / 奶霧櫻花粉 — fully hand-crafted
+  static const _rosePrimary          = Color(0xFFE58AB3); // decorative soft pink — icon, accent bg
+  static const _roseActionPrimary    = Color(0xFFB65382); // action: buttons/FAB/active tab — 4.61:1 white contrast
+  static const _rosePrimaryContainer = Color(0xFFF7CFE0); // accentSoft — Icon bg / badge
+  static const _roseSwitchTrack      = Color(0xFFF3C2D6); // Switch Track On — soft pink
+  static const _roseSwitchThumb      = Color(0xFFB65382); // Switch Thumb On — deeper berry pink
+  static const _roseSecondary        = Color(0xFFC4A8D4); // soft lavender #EBDCF2 family
+  static const _roseSecondaryContainer = Color(0xFFF3E7F7); // soft lavender container
+  static const _roseFabBg            = Color(0xFFB65382); // FAB — deeper berry pink, 4.61:1 white contrast
 
   static ThemeData _buildRoseLightTheme() {
-    final p = _palettes[3]!;
     const cs = ColorScheme(
       brightness:               Brightness.light,
       // ── Surfaces ──
       surface:                  Color(0xFFFFF9FC),   // App Background
       surfaceContainerLowest:   Color(0xFFFFF9FC),
-      surfaceContainerLow:      Color(0xFFFDECF3),   // Card Background
-      surfaceContainer:         Color(0xFFFBE6EF),   // Soft Surface
-      surfaceContainerHigh:     Color(0xFFF8DDE9),
-      surfaceContainerHighest:  Color(0xFFF5D4E2),
+      surfaceContainerLow:      Color(0xFFFDEBF3),   // Card Background
+      surfaceContainer:         Color(0xFFFBE4EE),   // Nav bar / drawer (navBackground)
+      surfaceContainerHigh:     Color(0xFFF7CFE0),   // Modal / accentSoft
+      surfaceContainerHighest:  Color(0xFFF5D4E2),   // Chips, selected-alt
       surfaceTint:              Colors.transparent,
       // ── Primary ──
-      primary:                  Color(0xFFD97FA4),   // Primary Deep (contrast OK on light)
+      primary:                  _roseActionPrimary,  // action primary — 4.61:1 white contrast (WCAG AA)
       onPrimary:                Color(0xFFFFFFFF),
-      primaryContainer:         Color(0xFFFFE8F1),   // Icon Soft Background
+      primaryContainer:         Color(0xFFF7CFE0),   // accentSoft — icon bg (decorative #E58AB3 family)
       onPrimaryContainer:       Color(0xFF7A2848),
-      // ── Secondary (lavender / 紫粉陰影) ──
+      // ── Secondary (soft lavender) ──
       secondary:                Color(0xFFC4A8D4),
       onSecondary:              Color(0xFFFFFFFF),
-      secondaryContainer:       Color(0xFFF0E6F7),   // #EBDCF2
+      secondaryContainer:       Color(0xFFF3E7F7),   // soft lavender
       onSecondaryContainer:     Color(0xFF5C3A70),
       // ── Tertiary (keep green for income) ──
       tertiary:                 Color(0xFF5DAD7C),
@@ -295,12 +300,12 @@ class ThemeProvider extends ChangeNotifier {
       onSurface:                Color(0xFF2D1A24),   // warm dark plum
       onSurfaceVariant:         Color(0xFF9B6070),   // medium plum
       // ── Borders ──
-      outline:                  Color(0xFFF1C8D8),   // Border
-      outlineVariant:           Color(0xFFEFD9E3),   // Soft Divider
+      outline:                  Color(0xFFF0C6D7),   // border
+      outlineVariant:           Color(0xFFF3D5E3),   // soft divider
       // ── Inverse ──
       inverseSurface:           Color(0xFF3D1A2A),
       onInverseSurface:         Color(0xFFFFF0F5),
-      inversePrimary:           Color(0xFFF8C7D9),   // Primary Soft
+      inversePrimary:           Color(0xFFF7CFE0),   // accentSoft on dark
       shadow:                   Color(0xFF000000),
       scrim:                    Color(0xFF000000),
     );
@@ -320,7 +325,6 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   static ThemeData _buildRoseDarkTheme() {
-    final p = _palettes[3]!;
     const cs = ColorScheme(
       brightness:               Brightness.dark,
       surface:                  Color(0xFF18100F),
@@ -396,11 +400,14 @@ class ThemeProvider extends ChangeNotifier {
         outline:                   p.lOutline,
         outlineVariant:            p.lOutlineVariant,
         surfaceTint:               Colors.transparent,
-        onSurface:          const  Color(0xFF1C1C1E),
-        onSurfaceVariant:   const  Color(0xFF5E5E6E),
+        primary:                   p.lAccentPrimary,
+        onPrimary:           const Color(0xFFFFFFFF),
+        primaryContainer:          p.lAccentSoft,
+        onSurface:           const Color(0xFF1C1C1E),
+        onSurfaceVariant:    const Color(0xFF5E5E6E),
       ),
     );
-    return _applyComponents(base);
+    return _applyComponents(base, switchTrack: p.lSwitchTrack);
   }
 
   // ── Dark theme ───────────────────────────────────────────────────────────
