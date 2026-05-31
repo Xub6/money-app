@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart' show databaseFactoryFfiWeb;
 import 'package:path/path.dart';
 import '../models/expense_item.dart';
 import '../models/fixed_item.dart';
@@ -28,6 +30,16 @@ class AppDatabase {
 
   Future<Database> _initDatabase() async {
     try {
+      if (kIsWeb) {
+        databaseFactory = databaseFactoryFfiWeb;
+        AppLogger.info('Opening database (Web/IndexedDB): $_databaseName');
+        return await openDatabase(
+          _databaseName,
+          version: _version,
+          onCreate: _onCreate,
+          onUpgrade: _onUpgrade,
+        );
+      }
       final dbPath = await getDatabasesPath();
       final path = join(dbPath, _databaseName);
       AppLogger.info('Opening database at: $path');
@@ -451,6 +463,7 @@ class AppDatabase {
   }
 
   Future<int> _getDatabaseFileSize() async {
+    if (kIsWeb) return 0;
     try {
       final dbPath = await getDatabasesPath();
       final path = join(dbPath, _databaseName);

@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:vibration/vibration.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -56,7 +58,9 @@ const kGray = AppColors.textSecondary;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  if (!kIsWeb) {
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  }
 
   FlutterError.onError = (FlutterErrorDetails details) {
     AppLogger.error('Flutter Error',
@@ -69,6 +73,10 @@ void main() async {
 
   AppLogger.info('App starting...');
   runApp(const MoneyApp());
+  // QA Sandbox only: enable semantics for Playwright ARIA locators
+  if (kIsWeb) {
+    SemanticsBinding.instance.ensureSemantics();
+  }
 }
 
 // ─── NavigatorObserver: hide TourOverlay during ModalBottomSheet ───────────────
@@ -1738,6 +1746,12 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   Future<void> _doBackup() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Web QA Sandbox 不支援此原生功能')),
+      );
+      return;
+    }
     widget.state.hapticMedium();
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -1772,6 +1786,12 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   Future<void> _doExportCsv() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Web QA Sandbox 不支援此原生功能')),
+      );
+      return;
+    }
     widget.state.hapticMedium();
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -1791,6 +1811,12 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   Future<void> _doExportExcel() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Web QA Sandbox 不支援此原生功能')),
+      );
+      return;
+    }
     widget.state.hapticMedium();
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -1812,6 +1838,12 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   Future<void> _doRestore() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Web QA Sandbox 不支援此原生功能')),
+      );
+      return;
+    }
     widget.state.hapticMedium();
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -1894,6 +1926,12 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   Future<void> _doShareBackup() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Web QA Sandbox 不支援此原生功能')),
+      );
+      return;
+    }
     widget.state.hapticMedium();
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -1920,6 +1958,12 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   Future<void> _doRestoreFromFile() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Web QA Sandbox 不支援此原生功能')),
+      );
+      return;
+    }
     widget.state.hapticMedium();
     final messenger = ScaffoldMessenger.of(context);
     try {

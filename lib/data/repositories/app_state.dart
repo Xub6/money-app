@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vibration/vibration.dart';
@@ -325,15 +326,15 @@ class AppState extends ChangeNotifier {
   }
 
   void hapticLight() {
-    if (hapticEnabled) Vibration.vibrate(duration: 40, amplitude: 80);
+    if (hapticEnabled && !kIsWeb) Vibration.vibrate(duration: 40, amplitude: 80);
   }
 
   void hapticMedium() {
-    if (hapticEnabled) Vibration.vibrate(duration: 70, amplitude: 160);
+    if (hapticEnabled && !kIsWeb) Vibration.vibrate(duration: 70, amplitude: 160);
   }
 
   void hapticHeavy() {
-    if (hapticEnabled) Vibration.vibrate(duration: 100, amplitude: 255);
+    if (hapticEnabled && !kIsWeb) Vibration.vibrate(duration: 100, amplitude: 255);
   }
 
   // ─── Budget / Statistics ───
