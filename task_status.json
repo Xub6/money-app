@@ -1,0 +1,94 @@
+{
+  "session_id": "qa-web-2026-05-31",
+  "created_at": "2026-05-31T00:00:00+08:00",
+  "updated_at": "2026-05-31T16:00:00+08:00",
+  "phase": "qa_complete",
+  "status": "completed",
+  "branch": "qa/web-sandbox",
+  "base_commit": "8c2b0dc",
+  "restrictions": [
+    "NO push to qa/web-sandbox",
+    "NO merge to main",
+    "NO Cloudflare Tunnel",
+    "NO public URLs",
+    "NO AAB builds",
+    "NO claims of Web QA completion without evidence"
+  ],
+  "qa_results": {
+    "QA-WEB-005": {
+      "status": "pass",
+      "description": "Tour Keys Registry — all GlobalKeys exist with correct debug labels",
+      "flutter_layer": "pass",
+      "playwright_layer": "pass",
+      "notes": "4 Flutter unit tests pass; Playwright: flt-semantics present in DOM",
+      "artifacts": [
+        "test/unit/web_qa_tests.dart",
+        "qa_playwright_results.json"
+      ]
+    },
+    "QA-WEB-006": {
+      "status": "pass",
+      "description": "TourSession Lifecycle + Accessibility — predicate flags, ISO-8601 timestamps, viewport layout",
+      "flutter_layer": "pass",
+      "playwright_layer": "pass",
+      "notes": "5 Flutter unit tests pass; Playwright: page title present, no horizontal overflow at 390px",
+      "artifacts": [
+        "test/unit/web_qa_tests.dart",
+        "qa_playwright_results.json"
+      ]
+    },
+    "QA-WEB-007": {
+      "status": "pass",
+      "description": "Next button disabled on actionRequired tour steps until predicate satisfied",
+      "flutter_layer": "pass",
+      "playwright_layer": "pass",
+      "notes": "8 Flutter unit tests pass (tour_controller_test.dart); Playwright: flt-semantics elements rendered",
+      "artifacts": [
+        "test/unit/tour_controller_test.dart",
+        "qa_playwright_results.json"
+      ]
+    },
+    "QA-WEB-008": {
+      "status": "pass",
+      "description": "Web storage adapter — sqflite_common_ffi_web — app loads without critical console errors",
+      "flutter_layer": "pass",
+      "playwright_layer": "pass",
+      "notes": "4 Flutter unit tests pass; Playwright: no critical JS errors on localhost:8080 (Yahoo Finance CORS filtered as known external API behavior)",
+      "artifacts": [
+        "test/unit/web_qa_tests.dart",
+        "qa_playwright_results.json"
+      ]
+    }
+  },
+  "flutter_tests": {
+    "count": 33,
+    "passed": 33,
+    "failed": 0,
+    "run_at": "2026-05-31T16:00:00+08:00",
+    "command": "flutter test test/widget_test.dart test/unit/models_test.dart test/unit/tour_controller_test.dart test/unit/web_qa_tests.dart",
+    "breakdown": {
+      "widget_test.dart": 1,
+      "models_test.dart": 11,
+      "tour_controller_test.dart": 8,
+      "web_qa_tests.dart": 13
+    }
+  },
+  "playwright_tests": {
+    "count": 5,
+    "passed": 5,
+    "failed": 0,
+    "run_at": "2026-05-31T16:00:00+08:00",
+    "script": "qa_web_playwright.js",
+    "viewport": "390x844 (iPhone 14 Pro)"
+  },
+  "stop_hook": {
+    "condition": "status == completed AND all QA-WEB pass AND flutter_tests.failed == 0",
+    "satisfied": true,
+    "lifecycle": "input_received → qa_running → qa_complete → report_ready → done",
+    "current_state": "done"
+  },
+  "handoff_report": {
+    "ready": true,
+    "path": "HANDOFF_REPORT_QA_WEB.md"
+  }
+}

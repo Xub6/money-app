@@ -1,0 +1,50 @@
+{
+  "run_at": "2026-05-31T12:04:28.010Z",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "base_url": "http://localhost:8080",
+  "tests": [
+    {
+      "id": "QA-WEB-008",
+      "name": "App loads without critical console errors",
+      "status": "pass",
+      "notes": "12 total console messages, 0 critical errors",
+      "error": null
+    },
+    {
+      "id": "QA-WEB-005",
+      "name": "Flutter semantic tree present in DOM",
+      "status": "pass",
+      "notes": "flt-semantics/glass-pane element found",
+      "error": null
+    },
+    {
+      "id": "QA-WEB-006",
+      "name": "Page has accessible title",
+      "status": "pass",
+      "notes": "title=\"錢錢管家\"",
+      "error": null
+    },
+    {
+      "id": "QA-WEB-006",
+      "name": "No horizontal overflow at iPhone 390px viewport",
+      "status": "pass",
+      "notes": "scrollWidth=390, clientWidth=390",
+      "error": null
+    },
+    {
+      "id": "QA-WEB-007",
+      "name": "Flutter semantic layer renders button states",
+      "status": "pass",
+      "notes": "Found 12 flt-semantics elements; 1 aria-disabled elements",
+      "error": null
+    }
+  ],
+  "summary": {
+    "pass": 5,
+    "fail": 0,
+    "skip": 0
+  }
+}
