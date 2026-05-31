@@ -472,12 +472,11 @@ class _MissionPanel extends StatelessWidget {
   }
 
   Widget _buildActionRequiredFooter(BuildContext context, Color subColor) {
-    // actionRequired: 左側空，右側顯示狀態
-    Widget rightWidget;
+    // actionRequired: 左側空，中間顯示狀態，右側顯示 disabled Next（明確 ARIA 狀態）
+    Widget centerWidget;
 
     if (stepJustCompleted) {
-      // 完成閃爍 ✓
-      rightWidget = AnimatedDefaultTextStyle(
+      centerWidget = AnimatedDefaultTextStyle(
         duration: const Duration(milliseconds: 200),
         style: const TextStyle(
           color: AppColors.gold,
@@ -487,13 +486,12 @@ class _MissionPanel extends StatelessWidget {
         child: Text(AppLocalizations.of(context, 'tour_step_done')),
       );
     } else {
-      // 等待完成：顯示 step-specific 操作提示
       final hintKey = step.actionHintLocKey ?? 'tour_action_hint_below';
       final hintText = wrongTap
           ? AppLocalizations.of(context, 'tour_wrong_tap')
           : AppLocalizations.of(context, hintKey);
       final hintColor = wrongTap ? Colors.orange : AppColors.gold;
-      rightWidget = AnimatedDefaultTextStyle(
+      centerWidget = AnimatedDefaultTextStyle(
         duration: const Duration(milliseconds: 300),
         style: TextStyle(
           color: hintColor,
@@ -504,9 +502,14 @@ class _MissionPanel extends StatelessWidget {
       );
     }
 
+    // Disabled Next button (onTap: null) — explicit lock for ARIA semantics and
+    // belt-and-suspenders guard. Callback guard also in TourController.next().
+    final nextLabel = isLast
+        ? AppLocalizations.of(context, 'tour_done')
+        : AppLocalizations.of(context, 'tour_next');
+
     return Row(
       children: [
-        // 上一步（若不是第一步）
         if (stepIndex > 0)
           _TextBtn(
             label: AppLocalizations.of(context, 'tour_prev'),
@@ -516,7 +519,13 @@ class _MissionPanel extends StatelessWidget {
         else
           const SizedBox(width: 60),
         const Spacer(),
-        rightWidget,
+        centerWidget,
+        const SizedBox(width: 10),
+        // Explicitly disabled: onTap is null → ARIA enabled=false, tap ignored
+        _FilledBtn(
+          label: nextLabel,
+          onTap: isCurrentStepCompleted ? onNext : null,
+        ),
       ],
     );
   }
@@ -534,12 +543,12 @@ class _MissionPanel extends StatelessWidget {
         else
           const SizedBox(width: 60),
         const Spacer(),
-        // 下一步 / 完成
+        // 下一步 / 完成 (info/finish steps: always enabled)
         _FilledBtn(
           label: (isLast || step.isFinish)
               ? AppLocalizations.of(context, 'tour_done')
               : AppLocalizations.of(context, 'tour_next'),
-          onTap: onNext,
+          onTap: onNext, // non-null for info/finish steps
         ),
       ],
     );
@@ -571,33 +580,35 @@ class _TextBtn extends StatelessWidget {
 
 class _FilledBtn extends StatelessWidget {
   final String label;
-  final AsyncCallback onTap;
+  // null = disabled (action-required step guard). Never null for info/finish steps.
+  final AsyncCallback? onTap;
   const _FilledBtn({required this.label, required this.onTap});
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
-          decoration: BoxDecoration(
-            color: AppColors.gold,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.gold.withValues(alpha: 0.40),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-            ),
-          ),
+  Widget build(BuildContext context) {
+    final isEnabled = onTap != null;
+    // Use Flutter's built-in ElevatedButton so disabled state is properly
+    // reflected in the ARIA semantic tree (aria-disabled="true" when null onTap).
+    return ElevatedButton(
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isEnabled
+            ? AppColors.gold
+            : AppColors.gold.withValues(alpha: 0.35),
+        disabledBackgroundColor: AppColors.gold.withValues(alpha: 0.35),
+        foregroundColor: Colors.white,
+        disabledForegroundColor: Colors.white.withValues(alpha: 0.55),
+        elevation: isEnabled ? 4 : 0,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-      );
+        textStyle: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+        ),
+      ),
+      child: Text(label),
+    );
+  }
 }
